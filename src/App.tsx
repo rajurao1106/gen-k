@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { marked } from "marked";
 import { useEffect, useMemo, useState } from "react";
-// import TestData from "./TestData";
 
 type KundaliRecord = {
   name: string;
@@ -569,7 +568,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* <TestData /> */}
+
     </div>
   );
 }
