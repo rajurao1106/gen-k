@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { marked } from "marked";
-import { useEffect, useMemo, useRef, useState } from "react";
-// import TestData from "./TestData";
+import { useEffect, useMemo, useState } from "react";
 
 type ChartData = {
   lagna?: string;
@@ -1004,7 +1003,6 @@ ${html}`,
         </div>
       </div>
 
-      {/* <TestData /> */}
     </div>
   );
 }
