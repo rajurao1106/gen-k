@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { marked } from "marked";
 import { useEffect, useMemo, useState } from "react";
+// import TestData from "./TestData";
 
 type KundaliRecord = {
   name: string;
@@ -30,9 +31,11 @@ export default function App() {
     gender: "",
   });
   const [loading, setLoading] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kundali, setKundali] = useState<KundaliRecord[]>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [language, setLanguage] = useState<"en" | "hi">("en");
 
   useEffect(() => {
     const existingRaw = localStorage.getItem("kundali");
@@ -127,6 +130,14 @@ export default function App() {
         * **Time of Birth:**  ${input.bot}
         * **Place of Birth:**  ${input.bop}
         * **Gender (optional):**  ${input.gender}
+
+        ## Response Language
+
+        Write the ENTIRE response in ${
+          language === "hi" ? "Hindi, using Devanagari script" : "English"
+        }. Every heading, section title, table label and sentence — including "Your Personalized Kundli Analysis", "Birth Details" and "Key Takeaways" — must be in ${
+          language === "hi" ? "Hindi" : "English"
+        }. Do not mix languages.
 
         First, use these birth details to determine the person's Vedic astrology chart, including Lagna/Ascendant, Moon sign, Sun sign, planetary placements, houses, Nakshatra, Vimshottari Dasha and relevant divisional charts where applicable.
 
@@ -352,6 +363,34 @@ export default function App() {
     }
   };
 
+  const translateToHindi = async () => {
+    if (!html) return;
+    try {
+      setTranslating(true);
+      setError(null);
+      const ai = new GoogleGenAI({
+        apiKey: import.meta.env.VITE_API_KEY,
+      });
+
+      const response = ai.interactions.create({
+        model: "gemini-3.5-flash",
+        input: `Translate the following Kundli reading (given as HTML) into natural, fluent Hindi using Devanagari script. Keep all HTML tags (h1, h2, h3, p, ul, li, table, tr, th, td, strong, etc.) and their structure exactly as they are — translate only the visible text content inside the tags. Do not add commentary before or after. Do not wrap the output in markdown code fences.
+
+HTML to translate:
+${html}`,
+      });
+
+      const text = (await response).output_text ?? "";
+      setHtml(text.trim());
+      setLanguage("hi");
+    } catch (error) {
+      console.error(error);
+      setError("Could not translate this reading to Hindi. Please try again.");
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen bg-[#0a0e26] text-[#f1ede4] overflow-x-hidden">
       {/* Font import + subtle starfield background */}
@@ -461,6 +500,36 @@ export default function App() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#b8ade0] mb-1.5">
+                    Reading language
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLanguage("en")}
+                      className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
+                        language === "en"
+                          ? "bg-[#d4af6a]/10 border-[#d4af6a]/50 text-[#d4af6a]"
+                          : "bg-[#0a0e26] border-white/10 text-[#9ca3c2] hover:border-white/20"
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLanguage("hi")}
+                      className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
+                        language === "hi"
+                          ? "bg-[#d4af6a]/10 border-[#d4af6a]/50 text-[#d4af6a]"
+                          : "bg-[#0a0e26] border-white/10 text-[#9ca3c2] hover:border-white/20"
+                      }`}
+                    >
+                      हिंदी
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {error && (
@@ -559,16 +628,36 @@ export default function App() {
             )}
 
             {!loading && html && (
-              <div
-                className="prose-kundli"
-                dangerouslySetInnerHTML={{ __html: html }}
-              />
+              <>
+                <div className="flex justify-end mb-2">
+                  <button
+                    onClick={translateToHindi}
+                    disabled={translating || language === "hi"}
+                    className="text-xs flex items-center gap-1.5 rounded-lg border border-white/10 hover:border-[#8e7cc3]/50 hover:text-[#b8ade0] disabled:opacity-40 disabled:cursor-not-allowed text-[#cbd0e8] px-3 py-1.5 transition-colors"
+                  >
+                    {translating ? (
+                      <>
+                        <span className="h-3 w-3 rounded-full border-2 border-[#b8ade0]/30 border-t-[#b8ade0] animate-spin" />
+                        Hindi mein badla ja raha hai…
+                      </>
+                    ) : language === "hi" ? (
+                      "हिंदी में उपलब्ध"
+                    ) : (
+                      "हिंदी में अनुवाद करें"
+                    )}
+                  </button>
+                </div>
+                <div
+                  className="prose-kundli"
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              </>
             )}
           </div>
         </div>
       </div>
 
-
+      {/* <TestData /> */}
     </div>
   );
 }
