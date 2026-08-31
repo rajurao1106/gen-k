@@ -406,7 +406,7 @@ ${html}`,
                 htmlFor="gender"
                 className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
               >
-                Gender <span className="text-[#8ea1c2]">(optional)</span>
+                Gender 
               </label>
               <select
                 id="gender"

@@ -34,21 +34,21 @@ function KundaliExperience() {
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
 
         :root {
-          --bg-app: #0a1324;
-          --bg-surface: #162b45;
-          --bg-surface-strong: #1c3558;
-          --bg-surface-soft: #23406d;
-          --bg-header: #0d1f34;
-          --gold: #f2c36b;
-          --gold-strong: #dca347;
-          --gold-soft: #f9e6b2;
+          --bg-app: #071a2a;
+          --bg-surface: #10273d;
+          --bg-surface-strong: #153555;
+          --bg-surface-soft: #1d446d;
+          --bg-header: #0d2138;
+          --gold: #f0c06d;
+          --gold-strong: #d69b3c;
+          --gold-soft: #f8e6b6;
           --text-primary: #f9f3eb;
           --text-body: #edf2fb;
-          --text-muted: #cbd9ee;
-          --text-subtle: #a7b9d6;
-          --text-dark: #0b1324;
-          --border: rgba(242,195,107,0.38);
-          --danger: #f29a8b;
+          --text-muted: #c9d8ed;
+          --text-subtle: #a6bddb;
+          --text-dark: #081724;
+          --border: rgba(240,192,109,0.34);
+          --danger: #ef9f90;
         }
 
         .font-display { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.01em; }
@@ -56,12 +56,12 @@ function KundaliExperience() {
 
         .brass-surface {
           background:
-            radial-gradient(circle at 15% 20%, rgba(242,195,107,0.22), transparent 45%),
-            radial-gradient(circle at 85% 80%, rgba(242,195,107,0.12), transparent 50%),
-            linear-gradient(160deg, #0f2035 0%, #0b182b 55%, #07111f 100%);
+            radial-gradient(circle at 15% 20%, rgba(240,192,109,0.14), transparent 42%),
+            radial-gradient(circle at 85% 80%, rgba(120,170,255,0.08), transparent 48%),
+            linear-gradient(160deg, #0a1d2f 0%, #0d233b 45%, #071822 100%);
         }
         .brass-header {
-          background: linear-gradient(135deg, #122c47 0%, #0d1f34 55%, #0a182a 100%);
+          background: linear-gradient(135deg, #10273d 0%, #0d2138 52%, #0a1a2e 100%);
         }
 
         .prose-kundli h2 { font-family: 'Rajdhani', sans-serif; color: var(--gold); font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
@@ -126,7 +126,7 @@ function KundaliExperience() {
         />
 
         <div className="min-w-0 flex-1 ">
-          <header className="relative brass-header border-b border-[#f2c36b]/25 no-print">
+          <header className="relative lg:hidden brass-header border-b border-[#f2c36b]/25 no-print">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
               <HamburgerButton
                 onClick={() => setMenuOpen(true)}
@@ -146,7 +146,7 @@ function KundaliExperience() {
             </div>
           </header>
 
-          <div className="relative max-w-6xl h-screen overflow-scroll mx-auto px-4 sm:px-6 lg:px-8 py-8 font-body">
+          <div className="relative max-w-6xl h-screen overflow-y-scroll  mx-auto px-4 sm:px-6 lg:px-8 py-8 font-body">
             {page === "kundali" && <KundaliPage />}
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}
