@@ -132,9 +132,9 @@ function KundaliExperience() {
                 onClick={() => setMenuOpen(true)}
                 className="lg:hidden"
               />
-              <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0 shadow-[0_0_18px_rgba(242,195,107,0.38)]">
+              {/* <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0">
                 <img src="/logo.png" alt="" />
-              </div>
+              </div> */}
               <div>
                 <h1 className="font-display text-lg sm:text-xl font-semibold tracking-wide text-[#f5efe6]">
                   Gen-K &middot; {PAGE_TITLES[page].hi}
