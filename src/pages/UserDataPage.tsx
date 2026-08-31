@@ -28,8 +28,7 @@ export default function UserDataPage() {
       const data = await fetchAllUserDetails();
       setRecords(data);
       setError("");
-    } catch (loadError) {
-      console.error("Loading saved records failed:", loadError);
+    } catch {
       setError("Unable to load saved records. Please try again later.");
     } finally {
       setLoading(false);
@@ -100,8 +99,7 @@ export default function UserDataPage() {
       setDeletingId(id);
       await deleteUserDetail(id);
       setRecords((previous) => previous.filter((record) => record._id !== id));
-    } catch (deleteError) {
-      console.error("Deleting saved record failed:", deleteError);
+    } catch {
       setError("Unable to delete this record. Please try again later.");
     } finally {
       setDeletingId(null);

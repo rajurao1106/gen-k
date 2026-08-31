@@ -40,8 +40,7 @@ router.post("/save", async (req, res) => {
       message: "User details saved successfully",
       data: userDetail,
     });
-  } catch (error) {
-    console.error("Save user detail error:", error);
+  } catch {
     res.status(500).json({
       success: false,
       message: "Failed to save user details",
@@ -57,8 +56,7 @@ router.get("/all", async (req, res) => {
       count: records.length,
       data: records,
     });
-  } catch (error) {
-    console.error("Fetch user details error:", error);
+  } catch {
     res.status(500).json({
       success: false,
       message: "Failed to fetch user details",
@@ -91,8 +89,7 @@ router.delete("/delete/:id", async (req, res) => {
       message: "User record deleted successfully.",
       data: deletedRecord,
     });
-  } catch (error) {
-    console.error("Delete user detail error:", error);
+  } catch {
     res.status(500).json({
       success: false,
       message: "Failed to delete user record",

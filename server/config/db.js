@@ -21,7 +21,6 @@ const connectDB = async () => {
     return mongoose.connection;
   } catch (error) {
     connectionPromise = undefined;
-    console.error("MongoDB connection error:", error.message);
     throw error;
   }
 };

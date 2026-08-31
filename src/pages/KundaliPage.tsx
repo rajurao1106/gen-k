@@ -279,8 +279,7 @@ Rules:
           content: shayari,
           chart: chartData ?? null,
         });
-      } catch (saveError) {
-        console.error("Database save on generate failed:", saveError);
+      } catch {
         setError(
           "Reading generated, but it could not be saved. Please try again later.",
         );
@@ -290,7 +289,6 @@ Rules:
       // blocks or fails the text reading if it errors out.
       generateChartData();
     } catch (error) {
-      console.error(error);
       setError(
         isQuotaOrRateLimitError(error)
           ? QUOTA_ERROR_MESSAGE_HI

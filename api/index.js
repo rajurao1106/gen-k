@@ -4,8 +4,7 @@ export default async function handler(req, res) {
   try {
     await initializeServer();
     return app(req, res);
-  } catch (error) {
-    console.error("API initialization error:", error);
+  } catch {
     return res.status(500).json({
       success: false,
       message: "Service temporarily unavailable. Please try again later.",
