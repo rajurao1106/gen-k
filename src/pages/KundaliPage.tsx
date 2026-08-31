@@ -406,7 +406,7 @@ ${html}`,
                 htmlFor="gender"
                 className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
               >
-                Gender 
+                Gender
               </label>
               <select
                 id="gender"
@@ -532,7 +532,7 @@ ${html}`,
         {!html && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#8ea1c2] no-print">
             <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
-              <img src="/public/logo.png" alt="" />
+              <img src="/logo.png" alt="" />
             </div>
             <p className="font-display text-xl font-semibold text-[#afbdd7] mb-1">
               Your reading will appear here

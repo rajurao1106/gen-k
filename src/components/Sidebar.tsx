@@ -90,7 +90,7 @@ export function Sidebar({
       >
         <div className="flex items-center gap-3 px-5 py-5 border-b border-[#f2c36b]/20">
           <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] shadow-[0_0_16px_rgba(242,195,107,0.35)] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0">
-            <img src="/public/logo.png" alt="" />
+            <img src="/logo.png" alt="" />
           </div>
           <div>
             <p className="font-display text-base font-semibold text-[#f9f3eb]">

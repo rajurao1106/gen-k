@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
-import { callGemini, extractJson, isQuotaOrRateLimitError, QUOTA_ERROR_MESSAGE_HI } from "../lib/gemini";
+import {
+  callGemini,
+  extractJson,
+  isQuotaOrRateLimitError,
+  QUOTA_ERROR_MESSAGE_HI,
+} from "../lib/gemini";
 import { getSavedKundalis } from "../lib/storage";
 import type { KundaliRecord } from "../types";
 
-type GunaRow = { guna: string; var: string; vadhu: string; ank: string; maxAnk: number };
+type GunaRow = {
+  guna: string;
+  var: string;
+  vadhu: string;
+  ank: string;
+  maxAnk: number;
+};
 
 type MilanResult = {
   totalScore: number;
@@ -28,10 +39,10 @@ function PersonPicker({
   return (
     <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">{label}</p>
-        {selected && (
-          <span className="text-[#d8b36a] text-sm">✔</span>
-        )}
+        <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+          {label}
+        </p>
+        {selected && <span className="text-[#d8b36a] text-sm">✔</span>}
       </div>
       <select
         value={selectedIndex ?? ""}
@@ -49,14 +60,18 @@ function PersonPicker({
       </select>
       {selected ? (
         <>
-          <p className="font-display text-base font-semibold text-[#f5efe6]">{selected.name || "—"}</p>
+          <p className="font-display text-base font-semibold text-[#f5efe6]">
+            {selected.name || "—"}
+          </p>
           <p className="text-xs text-[#afbdd7] mt-1">
             {selected.dob} {selected.bot ? `· ${selected.bot}` : ""}
           </p>
           <p className="text-xs text-[#afbdd7] truncate">{selected.bop}</p>
         </>
       ) : (
-        <p className="text-xs text-[#8ea1c2]">Koi reading select nahi ki gayi</p>
+        <p className="text-xs text-[#8ea1c2]">
+          Koi reading select nahi ki gayi
+        </p>
       )}
     </div>
   );
@@ -76,7 +91,9 @@ export default function KundaliMilanPage() {
 
   const varRecord = varIndex !== null ? records[varIndex] : null;
   const vadhuRecord = vadhuIndex !== null ? records[vadhuIndex] : null;
-  const canCompute = Boolean(varRecord && vadhuRecord && varIndex !== vadhuIndex);
+  const canCompute = Boolean(
+    varRecord && vadhuRecord && varIndex !== vadhuIndex,
+  );
 
   const runMilan = async () => {
     if (!varRecord || !vadhuRecord) return;
@@ -131,7 +148,11 @@ Rules:
       }
     } catch (err) {
       console.error(err);
-      setError(isQuotaOrRateLimitError(err) ? QUOTA_ERROR_MESSAGE_HI : "Guna Milan calculate karte waqt kuch gadbad ho gayi. Please try again.");
+      setError(
+        isQuotaOrRateLimitError(err)
+          ? QUOTA_ERROR_MESSAGE_HI
+          : "Guna Milan calculate karte waqt kuch gadbad ho gayi. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -141,11 +162,15 @@ Rules:
     return (
       <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 text-center">
         <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
-            <img src="/public/logo.png" alt="" />
-          </div>
-        <p className="font-display text-xl font-semibold text-[#afbdd7] mb-2">कुंडली मिलान</p>
+          <img src="/logo.png" alt="" />
+        </div>
+        <p className="font-display text-xl font-semibold text-[#afbdd7] mb-2">
+          कुंडली मिलान
+        </p>
         <p className="text-sm text-[#afbdd7] max-w-md mx-auto">
-          Guna Milan ke liye kam se kam 2 saved readings chahiye. पहले "कुंडली" page se दो लोगों की readings generate karke save karein, फिर यहाँ वापस आएं।
+          Guna Milan ke liye kam se kam 2 saved readings chahiye. पहले "कुंडली"
+          page se दो लोगों की readings generate karke save karein, फिर यहाँ वापस
+          आएं।
         </p>
       </div>
     );
@@ -154,22 +179,40 @@ Rules:
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">कुंडली मिलान</h2>
-        <p className="text-xs text-[#afbdd7] mb-5">Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।</p>
+        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
+          कुंडली मिलान
+        </h2>
+        <p className="text-xs text-[#afbdd7] mb-5">
+          Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-          <PersonPicker label="वर" records={records} selectedIndex={varIndex} onSelect={setVarIndex} />
-          <PersonPicker label="वधु" records={records} selectedIndex={vadhuIndex} onSelect={setVadhuIndex} />
+          <PersonPicker
+            label="वर"
+            records={records}
+            selectedIndex={varIndex}
+            onSelect={setVarIndex}
+          />
+          <PersonPicker
+            label="वधु"
+            records={records}
+            selectedIndex={vadhuIndex}
+            onSelect={setVadhuIndex}
+          />
         </div>
 
-        {varIndex !== null && vadhuIndex !== null && varIndex === vadhuIndex && (
-          <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
-            वर और वधु के लिए अलग-अलग readings चुनें।
-          </p>
-        )}
+        {varIndex !== null &&
+          vadhuIndex !== null &&
+          varIndex === vadhuIndex && (
+            <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
+              वर और वधु के लिए अलग-अलग readings चुनें।
+            </p>
+          )}
 
         {error && (
-          <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">{error}</p>
+          <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
+            {error}
+          </p>
         )}
 
         <button
@@ -193,34 +236,55 @@ Rules:
           <h3 className="font-display text-lg font-semibold text-[#d8b36a] text-center mb-1">
             गुण मिलान {result.totalScore} / {result.maxScore}
           </h3>
-          <p className="text-center text-xs text-[#afbdd7] mb-5">{result.verdict}</p>
+          <p className="text-center text-xs text-[#afbdd7] mb-5">
+            {result.verdict}
+          </p>
 
           <div className="overflow-x-auto rounded-xl border border-[#d8b36a]/20">
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">गुण</th>
-                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">वर</th>
-                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">वधु</th>
-                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">अंक</th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">
+                    गुण
+                  </th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">
+                    वर
+                  </th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">
+                    वधु
+                  </th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">
+                    अंक
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {result.rows.map((row, i) => (
                   <tr key={i} className={i % 2 === 1 ? "bg-[#d8b36a]/5" : ""}>
-                    <td className="px-3 py-2 text-[#f4d7a7] font-medium border-t border-[#d8b36a]/10">{row.guna}</td>
-                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">{row.var}</td>
-                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">{row.vadhu}</td>
-                    <td className="px-3 py-2 text-[#f5efe6] border-t border-[#d8b36a]/10">{row.ank}</td>
+                    <td className="px-3 py-2 text-[#f4d7a7] font-medium border-t border-[#d8b36a]/10">
+                      {row.guna}
+                    </td>
+                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">
+                      {row.var}
+                    </td>
+                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">
+                      {row.vadhu}
+                    </td>
+                    <td className="px-3 py-2 text-[#f5efe6] border-t border-[#d8b36a]/10">
+                      {row.ank}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <p className="text-sm text-[#e3cbb0] leading-relaxed mt-5">{result.summary}</p>
+          <p className="text-sm text-[#e3cbb0] leading-relaxed mt-5">
+            {result.summary}
+          </p>
           <p className="text-[10px] text-[#8ea1c2] mt-3 text-center">
-            AI-computed traditional Ashtakoot estimate — critical decisions ke liye certified astrologer se verify karein।
+            AI-computed traditional Ashtakoot estimate — critical decisions ke
+            liye certified astrologer se verify karein।
           </p>
         </div>
       )}
