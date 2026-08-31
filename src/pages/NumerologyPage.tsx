@@ -89,17 +89,17 @@ Rules:
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h2 className="font-display text-xl font-semibold text-[#fbe9d0] mb-1">न्यूमरोलॉजी</h2>
-        <p className="text-xs text-[#c99a6b] mb-5">Naam aur date of birth se aapke ank (numbers) nikalte hain।</p>
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">न्यूमरोलॉजी</h2>
+        <p className="text-xs text-[#afbdd7] mb-5">Naam aur date of birth se aapke ank (numbers) nikalte hain।</p>
 
         {saved.length > 0 && (
           <div className="mb-4">
-            <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">Saved reading se bharein (optional)</label>
+            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">Saved reading se bharein (optional)</label>
             <select
               defaultValue=""
               onChange={(e) => applySaved(Number(e.target.value))}
-              className="w-full rounded-lg bg-[#1c0e05] border border-[#e8a13a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#e8a13a]/60"
+              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/60"
             >
               <option value="" disabled>
                 Choose karein…
@@ -115,21 +115,21 @@ Rules:
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">Full name</label>
+            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">Full name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Ananya Sharma"
-              className="w-full rounded-lg bg-[#1c0e05] border border-[#e8a13a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#7a5c40] outline-none focus:border-[#e8a13a]/70 focus:ring-1 focus:ring-[#e8a13a]/40"
+              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">Date of birth</label>
+            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">Date of birth</label>
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full rounded-lg bg-[#1c0e05] border border-[#e8a13a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#e8a13a]/70 focus:ring-1 focus:ring-[#e8a13a]/40"
+              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
             />
           </div>
         </div>
@@ -141,11 +141,11 @@ Rules:
         <button
           onClick={runNumerology}
           disabled={loading}
-          className="mt-5 w-full rounded-lg bg-[#e8a13a] hover:bg-[#d68f28] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#20100a] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
+          className="mt-5 w-full rounded-lg bg-[#d8b36a] hover:bg-[#c99a58] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#0b1324] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
-              <span className="h-3.5 w-3.5 rounded-full border-2 border-[#20100a]/40 border-t-[#20100a] animate-spin" />
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-[#0b1324]/40 border-t-[#0b1324] animate-spin" />
               अंक गणना हो रही है…
             </>
           ) : (
@@ -155,9 +155,9 @@ Rules:
       </div>
 
       {loading && (
-        <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-10 text-center">
-          <div className="h-8 w-8 mx-auto rounded-full border-2 border-[#e8a13a]/30 border-t-[#e8a13a] animate-spin mb-4" />
-          <p className="text-sm text-[#c99a6b]">आपके अंक निकाले जा रहे हैं…</p>
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 text-center">
+          <div className="h-8 w-8 mx-auto rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] animate-spin mb-4" />
+          <p className="text-sm text-[#afbdd7]">आपके अंक निकाले जा रहे हैं…</p>
         </div>
       )}
 
@@ -165,26 +165,26 @@ Rules:
         <div className="space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {result.cards.map((card, i) => (
-              <div key={i} className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4 text-center">
-                <p className="font-display text-3xl font-bold text-[#e8a13a] mb-1">{card.number}</p>
-                <p className="text-xs font-medium text-[#f2b25c] mb-1">{card.label}</p>
-                <p className="text-[11px] text-[#a9835f] leading-snug">{card.description}</p>
+              <div key={i} className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4 text-center">
+                <p className="font-display text-3xl font-bold text-[#d8b36a] mb-1">{card.number}</p>
+                <p className="text-xs font-medium text-[#f4d7a7] mb-1">{card.label}</p>
+                <p className="text-[11px] text-[#afbdd7] leading-snug">{card.description}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5 text-sm">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">Lucky Colors</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">Lucky Colors</p>
                 <p className="text-[#e3cbb0]">{result.luckyColors.join(", ")}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">Lucky Days</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">Lucky Days</p>
                 <p className="text-[#e3cbb0]">{result.luckyDays.join(", ")}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">Lucky Numbers</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">Lucky Numbers</p>
                 <p className="text-[#e3cbb0]">{result.luckyNumbers.join(", ")}</p>
               </div>
             </div>

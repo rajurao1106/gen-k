@@ -28,35 +28,54 @@ function KundaliExperience() {
   return (
     <div
       id="appShell"
-      className="relative min-h-screen bg-[#20100a] text-[#f5e6d3] overflow-x-hidden"
+      className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-hidden"
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
+
+        :root {
+          --bg-app: #0a1324;
+          --bg-surface: #162b45;
+          --bg-surface-strong: #1c3558;
+          --bg-surface-soft: #23406d;
+          --bg-header: #0d1f34;
+          --gold: #f2c36b;
+          --gold-strong: #dca347;
+          --gold-soft: #f9e6b2;
+          --text-primary: #f9f3eb;
+          --text-body: #edf2fb;
+          --text-muted: #cbd9ee;
+          --text-subtle: #a7b9d6;
+          --text-dark: #0b1324;
+          --border: rgba(242,195,107,0.38);
+          --danger: #f29a8b;
+        }
+
         .font-display { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.01em; }
         .font-body { font-family: 'Mukta', sans-serif; }
 
         .brass-surface {
           background:
-            radial-gradient(circle at 15% 20%, rgba(232,161,58,0.10), transparent 45%),
-            radial-gradient(circle at 85% 80%, rgba(232,161,58,0.06), transparent 50%),
-            linear-gradient(160deg, #3a2010 0%, #2a1608 60%, #1c0e05 100%);
+            radial-gradient(circle at 15% 20%, rgba(242,195,107,0.22), transparent 45%),
+            radial-gradient(circle at 85% 80%, rgba(242,195,107,0.12), transparent 50%),
+            linear-gradient(160deg, #0f2035 0%, #0b182b 55%, #07111f 100%);
         }
         .brass-header {
-          background: linear-gradient(135deg, #4a2a12 0%, #3a1f0a 55%, #2a1608 100%);
+          background: linear-gradient(135deg, #122c47 0%, #0d1f34 55%, #0a182a 100%);
         }
 
-        .prose-kundli h2 { font-family: 'Rajdhani', sans-serif; color: #e8a13a; font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid rgba(232,161,58,0.3); padding-bottom: 0.4rem; }
-        .prose-kundli h1 { font-family: 'Rajdhani', sans-serif; color: #fbe9d0; font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
-        .prose-kundli h3 { color: #f2b25c; font-size: 1.05rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.4rem; }
-        .prose-kundli p { color: #e3cbb0; line-height: 1.7; margin-bottom: 0.85rem; }
-        .prose-kundli ul { color: #e3cbb0; margin-bottom: 0.85rem; padding-left: 1.1rem; }
+        .prose-kundli h2 { font-family: 'Rajdhani', sans-serif; color: var(--gold); font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+        .prose-kundli h1 { font-family: 'Rajdhani', sans-serif; color: var(--text-primary); font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+        .prose-kundli h3 { color: var(--gold-soft); font-size: 1.05rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.4rem; }
+        .prose-kundli p { color: var(--text-body); line-height: 1.7; margin-bottom: 0.85rem; }
+        .prose-kundli ul { color: var(--text-body); margin-bottom: 0.85rem; padding-left: 1.1rem; }
         .prose-kundli li { margin-bottom: 0.35rem; }
-        .prose-kundli li::marker { color: #e8a13a; }
-        .prose-kundli strong { color: #fbe9d0; }
-        .prose-kundli table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-bottom: 1rem; -webkit-overflow-scrolling: touch; border: 1px solid rgba(232,161,58,0.25); border-radius: 8px; }
-        .prose-kundli th, .prose-kundli td { border: 1px solid rgba(232,161,58,0.18); padding: 0.55rem 0.8rem; text-align: left; color: #e3cbb0; white-space: nowrap; }
-        .prose-kundli th { color: #20100a; background: #e8a13a; font-weight: 700; }
-        .prose-kundli tr:nth-child(even) td { background: rgba(232,161,58,0.05); }
+        .prose-kundli li::marker { color: var(--gold); }
+        .prose-kundli strong { color: var(--text-primary); }
+        .prose-kundli table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-bottom: 1rem; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 8px; }
+        .prose-kundli th, .prose-kundli td { border: 1px solid rgba(216,179,106,0.18); padding: 0.55rem 0.8rem; text-align: left; color: var(--text-body); white-space: nowrap; }
+        .prose-kundli th { color: var(--text-dark); background: var(--gold); font-weight: 700; }
+        .prose-kundli tr:nth-child(even) td { background: rgba(216,179,106,0.05); }
         .prose-kundli h1, .prose-kundli h2, .prose-kundli h3, .prose-kundli p, .prose-kundli li {
           overflow-wrap: break-word;
           word-break: break-word;
@@ -107,20 +126,20 @@ function KundaliExperience() {
         />
 
         <div className="min-w-0 flex-1 ">
-          <header className="relative brass-header border-b border-[#e8a13a]/20 no-print">
+          <header className="relative brass-header border-b border-[#f2c36b]/25 no-print">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
               <HamburgerButton
                 onClick={() => setMenuOpen(true)}
                 className="lg:hidden"
               />
-              <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#e8a13a] flex items-center justify-center text-[#2a1608] font-display font-bold text-lg shrink-0">
+              <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0 shadow-[0_0_18px_rgba(242,195,107,0.38)]">
                 <img src="/public/logo.png" alt="" />
               </div>
               <div>
-                <h1 className="font-display text-lg sm:text-xl font-semibold tracking-wide text-[#fbe9d0]">
+                <h1 className="font-display text-lg sm:text-xl font-semibold tracking-wide text-[#f5efe6]">
                   Gen-K &middot; {PAGE_TITLES[page].hi}
                 </h1>
-                <p className="text-[10px] sm:text-xs text-[#c99a6b] tracking-wide">
+                <p className="text-[10px] sm:text-xs text-[#afbdd7] tracking-wide">
                   {PAGE_TITLES[page].sub}
                 </p>
               </div>

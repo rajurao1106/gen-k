@@ -65,7 +65,14 @@ export default function KundaliPage() {
     [input],
   );
 
-  const storedData = async () => {
+  const saveLocally = () => {
+    if (!input.name || !input.dob || !input.bot || !input.bop) {
+      setError(
+        "Please fill in name, date, time, and place of birth before saving.",
+      );
+      return;
+    }
+
     const record = {
       name: input.name,
       dob: input.dob,
@@ -76,37 +83,12 @@ export default function KundaliPage() {
       chart: chartData,
     };
 
+    // This button is intentionally browser-local only.
+    // MongoDB persistence happens only from the Generate reading action.
     const updated = saveKundaliRecord(record);
     setKundali(updated);
     setActiveIndex(updated.length - 1);
-
-    if (!input.name || !input.dob || !input.bot || !input.bop) {
-      setError(
-        "Please fill in name, date, time, and place of birth before saving.",
-      );
-      return;
-    }
-
-    try {
-      await saveUserDetail({
-        fullName: input.name,
-        dateOfBirth: input.dob,
-        timeOfBirth: input.bot,
-        placeOfBirth: input.bop,
-        gender: input.gender,
-        readingLanguage: language,
-        content: html,
-        chart: chartData ?? null,
-      });
-      setError(null);
-    } catch (saveError) {
-      console.error("Backend save failed:", saveError);
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Failed to save to database.",
-      );
-    }
+    setError(null);
   };
 
   const getData = (item: KundaliRecord, index: number) => {
@@ -285,6 +267,27 @@ Rules:
       setHtml(shayari);
       setActiveIndex(null);
 
+      try {
+        // Only the Generate reading action writes to MongoDB.
+        await saveUserDetail({
+          fullName: input.name,
+          dateOfBirth: input.dob,
+          timeOfBirth: input.bot,
+          placeOfBirth: input.bop,
+          gender: input.gender,
+          readingLanguage: language,
+          content: shayari,
+          chart: chartData ?? null,
+        });
+      } catch (saveError) {
+        console.error("Database save on generate failed:", saveError);
+        setError(
+          saveError instanceof Error
+            ? `Reading generated, but database save failed: ${saveError.message}`
+            : "Reading generated, but database save failed.",
+        );
+      }
+
       // Fire the chart request after the main reading succeeds; this never
       // blocks or fails the text reading if it errors out.
       generateChartData();
@@ -369,11 +372,11 @@ ${html}`,
     >
       {/* Left column: form + saved list */}
       <div className="space-y-6 lg:sticky lg:top-8 no-print">
-        <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h2 className="font-display text-xl font-semibold text-[#fbe9d0] mb-1">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
             जन्म विवरण &middot; Birth details
           </h2>
-          <p className="text-xs text-[#c99a6b] mb-5">
+          <p className="text-xs text-[#afbdd7] mb-5">
             Accuracy of time and place matters most for house-based predictions.
           </p>
 
@@ -382,7 +385,7 @@ ${html}`,
               <div key={field.key}>
                 <label
                   htmlFor={field.key}
-                  className="block text-xs font-medium text-[#f2b25c] mb-1.5"
+                  className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
                 >
                   {field.label}
                 </label>
@@ -393,7 +396,7 @@ ${html}`,
                   value={input[field.key]}
                   name={field.key}
                   onChange={onchangeHandle}
-                  className="w-full rounded-lg bg-[#1c0e05] border border-[#e8a13a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#7a5c40] outline-none focus:border-[#e8a13a]/70 focus:ring-1 focus:ring-[#e8a13a]/40 transition-colors"
+                  className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40 transition-colors"
                 />
               </div>
             ))}
@@ -401,16 +404,16 @@ ${html}`,
             <div>
               <label
                 htmlFor="gender"
-                className="block text-xs font-medium text-[#f2b25c] mb-1.5"
+                className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
               >
-                Gender <span className="text-[#7a5c40]">(optional)</span>
+                Gender <span className="text-[#8ea1c2]">(optional)</span>
               </label>
               <select
                 id="gender"
                 name="gender"
                 value={input.gender}
                 onChange={onchangeHandle}
-                className="w-full rounded-lg bg-[#1c0e05] border border-[#e8a13a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#e8a13a]/70 focus:ring-1 focus:ring-[#e8a13a]/40 transition-colors"
+                className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40 transition-colors"
               >
                 <option value="">Prefer not to say</option>
                 <option value="Female">Female</option>
@@ -420,7 +423,7 @@ ${html}`,
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">
+              <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">
                 Reading language
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -429,8 +432,8 @@ ${html}`,
                   onClick={() => setLanguage("en")}
                   className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
                     language === "en"
-                      ? "bg-[#e8a13a]/15 border-[#e8a13a]/60 text-[#e8a13a]"
-                      : "bg-[#1c0e05] border-[#e8a13a]/15 text-[#c99a6b] hover:border-[#e8a13a]/40"
+                      ? "bg-[#d8b36a]/15 border-[#d8b36a]/60 text-[#d8b36a]"
+                      : "bg-[#111d31] border-[#d8b36a]/15 text-[#afbdd7] hover:border-[#d8b36a]/40"
                   }`}
                 >
                   English
@@ -440,8 +443,8 @@ ${html}`,
                   onClick={() => setLanguage("hi")}
                   className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
                     language === "hi"
-                      ? "bg-[#e8a13a]/15 border-[#e8a13a]/60 text-[#e8a13a]"
-                      : "bg-[#1c0e05] border-[#e8a13a]/15 text-[#c99a6b] hover:border-[#e8a13a]/40"
+                      ? "bg-[#d8b36a]/15 border-[#d8b36a]/60 text-[#d8b36a]"
+                      : "bg-[#111d31] border-[#d8b36a]/15 text-[#afbdd7] hover:border-[#d8b36a]/40"
                   }`}
                 >
                   हिंदी
@@ -460,11 +463,11 @@ ${html}`,
             <button
               onClick={createShayari}
               disabled={loading}
-              className="w-full rounded-lg bg-[#e8a13a] hover:bg-[#d68f28] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#20100a] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-lg bg-[#d8b36a] hover:bg-[#c99a58] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#0b1324] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
-                  <span className="h-3.5 w-3.5 rounded-full border-2 border-[#20100a]/40 border-t-[#20100a] animate-spin" />
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-[#0b1324]/40 border-t-[#0b1324] animate-spin" />
                   Consulting the stars…
                 </>
               ) : (
@@ -472,9 +475,9 @@ ${html}`,
               )}
             </button>
             <button
-              onClick={() => void storedData()}
+              onClick={() => void saveLocally()}
               disabled={!html || loading}
-              className="w-full rounded-lg border border-[#e8a13a]/25 hover:border-[#e8a13a]/60 hover:text-[#f2b25c] disabled:opacity-40 disabled:cursor-not-allowed text-[#f5e6d3] text-sm py-2.5 transition-colors"
+              className="w-full rounded-lg border border-[#d8b36a]/25 hover:border-[#d8b36a]/60 hover:text-[#f4d7a7] disabled:opacity-40 disabled:cursor-not-allowed text-[#f5e6d3] text-sm py-2.5 transition-colors"
             >
               Save this reading
             </button>
@@ -482,8 +485,8 @@ ${html}`,
         </div>
 
         {kundali.length > 0 && (
-          <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-            <h3 className="font-display text-lg font-semibold text-[#fbe9d0] mb-3">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+            <h3 className="font-display text-lg font-semibold text-[#f5efe6] mb-3">
               Saved readings
             </h3>
             <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -493,22 +496,22 @@ ${html}`,
                     onClick={() => getData(item, index)}
                     className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border ${
                       activeIndex === index
-                        ? "bg-[#e8a13a]/15 border-[#e8a13a]/50 text-[#e8a13a]"
-                        : "bg-transparent border-[#e8a13a]/10 hover:border-[#e8a13a]/30 text-[#e3cbb0]"
+                        ? "bg-[#d8b36a]/15 border-[#d8b36a]/50 text-[#d8b36a]"
+                        : "bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#e3cbb0]"
                     }`}
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium">
                         {item.name || "Untitled"}
                       </span>
-                      <span className="block text-xs text-[#a9835f] truncate">
+                      <span className="block text-xs text-[#afbdd7] truncate">
                         {item.dob}
                       </span>
                     </span>
                     <span
                       role="button"
                       onClick={(e) => deleteData(index, e)}
-                      className="shrink-0 text-[#a9835f] hover:text-[#f0958a] text-xs px-1.5 py-0.5 rounded transition-colors"
+                      className="shrink-0 text-[#afbdd7] hover:text-[#f0958a] text-xs px-1.5 py-0.5 rounded transition-colors"
                       aria-label={`Delete ${item.name}`}
                     >
                       ✕
@@ -524,14 +527,14 @@ ${html}`,
       {/* Right column: reading */}
       <div
         id="printArea"
-        className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-6 sm:p-8 min-h-[420px] shadow-xl shadow-black/30"
+        className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 sm:p-8 min-h-[420px] shadow-xl shadow-black/30"
       >
         {!html && !loading && (
-          <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#7a5c40] no-print">
-            <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#e8a13a] flex items-center justify-center text-[#2a1608] font-display font-bold text-lg shrink-0">
+          <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#8ea1c2] no-print">
+            <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
               <img src="/public/logo.png" alt="" />
             </div>
-            <p className="font-display text-xl font-semibold text-[#c99a6b] mb-1">
+            <p className="font-display text-xl font-semibold text-[#afbdd7] mb-1">
               Your reading will appear here
             </p>
             <p className="text-sm max-w-sm">
@@ -543,8 +546,8 @@ ${html}`,
 
         {loading && (
           <div className="h-full flex flex-col items-center justify-center py-20 text-center no-print">
-            <div className="h-8 w-8 rounded-full border-2 border-[#e8a13a]/30 border-t-[#e8a13a] animate-spin mb-4" />
-            <p className="text-sm text-[#c99a6b]">
+            <div className="h-8 w-8 rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] animate-spin mb-4" />
+            <p className="text-sm text-[#afbdd7]">
               Mapping planetary placements and dashas…
             </p>
           </div>
@@ -553,26 +556,26 @@ ${html}`,
         {!loading && html && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 no-print">
-              <div className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4">
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">
+              <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4">
+                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">
                   Name
                 </p>
-                <p className="font-display text-base font-semibold text-[#fbe9d0]">
+                <p className="font-display text-base font-semibold text-[#f5efe6]">
                   {input.name || "—"}
                 </p>
-                <p className="text-xs text-[#c99a6b] mt-1">
+                <p className="text-xs text-[#afbdd7] mt-1">
                   {input.dob} {input.bot ? `· ${input.bot}` : ""}
                 </p>
-                <p className="text-xs text-[#a9835f] truncate">{input.bop}</p>
+                <p className="text-xs text-[#afbdd7] truncate">{input.bop}</p>
               </div>
-              <div className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4 flex flex-col justify-center">
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">
+              <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4 flex flex-col justify-center">
+                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">
                   Lagna &middot; Ayanamsa
                 </p>
-                <p className="font-display text-base font-semibold text-[#fbe9d0]">
+                <p className="font-display text-base font-semibold text-[#f5efe6]">
                   {chartData?.lagna || (chartLoading ? "Calculating…" : "—")}
                 </p>
-                <p className="text-xs text-[#c99a6b] mt-1">
+                <p className="text-xs text-[#afbdd7] mt-1">
                   {chartData?.ayanamsa || ""}
                 </p>
               </div>
@@ -582,11 +585,11 @@ ${html}`,
               <button
                 onClick={translateToHindi}
                 disabled={translating || language === "hi"}
-                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#e8a13a]/20 hover:border-[#e8a13a]/50 hover:text-[#f2b25c] disabled:opacity-40 disabled:cursor-not-allowed text-[#e3cbb0] px-3 py-1.5 transition-colors"
+                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#d8b36a]/50 hover:text-[#f4d7a7] disabled:opacity-40 disabled:cursor-not-allowed text-[#e3cbb0] px-3 py-1.5 transition-colors"
               >
                 {translating ? (
                   <>
-                    <span className="h-3 w-3 rounded-full border-2 border-[#f2b25c]/30 border-t-[#f2b25c] animate-spin" />
+                    <span className="h-3 w-3 rounded-full border-2 border-[#f4d7a7]/30 border-t-[#f4d7a7] animate-spin" />
                     Hindi mein badla ja raha hai…
                   </>
                 ) : language === "hi" ? (
@@ -600,7 +603,7 @@ ${html}`,
                 <>
                   <button
                     onClick={handlePlayPause}
-                    className="text-xs flex items-center gap-1.5 rounded-lg border border-[#e8a13a]/20 hover:border-[#e8a13a]/50 hover:text-[#e8a13a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
+                    className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#d8b36a]/50 hover:text-[#d8b36a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
                   >
                     {speechState === "speaking"
                       ? "⏸ रोकें"
@@ -611,7 +614,7 @@ ${html}`,
                   {speechState !== "idle" && (
                     <button
                       onClick={handleStopSpeech}
-                      className="text-xs flex items-center gap-1.5 rounded-lg border border-[#e8a13a]/20 hover:border-[#f0958a]/50 hover:text-[#f0958a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
+                      className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#f0958a]/50 hover:text-[#f0958a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
                     >
                       ⏹ बंद करें
                     </button>
@@ -621,33 +624,33 @@ ${html}`,
 
               <button
                 onClick={handleDownloadPdf}
-                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#e8a13a]/50 hover:border-[#e8a13a] text-[#e8a13a] px-3 py-1.5 transition-colors"
+                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/50 hover:border-[#d8b36a] text-[#d8b36a] px-3 py-1.5 transition-colors"
               >
                 ⬇ चार्ट सहित डाउनलोड करें
               </button>
             </div>
 
             {(chartLoading || chartData) && (
-              <div className="mb-6 rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/60 p-4">
-                <h3 className="font-display text-lg font-semibold text-[#e8a13a] mb-2 text-center">
+              <div className="mb-6 rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/60 p-4">
+                <h3 className="font-display text-lg font-semibold text-[#d8b36a] mb-2 text-center">
                   Janma Kundali (Birth Chart)
                 </h3>
                 {chartLoading && !chartData && (
-                  <p className="text-xs text-[#c99a6b] text-center py-6 no-print">
+                  <p className="text-xs text-[#afbdd7] text-center py-6 no-print">
                     चार्ट तैयार किया जा रहा है…
                   </p>
                 )}
                 {chartData && (
                   <>
                     <KundaliChartSVG data={chartData} />
-                    <p className="text-center text-xs text-[#a9835f] mt-3">
+                    <p className="text-center text-xs text-[#afbdd7] mt-3">
                       {chartData.lagna ? `Lagna: ${chartData.lagna}` : ""}
                       {chartData.lagna && chartData.ayanamsa ? " · " : ""}
                       {chartData.ayanamsa
                         ? `Ayanamsa: ${chartData.ayanamsa}`
                         : ""}
                     </p>
-                    <p className="text-center text-[10px] text-[#7a5c40] mt-1">
+                    <p className="text-center text-[10px] text-[#8ea1c2] mt-1">
                       North Indian style chart, AI-computed from your reading —
                       verify against a certified astrologer for critical
                       decisions.

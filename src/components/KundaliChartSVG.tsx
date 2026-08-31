@@ -45,21 +45,21 @@ export function KundaliChartSVG({
       viewBox="0 0 400 400"
       className={compact ? "w-full max-w-[220px] mx-auto" : "w-full max-w-[320px] mx-auto"}
     >
-      <rect x="1" y="1" width="398" height="398" fill="#2a1608" stroke="#e8a13a" strokeWidth="2" />
-      <polygon points="200,0 400,200 200,400 0,200" fill="none" stroke="#e8a13a" strokeWidth="1.5" />
-      <line x1="0" y1="0" x2="400" y2="400" stroke="#e8a13a" strokeWidth="1.5" />
-      <line x1="400" y1="0" x2="0" y2="400" stroke="#e8a13a" strokeWidth="1.5" />
+      <rect x="1" y="1" width="398" height="398" fill="#0a1529" stroke="#d8b36a" strokeWidth="2" />
+      <polygon points="200,0 400,200 200,400 0,200" fill="none" stroke="#d8b36a" strokeWidth="1.5" />
+      <line x1="0" y1="0" x2="400" y2="400" stroke="#d8b36a" strokeWidth="1.5" />
+      <line x1="400" y1="0" x2="0" y2="400" stroke="#d8b36a" strokeWidth="1.5" />
       {Object.entries(HOUSE_POLYGONS).map(([houseNum]) => {
         const n = Number(houseNum);
         const [cx, cy] = HOUSE_CENTERS[n];
         const planets = data.houses?.[houseNum] ?? [];
         return (
           <g key={houseNum}>
-            <text x={cx} y={cy - 14} textAnchor="middle" fontSize="10" fill="#c99a6b">
+            <text x={cx} y={cy - 14} textAnchor="middle" fontSize="10" fill="#afbdd7">
               {houseNum}
               {n === 1 ? " (Lg)" : ""}
             </text>
-            <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fbe9d0">
+            <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="700" fill="#f5efe6">
               {planets.join(" ")}
             </text>
           </g>

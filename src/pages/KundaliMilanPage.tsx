@@ -26,17 +26,17 @@ function PersonPicker({
 }) {
   const selected = selectedIndex !== null ? records[selectedIndex] : null;
   return (
-    <div className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4">
+    <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-wide text-[#a9835f]">{label}</p>
+        <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">{label}</p>
         {selected && (
-          <span className="text-[#e8a13a] text-sm">✔</span>
+          <span className="text-[#d8b36a] text-sm">✔</span>
         )}
       </div>
       <select
         value={selectedIndex ?? ""}
         onChange={(e) => onSelect(Number(e.target.value))}
-        className="w-full rounded-lg bg-[#2a1608] border border-[#e8a13a]/20 px-3 py-2 text-sm text-[#f5e6d3] outline-none focus:border-[#e8a13a]/60 mb-3"
+        className="w-full rounded-lg bg-[#0a1529] border border-[#d8b36a]/20 px-3 py-2 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/60 mb-3"
       >
         <option value="" disabled>
           Saved reading choose karein…
@@ -49,14 +49,14 @@ function PersonPicker({
       </select>
       {selected ? (
         <>
-          <p className="font-display text-base font-semibold text-[#fbe9d0]">{selected.name || "—"}</p>
-          <p className="text-xs text-[#c99a6b] mt-1">
+          <p className="font-display text-base font-semibold text-[#f5efe6]">{selected.name || "—"}</p>
+          <p className="text-xs text-[#afbdd7] mt-1">
             {selected.dob} {selected.bot ? `· ${selected.bot}` : ""}
           </p>
-          <p className="text-xs text-[#a9835f] truncate">{selected.bop}</p>
+          <p className="text-xs text-[#afbdd7] truncate">{selected.bop}</p>
         </>
       ) : (
-        <p className="text-xs text-[#7a5c40]">Koi reading select nahi ki gayi</p>
+        <p className="text-xs text-[#8ea1c2]">Koi reading select nahi ki gayi</p>
       )}
     </div>
   );
@@ -139,12 +139,12 @@ Rules:
 
   if (records.length < 2) {
     return (
-      <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-10 text-center">
-        <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#e8a13a] flex items-center justify-center text-[#2a1608] font-display font-bold text-lg shrink-0">
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 text-center">
+        <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
             <img src="/public/logo.png" alt="" />
           </div>
-        <p className="font-display text-xl font-semibold text-[#c99a6b] mb-2">कुंडली मिलान</p>
-        <p className="text-sm text-[#a9835f] max-w-md mx-auto">
+        <p className="font-display text-xl font-semibold text-[#afbdd7] mb-2">कुंडली मिलान</p>
+        <p className="text-sm text-[#afbdd7] max-w-md mx-auto">
           Guna Milan ke liye kam se kam 2 saved readings chahiye. पहले "कुंडली" page se दो लोगों की readings generate karke save karein, फिर यहाँ वापस आएं।
         </p>
       </div>
@@ -153,9 +153,9 @@ Rules:
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h2 className="font-display text-xl font-semibold text-[#fbe9d0] mb-1">कुंडली मिलान</h2>
-        <p className="text-xs text-[#c99a6b] mb-5">Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।</p>
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">कुंडली मिलान</h2>
+        <p className="text-xs text-[#afbdd7] mb-5">Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
           <PersonPicker label="वर" records={records} selectedIndex={varIndex} onSelect={setVarIndex} />
@@ -175,11 +175,11 @@ Rules:
         <button
           onClick={runMilan}
           disabled={!canCompute || loading}
-          className="w-full rounded-lg bg-[#e8a13a] hover:bg-[#d68f28] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#20100a] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
+          className="w-full rounded-lg bg-[#d8b36a] hover:bg-[#c99a58] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#0b1324] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
-              <span className="h-3.5 w-3.5 rounded-full border-2 border-[#20100a]/40 border-t-[#20100a] animate-spin" />
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-[#0b1324]/40 border-t-[#0b1324] animate-spin" />
               गुण मिलान निकाला जा रहा है…
             </>
           ) : (
@@ -189,29 +189,29 @@ Rules:
       </div>
 
       {result && (
-        <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h3 className="font-display text-lg font-semibold text-[#e8a13a] text-center mb-1">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <h3 className="font-display text-lg font-semibold text-[#d8b36a] text-center mb-1">
             गुण मिलान {result.totalScore} / {result.maxScore}
           </h3>
-          <p className="text-center text-xs text-[#c99a6b] mb-5">{result.verdict}</p>
+          <p className="text-center text-xs text-[#afbdd7] mb-5">{result.verdict}</p>
 
-          <div className="overflow-x-auto rounded-xl border border-[#e8a13a]/20">
+          <div className="overflow-x-auto rounded-xl border border-[#d8b36a]/20">
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="bg-[#e8a13a] text-[#20100a] font-semibold text-left px-3 py-2">गुण</th>
-                  <th className="bg-[#e8a13a] text-[#20100a] font-semibold text-left px-3 py-2">वर</th>
-                  <th className="bg-[#e8a13a] text-[#20100a] font-semibold text-left px-3 py-2">वधु</th>
-                  <th className="bg-[#e8a13a] text-[#20100a] font-semibold text-left px-3 py-2">अंक</th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">गुण</th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">वर</th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">वधु</th>
+                  <th className="bg-[#d8b36a] text-[#0b1324] font-semibold text-left px-3 py-2">अंक</th>
                 </tr>
               </thead>
               <tbody>
                 {result.rows.map((row, i) => (
-                  <tr key={i} className={i % 2 === 1 ? "bg-[#e8a13a]/5" : ""}>
-                    <td className="px-3 py-2 text-[#f2b25c] font-medium border-t border-[#e8a13a]/10">{row.guna}</td>
-                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#e8a13a]/10">{row.var}</td>
-                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#e8a13a]/10">{row.vadhu}</td>
-                    <td className="px-3 py-2 text-[#fbe9d0] border-t border-[#e8a13a]/10">{row.ank}</td>
+                  <tr key={i} className={i % 2 === 1 ? "bg-[#d8b36a]/5" : ""}>
+                    <td className="px-3 py-2 text-[#f4d7a7] font-medium border-t border-[#d8b36a]/10">{row.guna}</td>
+                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">{row.var}</td>
+                    <td className="px-3 py-2 text-[#e3cbb0] border-t border-[#d8b36a]/10">{row.vadhu}</td>
+                    <td className="px-3 py-2 text-[#f5efe6] border-t border-[#d8b36a]/10">{row.ank}</td>
                   </tr>
                 ))}
               </tbody>
@@ -219,7 +219,7 @@ Rules:
           </div>
 
           <p className="text-sm text-[#e3cbb0] leading-relaxed mt-5">{result.summary}</p>
-          <p className="text-[10px] text-[#7a5c40] mt-3 text-center">
+          <p className="text-[10px] text-[#8ea1c2] mt-3 text-center">
             AI-computed traditional Ashtakoot estimate — critical decisions ke liye certified astrologer se verify karein।
           </p>
         </div>

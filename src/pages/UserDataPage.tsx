@@ -94,14 +94,14 @@ export default function UserDataPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#20100a] px-4 py-8 text-[#f5e6d3]">
+    <div className="min-h-screen bg-[var(--bg-app)] px-4 py-8 text-[var(--text-primary)]">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 p-5 shadow-2xl shadow-black/30 md:flex-row md:items-center md:justify-between">
+        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)]/80 p-5 shadow-2xl shadow-black/30 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#c99a6b]">
+            <p className="text-xs uppercase tracking-[0.25em] text-[var(--text-muted)]">
               Admin dashboard
             </p>
-            <h1 className="font-display text-3xl text-[#fbe9d0]">
+            <h1 className="font-display text-3xl text-[var(--text-primary)]">
               All saved records
             </h1>
           </div>
@@ -110,36 +110,36 @@ export default function UserDataPage() {
             <button
               type="button"
               onClick={() => navigate("/", { replace: true })}
-              className="rounded-lg border border-[#e8a13a]/30 bg-[#1c0e05] px-4 py-2 text-sm text-[#fbe9d0] transition hover:border-[#e8a13a]/60"
+              className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface-strong)] px-4 py-2 text-sm text-[var(--text-primary)] transition hover:border-[var(--gold)]"
             >
               Home
             </button>
             <button
               type="button"
               onClick={logout}
-              className="rounded-lg bg-[#e8a13a] px-4 py-2 text-sm font-semibold text-[#20100a] transition hover:bg-[#d68f28]"
+              className="rounded-lg bg-[var(--gold)] px-4 py-2 text-sm font-semibold text-[var(--text-dark)] transition hover:bg-[var(--gold-strong)]"
             >
               Admin logout
             </button>
           </div>
         </div>
 
-        <div className="mb-6 rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 p-4 shadow-xl shadow-black/20">
+        <div className="mb-6 rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-4 shadow-xl shadow-black/20">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
-              <label className="mb-2 block text-[10px] uppercase tracking-wide text-[#a9835f]">
+              <label className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]">
                 Search records
               </label>
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by name, date, place, content..."
-                className="w-full rounded-lg border border-[#e8a13a]/20 bg-[#1c0e05] px-3 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#7a5c40] outline-none focus:border-[#e8a13a]/70"
+                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70"
               />
             </div>
 
             <div className="md:w-46">
-              <label className="mb-2 block text-[10px] uppercase tracking-wide text-[#a9835f]">
+              <label className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]">
                 Sort by
               </label>
               <select
@@ -147,7 +147,7 @@ export default function UserDataPage() {
                 onChange={(event) =>
                   setSortBy(event.target.value as "newest" | "oldest")
                 }
-                className="w-full rounded-lg border border-[#e8a13a]/20 bg-[#1c0e05] px-3 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#e8a13a]/70"
+                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70"
               >
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -157,7 +157,7 @@ export default function UserDataPage() {
         </div>
 
         {loading && (
-          <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 p-12 text-center text-[#c99a6b] shadow-xl shadow-black/20">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-12 text-center text-[#afbdd7] shadow-xl shadow-black/20">
             Loading saved user data...
           </div>
         )}
@@ -169,7 +169,7 @@ export default function UserDataPage() {
         )}
 
         {!loading && !error && filteredRecords.length === 0 && (
-          <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 p-10 text-center text-[#c99a6b] shadow-xl shadow-black/20">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-10 text-center text-[#afbdd7] shadow-xl shadow-black/20">
             No matching records found.
           </div>
         )}
@@ -179,14 +179,14 @@ export default function UserDataPage() {
             {filteredRecords.map((record) => (
               <div
                 key={record._id}
-                className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 p-5 shadow-xl shadow-black/20 transition hover:border-[#e8a13a]/40"
+                className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-xl shadow-black/20 transition hover:border-[#d8b36a]/40"
               >
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="font-display text-xl text-[#fbe9d0]">
+                    <h2 className="font-display text-xl text-[#f5efe6]">
                       {record.fullName || "Unnamed User"}
                     </h2>
-                    <p className="text-xs text-[#a9835f]">
+                    <p className="text-xs text-[#afbdd7]">
                       {record.createdAt
                         ? new Date(record.createdAt).toLocaleString()
                         : "No timestamp"}
@@ -194,7 +194,7 @@ export default function UserDataPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-[#e8a13a]/25 bg-[#e8a13a]/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-[#f2b25c]">
+                    <span className="rounded-full border border-[#d8b36a]/25 bg-[#d8b36a]/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-[#f4d7a7]">
                       {record.readingLanguage || "en"}
                     </span>
                     <button
@@ -210,7 +210,7 @@ export default function UserDataPage() {
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#a9835f]">
+                    <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
                       Date of birth
                     </p>
                     <p className="text-sm text-[#e3cbb0]">
@@ -218,7 +218,7 @@ export default function UserDataPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#a9835f]">
+                    <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
                       Time of birth
                     </p>
                     <p className="text-sm text-[#e3cbb0]">
@@ -226,7 +226,7 @@ export default function UserDataPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#a9835f]">
+                    <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
                       Place of birth
                     </p>
                     <p className="text-sm text-[#e3cbb0]">
@@ -234,7 +234,7 @@ export default function UserDataPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#a9835f]">
+                    <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
                       Gender
                     </p>
                     <p className="text-sm text-[#e3cbb0]">
@@ -244,8 +244,8 @@ export default function UserDataPage() {
                 </div>
 
                 {record.content && (
-                  <div className="mt-4 rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/60 p-4">
-                    <p className="mb-2 text-[10px] uppercase tracking-wide text-[#a9835f]">
+                  <div className="mt-4 rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/60 p-4">
+                    <p className="mb-2 text-[10px] uppercase tracking-wide text-[#afbdd7]">
                       Reading content
                     </p>
                     <div
