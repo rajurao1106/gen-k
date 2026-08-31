@@ -282,9 +282,7 @@ Rules:
       } catch (saveError) {
         console.error("Database save on generate failed:", saveError);
         setError(
-          saveError instanceof Error
-            ? `Reading generated, but database save failed: ${saveError.message}`
-            : "Reading generated, but database save failed.",
+          "Reading generated, but it could not be saved. Please try again later.",
         );
       }
 

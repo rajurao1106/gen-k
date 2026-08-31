@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     console.error("API initialization error:", error);
     return res.status(500).json({
       success: false,
-      message: "Backend initialization failed",
+      message: "Service temporarily unavailable. Please try again later.",
     });
   }
 }

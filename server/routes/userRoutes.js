@@ -45,7 +45,6 @@ router.post("/save", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to save user details",
-      error: error.message,
     });
   }
 });
@@ -63,7 +62,6 @@ router.get("/all", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch user details",
-      error: error.message,
     });
   }
 });
@@ -98,7 +96,6 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete user record",
-      error: error.message,
     });
   }
 });

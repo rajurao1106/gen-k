@@ -29,9 +29,8 @@ export default function UserDataPage() {
       setRecords(data);
       setError("");
     } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Failed to load data.",
-      );
+      console.error("Loading saved records failed:", loadError);
+      setError("Unable to load saved records. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -102,11 +101,8 @@ export default function UserDataPage() {
       await deleteUserDetail(id);
       setRecords((previous) => previous.filter((record) => record._id !== id));
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Failed to delete record.",
-      );
+      console.error("Deleting saved record failed:", deleteError);
+      setError("Unable to delete this record. Please try again later.");
     } finally {
       setDeletingId(null);
       setConfirmingId(null);
@@ -129,7 +125,8 @@ export default function UserDataPage() {
             </h1>
             {!loading && !error && (
               <p className="mt-1 text-sm text-[#afbdd7]">
-                {records.length} {records.length === 1 ? "record" : "records"} saved
+                {records.length} {records.length === 1 ? "record" : "records"}{" "}
+                saved
                 {hasActiveSearch &&
                   ` · ${filteredRecords.length} matching "${search.trim()}"`}
               </p>
@@ -179,7 +176,10 @@ export default function UserDataPage() {
         <div className="mb-6 rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-4 shadow-xl shadow-black/20">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
-              <label htmlFor="record-search" className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]">
+              <label
+                htmlFor="record-search"
+                className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]"
+              >
                 Search records
               </label>
               <div className="relative">
@@ -209,7 +209,14 @@ export default function UserDataPage() {
                     aria-label="Clear search"
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#8ea1c2] transition hover:text-[#f5e6d3]"
                   >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    >
                       <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
                   </button>
@@ -218,7 +225,10 @@ export default function UserDataPage() {
             </div>
 
             <div className="md:w-46">
-              <label htmlFor="record-sort" className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]">
+              <label
+                htmlFor="record-sort"
+                className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]"
+              >
                 Sort by
               </label>
               <select
@@ -243,7 +253,15 @@ export default function UserDataPage() {
             className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[#f0958a]/30 bg-[#f0958a]/10 p-4 text-[#f0958a] shadow-lg shadow-black/10"
           >
             <div className="flex items-start gap-3">
-              <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="mt-0.5 h-5 w-5 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4M12 16h.01" />
               </svg>
@@ -264,7 +282,14 @@ export default function UserDataPage() {
               aria-label="Dismiss error"
               className="shrink-0 rounded p-0.5 transition hover:text-[#f5b0a7]"
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
                 <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
@@ -273,7 +298,11 @@ export default function UserDataPage() {
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="space-y-4" aria-busy="true" aria-label="Loading saved user data">
+          <div
+            className="space-y-4"
+            aria-busy="true"
+            aria-label="Loading saved user data"
+          >
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -372,7 +401,9 @@ export default function UserDataPage() {
 
                       {isConfirming ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-[#afbdd7]">Delete this record?</span>
+                          <span className="text-xs text-[#afbdd7]">
+                            Delete this record?
+                          </span>
                           <button
                             type="button"
                             disabled={isDeleting}
