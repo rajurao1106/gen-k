@@ -160,7 +160,7 @@ Rules:
 
   if (records.length < 2) {
     return (
-      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 text-center">
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 flex-col flex gap-2 justify-center items-center text-center">
         <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
           <img src="/logo.png" alt="" />
         </div>
