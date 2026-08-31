@@ -1,3 +1,4 @@
+import { Navigate, Route, Routes } from "react-router-dom";
 import { useState } from "react";
 import { HamburgerButton, Sidebar } from "./components/Sidebar";
 import type { PageKey } from "./types";
@@ -5,6 +6,8 @@ import KundaliPage from "./pages/KundaliPage";
 import KundaliMilanPage from "./pages/KundaliMilanPage";
 import NumerologyPage from "./pages/NumerologyPage";
 import MahadashaPage from "./pages/MahadashaPage";
+import LoginPage from "./pages/LoginPage";
+import UserDataPage from "./pages/UserDataPage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   kundali: { hi: "कुंडली", sub: "Personalized life reading" },
@@ -13,7 +16,12 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
 };
 
-export default function App() {
+const isAdminAuthenticated = () => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem("genk_admin_session") === "true";
+};
+
+function KundaliExperience() {
   const [page, setPage] = useState<PageKey>("kundali");
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -22,7 +30,6 @@ export default function App() {
       id="appShell"
       className="relative min-h-screen bg-[#20100a] text-[#f5e6d3] overflow-x-hidden"
     >
-      {/* Fonts + the temple-brass texture that anchors the whole palette */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
         .font-display { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.01em; }
@@ -92,8 +99,6 @@ export default function App() {
       <div className="absolute inset-0 brass-surface pointer-events-none no-print" />
 
       <div className="relative lg:flex lg:items-start lg:min-h-screen">
-        {/* Desktop (lg+): permanent sidebar column. Mobile: hamburger-triggered
-            slide-in drawer, controlled by menuOpen. */}
         <Sidebar
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
@@ -102,10 +107,8 @@ export default function App() {
         />
 
         <div className="min-w-0 flex-1 ">
-          {/* App-bar — hamburger button only shows below the lg breakpoint,
-              since the sidebar is always visible on desktop. */}
-          <header className="relative  brass-header border-b border-[#e8a13a]/20 no-print">
-            <div className="max-w-6xl  mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
+          <header className="relative brass-header border-b border-[#e8a13a]/20 no-print">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
               <HamburgerButton
                 onClick={() => setMenuOpen(true)}
                 className="lg:hidden"
@@ -133,5 +136,25 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<KundaliExperience />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/user-data"
+        element={
+          isAdminAuthenticated() ? (
+            <UserDataPage />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

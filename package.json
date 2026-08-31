@@ -7,15 +7,21 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.js",
+    "dev:server": "nodemon server/index.js"
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
     "@tailwindcss/vite": "^4.3.3",
+    "cors": "^2.8.5",
     "dotenv": "^17.4.2",
+    "express": "^5.1.0",
     "marked": "^18.0.11",
+    "mongoose": "^8.16.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -23,6 +29,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
+    "nodemon": "^3.1.14",
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"

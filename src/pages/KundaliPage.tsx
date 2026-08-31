@@ -1,9 +1,19 @@
 import { marked } from "marked";
 import { useEffect, useMemo, useState } from "react";
-import { callGemini, extractJson, isQuotaOrRateLimitError, QUOTA_ERROR_MESSAGE_HI } from "../lib/gemini";
-import { deleteKundaliRecord, getSavedKundalis, saveKundaliRecord } from "../lib/storage";
+import {
+  callGemini,
+  extractJson,
+  isQuotaOrRateLimitError,
+  QUOTA_ERROR_MESSAGE_HI,
+} from "../lib/gemini";
+import {
+  deleteKundaliRecord,
+  getSavedKundalis,
+  saveKundaliRecord,
+} from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
+import { saveUserDetail } from "../lib/api";
 
 function stripHtmlToText(htmlStr: string) {
   const div = document.createElement("div");
@@ -15,16 +25,25 @@ export default function KundaliPage() {
   const [html, setHtml] = useState("");
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [chartLoading, setChartLoading] = useState(false);
-  const [input, setInput] = useState({ name: "", dob: "", bot: "", bop: "", gender: "" });
+  const [input, setInput] = useState({
+    name: "",
+    dob: "",
+    bot: "",
+    bop: "",
+    gender: "",
+  });
   const [loading, setLoading] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [kundali, setKundali] = useState<KundaliRecord[]>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [language, setLanguage] = useState<"en" | "hi">("en");
-  const [speechState, setSpeechState] = useState<"idle" | "speaking" | "paused">("idle");
+  const [speechState, setSpeechState] = useState<
+    "idle" | "speaking" | "paused"
+  >("idle");
 
-  const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const speechSupported =
+    typeof window !== "undefined" && "speechSynthesis" in window;
 
   useEffect(() => {
     setKundali(getSavedKundalis());
@@ -46,8 +65,8 @@ export default function KundaliPage() {
     [input],
   );
 
-  const storedData = () => {
-    const updated = saveKundaliRecord({
+  const storedData = async () => {
+    const record = {
       name: input.name,
       dob: input.dob,
       bot: input.bot,
@@ -55,15 +74,51 @@ export default function KundaliPage() {
       gender: input.gender,
       content: html,
       chart: chartData,
-    });
+    };
+
+    const updated = saveKundaliRecord(record);
     setKundali(updated);
     setActiveIndex(updated.length - 1);
+
+    if (!input.name || !input.dob || !input.bot || !input.bop) {
+      setError(
+        "Please fill in name, date, time, and place of birth before saving.",
+      );
+      return;
+    }
+
+    try {
+      await saveUserDetail({
+        fullName: input.name,
+        dateOfBirth: input.dob,
+        timeOfBirth: input.bot,
+        placeOfBirth: input.bop,
+        gender: input.gender,
+        readingLanguage: language,
+        content: html,
+        chart: chartData ?? null,
+      });
+      setError(null);
+    } catch (saveError) {
+      console.error("Backend save failed:", saveError);
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save to database.",
+      );
+    }
   };
 
   const getData = (item: KundaliRecord, index: number) => {
     setHtml(item.content);
     setChartData(item.chart ?? null);
-    setInput({ name: item.name, dob: item.dob, bot: item.bot, bop: item.bop, gender: item.gender });
+    setInput({
+      name: item.name,
+      dob: item.dob,
+      bot: item.bot,
+      bop: item.bop,
+      gender: item.gender,
+    });
     setActiveIndex(index);
     setError(null);
   };
@@ -81,7 +136,9 @@ export default function KundaliPage() {
     }
   };
 
-  const onchangeHandle = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const onchangeHandle = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     setInput({ ...input, [e.target.name]: e.target.value });
   };
 
@@ -233,7 +290,11 @@ Rules:
       generateChartData();
     } catch (error) {
       console.error(error);
-      setError(isQuotaOrRateLimitError(error) ? QUOTA_ERROR_MESSAGE_HI : "Something went wrong while consulting the stars. Please try again.");
+      setError(
+        isQuotaOrRateLimitError(error)
+          ? QUOTA_ERROR_MESSAGE_HI
+          : "Something went wrong while consulting the stars. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -256,7 +317,11 @@ ${html}`,
       setLanguage("hi");
     } catch (error) {
       console.error(error);
-      setError(isQuotaOrRateLimitError(error) ? QUOTA_ERROR_MESSAGE_HI : "Could not translate this reading to Hindi. Please try again.");
+      setError(
+        isQuotaOrRateLimitError(error)
+          ? QUOTA_ERROR_MESSAGE_HI
+          : "Could not translate this reading to Hindi. Please try again.",
+      );
     } finally {
       setTranslating(false);
     }
@@ -298,11 +363,16 @@ ${html}`,
   };
 
   return (
-    <div id="mainGrid" className="grid lg:grid-cols-[380px_1fr] gap-6 items-start">
+    <div
+      id="mainGrid"
+      className="grid lg:grid-cols-[380px_1fr] gap-6 items-start"
+    >
       {/* Left column: form + saved list */}
       <div className="space-y-6 lg:sticky lg:top-8 no-print">
         <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h2 className="font-display text-xl font-semibold text-[#fbe9d0] mb-1">जन्म विवरण &middot; Birth details</h2>
+          <h2 className="font-display text-xl font-semibold text-[#fbe9d0] mb-1">
+            जन्म विवरण &middot; Birth details
+          </h2>
           <p className="text-xs text-[#c99a6b] mb-5">
             Accuracy of time and place matters most for house-based predictions.
           </p>
@@ -310,7 +380,10 @@ ${html}`,
           <div className="space-y-4">
             {BIRTH_FIELDS.map((field) => (
               <div key={field.key}>
-                <label htmlFor={field.key} className="block text-xs font-medium text-[#f2b25c] mb-1.5">
+                <label
+                  htmlFor={field.key}
+                  className="block text-xs font-medium text-[#f2b25c] mb-1.5"
+                >
                   {field.label}
                 </label>
                 <input
@@ -326,7 +399,10 @@ ${html}`,
             ))}
 
             <div>
-              <label htmlFor="gender" className="block text-xs font-medium text-[#f2b25c] mb-1.5">
+              <label
+                htmlFor="gender"
+                className="block text-xs font-medium text-[#f2b25c] mb-1.5"
+              >
                 Gender <span className="text-[#7a5c40]">(optional)</span>
               </label>
               <select
@@ -344,7 +420,9 @@ ${html}`,
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">Reading language</label>
+              <label className="block text-xs font-medium text-[#f2b25c] mb-1.5">
+                Reading language
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -394,7 +472,7 @@ ${html}`,
               )}
             </button>
             <button
-              onClick={storedData}
+              onClick={() => void storedData()}
               disabled={!html || loading}
               className="w-full rounded-lg border border-[#e8a13a]/25 hover:border-[#e8a13a]/60 hover:text-[#f2b25c] disabled:opacity-40 disabled:cursor-not-allowed text-[#f5e6d3] text-sm py-2.5 transition-colors"
             >
@@ -405,7 +483,9 @@ ${html}`,
 
         {kundali.length > 0 && (
           <div className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-            <h3 className="font-display text-lg font-semibold text-[#fbe9d0] mb-3">Saved readings</h3>
+            <h3 className="font-display text-lg font-semibold text-[#fbe9d0] mb-3">
+              Saved readings
+            </h3>
             <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
               {kundali.map((item, index) => (
                 <li key={index}>
@@ -418,8 +498,12 @@ ${html}`,
                     }`}
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">{item.name || "Untitled"}</span>
-                      <span className="block text-xs text-[#a9835f] truncate">{item.dob}</span>
+                      <span className="block truncate font-medium">
+                        {item.name || "Untitled"}
+                      </span>
+                      <span className="block text-xs text-[#a9835f] truncate">
+                        {item.dob}
+                      </span>
                     </span>
                     <span
                       role="button"
@@ -438,21 +522,31 @@ ${html}`,
       </div>
 
       {/* Right column: reading */}
-      <div id="printArea" className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-6 sm:p-8 min-h-[420px] shadow-xl shadow-black/30">
+      <div
+        id="printArea"
+        className="rounded-2xl border border-[#e8a13a]/20 bg-[#2a1608]/60 backdrop-blur p-6 sm:p-8 min-h-[420px] shadow-xl shadow-black/30"
+      >
         {!html && !loading && (
           <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#7a5c40] no-print">
             <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#e8a13a] flex items-center justify-center text-[#2a1608] font-display font-bold text-lg shrink-0">
-            <img src="/public/logo.png" alt="" />
-          </div>
-            <p className="font-display text-xl font-semibold text-[#c99a6b] mb-1">Your reading will appear here</p>
-            <p className="text-sm max-w-sm">Fill in your birth details and generate a reading, or select a saved one from the left.</p>
+              <img src="/public/logo.png" alt="" />
+            </div>
+            <p className="font-display text-xl font-semibold text-[#c99a6b] mb-1">
+              Your reading will appear here
+            </p>
+            <p className="text-sm max-w-sm">
+              Fill in your birth details and generate a reading, or select a
+              saved one from the left.
+            </p>
           </div>
         )}
 
         {loading && (
           <div className="h-full flex flex-col items-center justify-center py-20 text-center no-print">
             <div className="h-8 w-8 rounded-full border-2 border-[#e8a13a]/30 border-t-[#e8a13a] animate-spin mb-4" />
-            <p className="text-sm text-[#c99a6b]">Mapping planetary placements and dashas…</p>
+            <p className="text-sm text-[#c99a6b]">
+              Mapping planetary placements and dashas…
+            </p>
           </div>
         )}
 
@@ -460,17 +554,27 @@ ${html}`,
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 no-print">
               <div className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4">
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">Name</p>
-                <p className="font-display text-base font-semibold text-[#fbe9d0]">{input.name || "—"}</p>
-                <p className="text-xs text-[#c99a6b] mt-1">{input.dob} {input.bot ? `· ${input.bot}` : ""}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">
+                  Name
+                </p>
+                <p className="font-display text-base font-semibold text-[#fbe9d0]">
+                  {input.name || "—"}
+                </p>
+                <p className="text-xs text-[#c99a6b] mt-1">
+                  {input.dob} {input.bot ? `· ${input.bot}` : ""}
+                </p>
                 <p className="text-xs text-[#a9835f] truncate">{input.bop}</p>
               </div>
               <div className="rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/70 p-4 flex flex-col justify-center">
-                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">Lagna &middot; Ayanamsa</p>
+                <p className="text-[10px] uppercase tracking-wide text-[#a9835f] mb-1">
+                  Lagna &middot; Ayanamsa
+                </p>
                 <p className="font-display text-base font-semibold text-[#fbe9d0]">
                   {chartData?.lagna || (chartLoading ? "Calculating…" : "—")}
                 </p>
-                <p className="text-xs text-[#c99a6b] mt-1">{chartData?.ayanamsa || ""}</p>
+                <p className="text-xs text-[#c99a6b] mt-1">
+                  {chartData?.ayanamsa || ""}
+                </p>
               </div>
             </div>
 
@@ -498,7 +602,11 @@ ${html}`,
                     onClick={handlePlayPause}
                     className="text-xs flex items-center gap-1.5 rounded-lg border border-[#e8a13a]/20 hover:border-[#e8a13a]/50 hover:text-[#e8a13a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
                   >
-                    {speechState === "speaking" ? "⏸ रोकें" : speechState === "paused" ? "▶ फिर से सुनें" : "🔊 रिस्पॉन्स सुनें"}
+                    {speechState === "speaking"
+                      ? "⏸ रोकें"
+                      : speechState === "paused"
+                        ? "▶ फिर से सुनें"
+                        : "🔊 रिस्पॉन्स सुनें"}
                   </button>
                   {speechState !== "idle" && (
                     <button
@@ -521,9 +629,13 @@ ${html}`,
 
             {(chartLoading || chartData) && (
               <div className="mb-6 rounded-xl border border-[#e8a13a]/20 bg-[#1c0e05]/60 p-4">
-                <h3 className="font-display text-lg font-semibold text-[#e8a13a] mb-2 text-center">Janma Kundali (Birth Chart)</h3>
+                <h3 className="font-display text-lg font-semibold text-[#e8a13a] mb-2 text-center">
+                  Janma Kundali (Birth Chart)
+                </h3>
                 {chartLoading && !chartData && (
-                  <p className="text-xs text-[#c99a6b] text-center py-6 no-print">चार्ट तैयार किया जा रहा है…</p>
+                  <p className="text-xs text-[#c99a6b] text-center py-6 no-print">
+                    चार्ट तैयार किया जा रहा है…
+                  </p>
                 )}
                 {chartData && (
                   <>
@@ -531,17 +643,24 @@ ${html}`,
                     <p className="text-center text-xs text-[#a9835f] mt-3">
                       {chartData.lagna ? `Lagna: ${chartData.lagna}` : ""}
                       {chartData.lagna && chartData.ayanamsa ? " · " : ""}
-                      {chartData.ayanamsa ? `Ayanamsa: ${chartData.ayanamsa}` : ""}
+                      {chartData.ayanamsa
+                        ? `Ayanamsa: ${chartData.ayanamsa}`
+                        : ""}
                     </p>
                     <p className="text-center text-[10px] text-[#7a5c40] mt-1">
-                      North Indian style chart, AI-computed from your reading — verify against a certified astrologer for critical decisions.
+                      North Indian style chart, AI-computed from your reading —
+                      verify against a certified astrologer for critical
+                      decisions.
                     </p>
                   </>
                 )}
               </div>
             )}
 
-            <div className="prose-kundli" dangerouslySetInnerHTML={{ __html: html }} />
+            <div
+              className="prose-kundli"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
           </>
         )}
       </div>
