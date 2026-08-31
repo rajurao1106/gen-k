@@ -1,5 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useState } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { HamburgerButton, Sidebar } from "./components/Sidebar";
 import type { PageKey } from "./types";
 import KundaliPage from "./pages/KundaliPage";
@@ -10,11 +10,57 @@ import LoginPage from "./pages/LoginPage";
 import UserDataPage from "./pages/UserDataPage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
+  home: { hi: "Home", sub: "Introduction & quick access" },
   kundali: { hi: "कुंडली", sub: "Personalized life reading" },
   milan: { hi: "कुंडली मिलान", sub: "Ashtakoot compatibility match" },
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
 };
+
+const PAGE_ROUTES: Record<PageKey, string> = {
+  home: "/",
+  kundali: "/kundali",
+  milan: "/milan",
+  numerology: "/numerology",
+  mahadasha: "/mahadasha",
+};
+
+function HomeIntroPage() {
+  const navigate = useNavigate();
+  const cards = [
+    { label: "कुंडली", desc: "Birth details, chart reading & guidance", path: "/kundali" },
+    { label: "कुंडली मिलान", desc: "Compatibility matching & guna analysis", path: "/milan" },
+    { label: "न्यूमरोलॉजी", desc: "Name and number-based insights", path: "/numerology" },
+    { label: "महादशा", desc: "Timeline and major life phases", path: "/mahadasha" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-[#f2c36b]/20 bg-[#10273d]/80 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
+        <p className="text-xs uppercase tracking-[0.22em] text-[#f2c36b]">Welcome</p>
+        <h2 className="mt-3 font-display text-3xl font-bold text-[#f9f3eb]">Gen-K Astrology</h2>
+        <p className="mt-3 max-w-2xl text-sm text-[#d9e5f7]">
+          Your spiritual companion for kundali insights, love compatibility, numerology and mahadasha guidance.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => (
+          <button
+            key={card.label}
+            type="button"
+            onClick={() => navigate(card.path)}
+            className="rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)]"
+          >
+            <p className="font-display text-2xl font-semibold text-[#f8d27a]">{card.label}</p>
+            <p className="mt-2 text-sm text-[#d9e5f7]">{card.desc}</p>
+            <span className="mt-4 inline-block text-xs uppercase tracking-wide text-[#f8d27a]">Open page →</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const isAdminAuthenticated = () => {
   if (typeof window === "undefined") return false;
@@ -22,7 +68,22 @@ const isAdminAuthenticated = () => {
 };
 
 function KundaliExperience() {
-  const [page, setPage] = useState<PageKey>("kundali");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const page = useMemo<PageKey>(() => {
+    switch (location.pathname) {
+      case "/milan":
+        return "milan";
+      case "/numerology":
+        return "numerology";
+      case "/mahadasha":
+        return "mahadasha";
+      case "/kundali":
+        return "kundali";
+      default:
+        return "home";
+    }
+  }, [location.pathname]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -122,7 +183,7 @@ function KundaliExperience() {
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
           activePage={page}
-          onNavigate={setPage}
+          onNavigate={(nextPage) => navigate(PAGE_ROUTES[nextPage])}
         />
 
         <div className="min-w-0 flex-1 ">
@@ -147,6 +208,7 @@ function KundaliExperience() {
           </header>
 
           <div className="relative max-w-6xl h-screen overflow-y-scroll  mx-auto px-4 sm:px-6 lg:px-8 py-8 font-body">
+            {page === "home" && <HomeIntroPage />}
             {page === "kundali" && <KundaliPage />}
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}
@@ -162,6 +224,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<KundaliExperience />} />
+      <Route path="/kundali" element={<KundaliExperience />} />
+      <Route path="/milan" element={<KundaliExperience />} />
+      <Route path="/numerology" element={<KundaliExperience />} />
+      <Route path="/mahadasha" element={<KundaliExperience />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
         path="/user-data"

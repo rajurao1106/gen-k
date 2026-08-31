@@ -12,6 +12,7 @@ type MenuItem = {
 // without a `page` are presentational stubs (kept for the familiar layout);
 // wire them up to real pages as the app grows.
 const MENU_ITEMS: MenuItem[] = [
+  { key: "home", label: "Home", icon: "grid", page: "home" },
   // { key: "stub", label: "मासिक", icon: "grid" },
   // { key: "stub", label: "पंचांग", icon: "calendar" },
   // { key: "stub", label: "त्यौहार", icon: "flag" },
@@ -89,8 +90,10 @@ export function Sidebar({
         aria-label="Main menu"
       >
         <div className="flex items-center gap-3 px-5 py-5 border-b border-[#f2c36b]/20">
-          <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b]
-           flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0">
+          <div
+            className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b]
+           flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0"
+          >
             <img src="/logo.png" alt="" />
           </div>
           <div>
