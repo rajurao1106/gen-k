@@ -1,4 +1,10 @@
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { useMemo, useState } from "react";
 import { HamburgerButton, Sidebar } from "./components/Sidebar";
 import type { PageKey } from "./types";
@@ -28,19 +34,40 @@ const PAGE_ROUTES: Record<PageKey, string> = {
 function HomeIntroPage() {
   const navigate = useNavigate();
   const cards = [
-    { label: "कुंडली", desc: "Birth details, chart reading & guidance", path: "/kundali" },
-    { label: "कुंडली मिलान", desc: "Compatibility matching & guna analysis", path: "/milan" },
-    { label: "न्यूमरोलॉजी", desc: "Name and number-based insights", path: "/numerology" },
-    { label: "महादशा", desc: "Timeline and major life phases", path: "/mahadasha" },
+    {
+      label: "कुंडली",
+      desc: "Birth details, chart reading & guidance",
+      path: "/kundali",
+    },
+    {
+      label: "कुंडली मिलान",
+      desc: "Compatibility matching & guna analysis",
+      path: "/milan",
+    },
+    {
+      label: "न्यूमरोलॉजी",
+      desc: "Name and number-based insights",
+      path: "/numerology",
+    },
+    {
+      label: "महादशा",
+      desc: "Timeline and major life phases",
+      path: "/mahadasha",
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-[#f2c36b]/20 bg-[#10273d]/80 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
-        <p className="text-xs uppercase tracking-[0.22em] text-[#f2c36b]">Welcome</p>
-        <h2 className="mt-3 font-display text-3xl font-bold text-[#f9f3eb]">Gen-K Astrology</h2>
+        <p className="text-xs uppercase tracking-[0.22em] text-[#f2c36b]">
+          Welcome
+        </p>
+        <h2 className="mt-3 font-display text-3xl font-bold text-[#f9f3eb]">
+          Gen-K Astrology
+        </h2>
         <p className="mt-3 max-w-2xl text-sm text-[#d9e5f7]">
-          Your spiritual companion for kundali insights, love compatibility, numerology and mahadasha guidance.
+          Your spiritual companion for kundali insights, love compatibility,
+          numerology and mahadasha guidance.
         </p>
       </div>
 
@@ -52,9 +79,13 @@ function HomeIntroPage() {
             onClick={() => navigate(card.path)}
             className="rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)]"
           >
-            <p className="font-display text-2xl font-semibold text-[#f8d27a]">{card.label}</p>
+            <p className="font-display text-2xl font-semibold text-[#f8d27a]">
+              {card.label}
+            </p>
             <p className="mt-2 text-sm text-[#d9e5f7]">{card.desc}</p>
-            <span className="mt-4 inline-block text-xs uppercase tracking-wide text-[#f8d27a]">Open page →</span>
+            <span className="mt-4 inline-block text-xs uppercase tracking-wide text-[#f8d27a]">
+              Open page →
+            </span>
           </button>
         ))}
       </div>
@@ -145,24 +176,55 @@ function KundaliExperience() {
         html, body { max-width: 100%; overflow-x: hidden; }
         * { min-width: 0; }
 
+        @page {
+          size: A4 portrait;
+          margin: 12mm;
+        }
+
         @media print {
-          html, body, #root { height: auto !important; overflow: visible !important; }
-          #appShell { position: static !important; height: auto !important; overflow: visible !important; }
+          html, body, #root {
+            height: auto !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+          }
+          body { background: #ffffff !important; }
+          #appShell {
+            position: static !important;
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+          }
 
           .no-print { display: none !important; }
 
           #printArea {
             display: block !important;
             position: static !important;
-            width: 100% !important;
+            width: auto !important;
             max-width: none !important;
+            min-height: 0 !important;
             height: auto !important;
             overflow: visible !important;
             background: #ffffff !important;
             color: #111111 !important;
             box-shadow: none !important;
             border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-inside: auto;
+            break-inside: auto;
           }
+
+          #printArea .prose-kundli {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            overflow: visible !important;
+            color: #111111 !important;
+          }
+
           #printArea .prose-kundli h2 { color: #8a5410; }
           #printArea .prose-kundli p,
           #printArea .prose-kundli ul,
@@ -172,7 +234,22 @@ function KundaliExperience() {
           #printArea .prose-kundli strong { color: #000000; }
           #printArea .prose-kundli h2,
           #printArea .prose-kundli h3,
-          #printArea table { break-inside: avoid-page; }
+          #printArea .prose-kundli p,
+          #printArea .prose-kundli ul,
+          #printArea .prose-kundli li,
+          #printArea table,
+          #printArea th,
+          #printArea td {
+            break-inside: auto;
+            page-break-inside: auto;
+          }
+          #printArea table {
+            display: table !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            table-layout: auto;
+          }
         }
       `}</style>
 

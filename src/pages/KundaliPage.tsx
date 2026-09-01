@@ -328,26 +328,47 @@ ${html}`,
 
   const handlePlayPause = () => {
     if (!speechSupported || !html) return;
+
+    const synth = window.speechSynthesis;
     if (speechState === "speaking") {
-      window.speechSynthesis.pause();
+      synth.pause();
       setSpeechState("paused");
       return;
     }
     if (speechState === "paused") {
-      window.speechSynthesis.resume();
+      synth.resume();
       setSpeechState("speaking");
       return;
     }
-    window.speechSynthesis.cancel();
+
     const text = stripHtmlToText(html);
     if (!text) return;
+
+    synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language === "hi" ? "hi-IN" : "en-IN";
+    const preferredLang = language === "hi" ? "hi-IN" : "en-US";
+    const voices = synth.getVoices?.() ?? [];
+    const preferredVoice =
+      voices.find((voice) =>
+        voice.lang.toLowerCase().startsWith(preferredLang.slice(0, 2)),
+      ) ??
+      voices.find((voice) => voice.lang.toLowerCase().startsWith("en")) ??
+      voices.find((voice) => voice.lang.toLowerCase().startsWith("hi")) ??
+      null;
+
+    utterance.lang = preferredLang;
     utterance.rate = 0.95;
+    utterance.pitch = 1;
+    if (preferredVoice) utterance.voice = preferredVoice;
     utterance.onend = () => setSpeechState("idle");
     utterance.onerror = () => setSpeechState("idle");
-    window.speechSynthesis.speak(utterance);
-    setSpeechState("speaking");
+
+    try {
+      synth.speak(utterance);
+      setSpeechState("speaking");
+    } catch {
+      setSpeechState("idle");
+    }
   };
 
   const handleStopSpeech = () => {
@@ -358,7 +379,108 @@ ${html}`,
 
   const handleDownloadPdf = () => {
     if (!html) return;
-    window.print();
+
+    const printRoot = document.getElementById("printArea");
+    if (!printRoot) {
+      window.print();
+      return;
+    }
+
+    const printableNode = printRoot.cloneNode(true) as HTMLElement;
+    printableNode
+      .querySelectorAll(".no-print")
+      .forEach((node) => node.remove());
+
+    const printWindow = window.open("", "_blank", "width=1200,height=900");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const printableHtml = printableNode.innerHTML;
+    printWindow.document.write(`<!doctype html>
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>Kundali Reading</title>
+          <style>
+            @page { size: A4 portrait; margin: 12mm; }
+            :root {
+              --bg: #ffffff;
+              --surface: #fffaf2;
+              --text: #111111;
+              --muted: #4b4b4b;
+              --gold: #b77c2b;
+              --border: rgba(183,124,43,0.35);
+            }
+            * { box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Arial, sans-serif; }
+            body { padding: 0; }
+            .print-wrapper { width: 100%; max-width: 100%; padding: 12px; }
+            .print-wrapper h1, .print-wrapper h2, .print-wrapper h3 {
+              color: var(--gold);
+              font-family: Georgia, serif;
+              margin: 0 0 12px;
+              page-break-after: avoid;
+            }
+            .print-wrapper p, .print-wrapper li, .print-wrapper td, .print-wrapper th {
+              color: var(--text);
+              font-size: 12.5px;
+              line-height: 1.7;
+            }
+            .print-wrapper table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 16px 0;
+              page-break-inside: auto;
+            }
+            .print-wrapper th, .print-wrapper td {
+              border: 1px solid var(--border);
+              padding: 7px 8px;
+              text-align: left;
+              vertical-align: top;
+            }
+            .print-wrapper th {
+              background: #f7e9c8;
+              color: #1a140d;
+            }
+            .print-wrapper ul, .print-wrapper ol { padding-left: 20px; margin: 12px 0; }
+            .print-wrapper .prose-kundli {
+              color: var(--text);
+              overflow: visible;
+            }
+            .print-wrapper .prose-kundli h1,
+            .print-wrapper .prose-kundli h2,
+            .print-wrapper .prose-kundli h3 {
+              page-break-after: avoid;
+            }
+            .print-wrapper .prose-kundli p,
+            .print-wrapper .prose-kundli ul,
+            .print-wrapper .prose-kundli li,
+            .print-wrapper .prose-kundli th,
+            .print-wrapper .prose-kundli td {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            svg { max-width: 100%; height: auto; display: block; margin: 0 auto 12px; }
+            @media print {
+              body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-wrapper">${printableHtml}</div>
+          <script>
+            window.onload = function () {
+              setTimeout(function () {
+                window.print();
+                setTimeout(function () { window.close(); }, 250);
+              }, 300);
+            };
+          </script>
+        </body>
+      </html>`);
+    printWindow.document.close();
   };
 
   return (
