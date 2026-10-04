@@ -1,5 +1,5 @@
 import { marked } from "marked";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   callGemini,
   extractJson,
@@ -15,16 +15,42 @@ import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
 import { saveUserDetail } from "../lib/api";
 
-function stripHtmlToText(htmlStr: string) {
-  const div = document.createElement("div");
-  div.innerHTML = htmlStr;
-  return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+const TOPICS = [
+  { id: "overview", en: "Kundli overview", hi: "कुंडली का सार" },
+  { id: "personality", en: "Personality", hi: "व्यक्तित्व" },
+  { id: "education", en: "Education", hi: "शिक्षा" },
+  { id: "career", en: "Career", hi: "करियर" },
+  { id: "money", en: "Money & wealth", hi: "धन और समृद्धि" },
+  { id: "relationships", en: "Love & relationships", hi: "प्रेम और रिश्ते" },
+  { id: "marriage", en: "Marriage", hi: "विवाह" },
+  { id: "family", en: "Family & parents", hi: "परिवार और माता-पिता" },
+  { id: "children", en: "Children", hi: "संतान" },
+  { id: "health", en: "Health & well-being", hi: "स्वास्थ्य और कल्याण" },
+  { id: "summary", en: "Life summary", hi: "जीवन का सार" },
+] as const;
+
+const ALL_TOPICS_ID = "all";
+
+function plainText(html: string) {
+  const element = document.createElement("div");
+  element.innerHTML = html;
+  return (element.textContent || element.innerText || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getErrorMessage(error: unknown) {
+  return isQuotaOrRateLimitError(error)
+    ? QUOTA_ERROR_MESSAGE_HI
+    : "Something went wrong while consulting the stars. Please try again.";
 }
 
 export default function KundaliPage() {
-  const [html, setHtml] = useState("");
-  const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [chartLoading, setChartLoading] = useState(false);
   const [input, setInput] = useState({
     name: "",
     dob: "",
@@ -32,101 +58,31 @@ export default function KundaliPage() {
     bop: "",
     gender: "",
   });
-  const [loading, setLoading] = useState(false);
-  const [translating, setTranslating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [kundali, setKundali] = useState<KundaliRecord[]>([]);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [language, setLanguage] = useState<"en" | "hi">("en");
-  const [speechState, setSpeechState] = useState<
-    "idle" | "speaking" | "paused"
-  >("idle");
-
-  const speechSupported =
-    typeof window !== "undefined" && "speechSynthesis" in window;
-
-  useEffect(() => {
-    setKundali(getSavedKundalis());
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (speechSupported) window.speechSynthesis.cancel();
-    };
-  }, []);
+  const [stage, setStage] = useState<"details" | "chat">("details");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [kundali, setKundali] = useState<KundaliRecord[]>(() =>
+    getSavedKundalis(),
+  );
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [savedLocally, setSavedLocally] = useState(false);
+  const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (speechSupported) window.speechSynthesis.cancel();
-    setSpeechState("idle");
-  }, [html]);
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const isFormComplete = useMemo(
-    () => Boolean(input.name && input.dob && input.bot && input.bop),
+    () => Boolean(input.name.trim() && input.dob && input.bot && input.bop.trim()),
     [input],
   );
 
-  const saveLocally = () => {
-    if (!input.name || !input.dob || !input.bot || !input.bop) {
-      setError(
-        "Please fill in name, date, time, and place of birth before saving.",
-      );
-      return;
-    }
-
-    const record = {
-      name: input.name,
-      dob: input.dob,
-      bot: input.bot,
-      bop: input.bop,
-      gender: input.gender,
-      content: html,
-      chart: chartData,
-    };
-
-    // This button is intentionally browser-local only.
-    // MongoDB persistence happens only from the Generate reading action.
-    const updated = saveKundaliRecord(record);
-    setKundali(updated);
-    setActiveIndex(updated.length - 1);
-    setError(null);
-  };
-
-  const getData = (item: KundaliRecord, index: number) => {
-    setHtml(item.content);
-    setChartData(item.chart ?? null);
-    setInput({
-      name: item.name,
-      dob: item.dob,
-      bot: item.bot,
-      bop: item.bop,
-      gender: item.gender,
-    });
-    setActiveIndex(index);
-    setError(null);
-  };
-
-  const deleteData = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updated = deleteKundaliRecord(index);
-    setKundali(updated);
-    if (activeIndex === index) {
-      setActiveIndex(null);
-      setHtml("");
-      setChartData(null);
-    } else if (activeIndex !== null && index < activeIndex) {
-      setActiveIndex(activeIndex - 1);
-    }
-  };
-
-  const onchangeHandle = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setInput({ ...input, [e.target.name]: e.target.value });
-  };
-
-  // Second, lightweight AI call: asks for a strict JSON house/planet map so
-  // the birth chart (Kundali diagram) can be drawn accurately from the same
-  // reading. Failure here never blocks the main text reading.
   const generateChartData = async () => {
     try {
       setChartLoading(true);
@@ -139,371 +95,204 @@ Date of Birth: ${input.dob}
 Time of Birth: ${input.bot}
 Place of Birth: ${input.bop}
 
-Respond with ONLY a raw JSON object, no markdown fences, no explanation, no extra text. Use this exact shape:
+Respond with ONLY a raw JSON object, no markdown fences or explanation. Use this shape:
+{"lagna":"<ascendant rashi name>","ayanamsa":"<ayanamsa system, e.g. Lahiri>","houses":{"1":["Su","Ma"],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"8":[],"9":[],"10":[],"11":[],"12":["Ke"]}}
 
-{"lagna":"<ascendant rashi name>","ayanamsa":"<ayanamsa system used, e.g. Lahiri>","houses":{"1":["Su","Ma"],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"8":[],"9":[],"10":[],"11":[],"12":["Ke"]}}
-
-Rules:
-- Keys "1" through "12" must all be present in "houses", house 1 is always the Lagna/Ascendant house.
-- Use only these two-letter planet codes: Su, Mo, Ma, Me, Ju, Ve, Sa, Ra, Ke.
-- Place each planet in exactly one house based on the actual computed chart.
-- If birth time is uncertain and house placement cannot be reliably computed, still give your best estimate rather than omitting the field.
-- Do not include any text outside the JSON object.`,
+Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me, Ju, Ve, Sa, Ra, Ke. Do not fabricate placements if they cannot be reliably calculated.`,
       });
-      const text = response.output_text ?? "";
-      const parsed = extractJson(text);
-      setChartData(parsed && parsed.houses ? (parsed as ChartData) : null);
-    } catch (err) {
-      console.error(err);
+      const parsed = extractJson(response.output_text ?? "");
+      setChartData(parsed?.houses ? (parsed as ChartData) : null);
+    } catch (chartError) {
+      console.error("Could not generate the birth chart:", chartError);
       setChartData(null);
     } finally {
       setChartLoading(false);
     }
   };
 
-  const createShayari = async () => {
+  const startChat = () => {
     if (!isFormComplete) {
       setError("Please fill in name, date, time, and place of birth.");
       return;
     }
-    try {
-      setLoading(true);
-      setError(null);
-      setChartData(null);
+    setError(null);
+    setMessages([]);
+    setSelectedTopic(null);
+    setSavedLocally(false);
+    setStage("chat");
+    void generateChartData();
+  };
 
+  const askQuestion = async (question: string, topicId?: string) => {
+    const trimmedQuestion = question.trim();
+    if (!trimmedQuestion || loading) return;
+
+    setError(null);
+    setSelectedTopic(topicId ?? null);
+    setMessageInput("");
+    setMessages((previous) => [
+      ...previous,
+      { role: "user", content: trimmedQuestion },
+    ]);
+    setLoading(true);
+
+    const previousContext = messages
+      .slice(-8)
+      .map(
+        (message) =>
+          `${message.role === "user" ? "User" : "Assistant"}: ${plainText(message.content)}`,
+      )
+      .join("\n");
+    const allTopics = topicId === ALL_TOPICS_ID;
+    const isTopicQuestion = Boolean(topicId && !allTopics);
+    const topic = TOPICS.find(({ id }) => id === topicId);
+    const focus = allTopics
+      ? `Give a comprehensive reading covering all of these areas: Kundli overview; personality and character; education and intelligence; career and profession; money and wealth; love and relationships; marriage; family and parents; children and family life; health and well-being; overall life summary. Use a separate clear heading for every area.`
+      : isTopicQuestion && topic
+        ? `Answer only about "${topic.en}". Do not include a full life reading or unrelated sections.`
+        : `Answer the user's question directly and personally. Focus only on the aspects relevant to the question; do not produce the full all-topics report unless explicitly requested.`;
+
+    try {
       const response = await callGemini({
         model: "gemini-3.5-flash",
-        input: `# AI Kundli Life Analysis — Master Prompt
+        input: `You are an expert Vedic astrology (Jyotish) assistant. Give personalized, balanced guidance based on the user's birth details and the current conversation.
 
-        You are an expert Vedic Astrology (Jyotish) AI assistant. Your task is to analyze a person's Kundli based on their exact **Date of Birth, Time of Birth, and Place of Birth** and provide a detailed, personalized interpretation of their life.
+Birth details:
+- Name: ${input.name}
+- Date of birth: ${input.dob}
+- Time of birth: ${input.bot}
+- Place of birth: ${input.bop}
+- Gender (optional): ${input.gender || "not provided"}
 
-        ## User Birth Details
+Write entirely in ${
+          language === "hi" ? "Hindi using Devanagari script" : "English"
+        }.
+${focus}
 
-        * **Name:**  ${input.name}
-        * **Date of Birth:**  ${input.dob}
-        * **Time of Birth:**  ${input.bot}
-        * **Place of Birth:**  ${input.bop}
-        * **Gender (optional):**  ${input.gender}
+User's latest request: ${trimmedQuestion}
+${previousContext ? `\nConversation so far:\n${previousContext}` : ""}
 
-        ## Response Language
-
-        Write the ENTIRE response in ${
-          language === "hi" ? "Hindi, using Devanagari script" : "English"
-        }. Every heading, section title, table label and sentence — including "Your Personalized Kundli Analysis", "Birth Details" and "Key Takeaways" — must be in ${
-          language === "hi" ? "Hindi" : "English"
-        }. Do not mix languages.
-
-        First, use these birth details to determine the person's Vedic astrology chart, including Lagna/Ascendant, Moon sign, Sun sign, planetary placements, houses, Nakshatra, Vimshottari Dasha and relevant divisional charts where applicable.
-
-        Do not make generic horoscope statements. Every interpretation should be connected to the person's actual Kundli.
-
-        ---
-
-        # Analysis Requirements
-
-        Provide a comprehensive life analysis covering the following areas:
-
-        ## 1. Kundli Overview
-        * Lagna/Ascendant, Rashi/Moon sign, Sun sign, Nakshatra and Pada
-        * Important planetary placements, strong and weak planets
-        * Benefic and challenging influences, important yogas and doshas
-        * Overall personality indicated by the chart
-
-        ## 2. Personality & Character
-        Natural personality, strengths, weaknesses, emotional nature, thinking and decision-making style, confidence and self-image, communication style, hidden talents, behavioral patterns, major character-development themes.
-
-        ## 3. Education & Intelligence
-        Learning ability, academic potential, suitable fields of study, higher education possibilities, competitive exams, research/technical/creative abilities, potential educational challenges, periods favorable for education.
-
-        ## 4. Career & Profession
-        Suitable career fields, job vs business potential, leadership ability, professional strengths, career obstacles, career changes, foreign opportunities, government/private-sector possibilities, entrepreneurship potential, professional reputation, major career growth periods. Give the reasoning from the relevant houses, planets and dashas.
-
-        ## 5. Money & Wealth
-        Income potential, savings, wealth accumulation, financial stability, business/investment tendencies, sudden gains or expenses, property/asset potential, financially favorable periods, financial risks and habits. Avoid guaranteeing exact financial outcomes.
-
-        ## 6. Love & Relationships
-        Romantic personality, relationship patterns, emotional needs, attraction patterns, possibility of serious relationships, potential relationship challenges, compatibility tendencies, important relationship periods. Do not claim certainty about another person's feelings or behavior.
-
-        ## 7. Marriage
-        Marriage tendencies, likely nature of spouse, spouse's personality characteristics, relationship dynamics, possible delays or challenges, married-life strengths and weaknesses, favorable marriage periods based on dasha/transits. If predicting timing, clearly label it as an astrological estimate rather than a guaranteed event.
-
-        ## 8. Family & Parents
-        Relationship with parents, family environment, responsibilities toward family, sibling relationships, major family-related themes, potential changes in family life.
-
-        ## 9. Children & Family Life
-        Possibility and general tendencies regarding children, parenting style, relationship with children, family expansion periods. Do not make definitive medical or fertility claims.
-
-        ## 10. Health & Well-being
-        Areas where the person may need to maintain healthy habits, stress tendencies, energy patterns, lifestyle considerations. Never diagnose diseases or replace professional medical advice.
-
-        ## 11. Overall Life Summary
-        Biggest natural strengths, main life challenges, career direction, financial tendencies, relationship/marriage tendencies, important life phases, areas where conscious effort can improve outcomes.
-
-        # Response Rules
-
-        1. Be personalized and specific to the provided birth details.
-        2. Explain the astrological reasoning behind important conclusions.
-        3. Do not make generic statements that could apply to everyone.
-        4. Never guarantee future events.
-        5. Use phrases such as "Kundli indicates", "there is a possibility", "this period may favor", or "astrologically, this suggests".
-        6. Never use astrology to make medical diagnoses.
-        7. Never create unnecessary fear regarding death, disease, accidents, divorce, financial loss or other serious events.
-        8. Do not claim that a prediction is 100% certain.
-        9. If birth time is uncertain, explicitly explain that house and timing-based predictions may become less reliable.
-        10. If required birth-chart calculations are unavailable or uncertain, do not fabricate planetary positions. State what information/calculation is missing.
-        11. Prefer Vedic/Sidereal astrology and clearly state the ayanamsa/system being used.
-        12. Use clear headings, tables and bullet points where they improve readability.
-        13. Give the user both positive possibilities and potential challenges.
-        14. Make the reading insightful, balanced and easy for a non-astrologer to understand.
-
-        # Final Output Structure
-
-        Start with **🔮 Your Personalized Kundli Analysis**, then show **Birth Details** (DOB, Birth Time, Birth Place), then sections 1–11 above, and end with **✨ Key Takeaways** — the 5–10 most important insights from the person's Kundli in simple language.
-        `,
+Use Vedic/sidereal astrology. Explain relevant astrological reasoning where possible, but do not invent planetary placements or calculations that are unavailable. Be clear that predictions are possibilities, not certainties. Never diagnose illness or make definitive fertility, death, accident, or financial claims. Keep the answer useful, warm, and easy to understand.`,
       });
+      const html = await marked.parse(response.output_text ?? "");
+      const assistantMessage = String(html).trim();
+      setMessages((previous) => [
+        ...previous,
+        { role: "assistant", content: assistantMessage },
+      ]);
+      setSavedLocally(false);
 
-      const text = response.output_text ?? "";
-      const shayari = await marked.parse(text);
-      setHtml(shayari);
-      setActiveIndex(null);
-
-      try {
-        // Only the Generate reading action writes to MongoDB.
-        await saveUserDetail({
-          fullName: input.name,
-          dateOfBirth: input.dob,
-          timeOfBirth: input.bot,
-          placeOfBirth: input.bop,
-          gender: input.gender,
-          readingLanguage: language,
-          content: shayari,
-          chart: chartData ?? null,
-        });
-      } catch {
-        setError(
-          "Reading generated, but it could not be saved. Please try again later.",
-        );
+      if (messages.length === 0) {
+        try {
+          await saveUserDetail({
+            fullName: input.name,
+            dateOfBirth: input.dob,
+            timeOfBirth: input.bot,
+            placeOfBirth: input.bop,
+            gender: input.gender,
+            readingLanguage: language,
+            content: assistantMessage,
+            chart: chartData,
+          });
+        } catch (saveError) {
+          console.error("Could not save the user's reading:", saveError);
+          setError(
+            "Your answer is ready, but it could not be saved. You can continue chatting or save it on this device.",
+          );
+        }
       }
-
-      // Fire the chart request after the main reading succeeds; this never
-      // blocks or fails the text reading if it errors out.
-      generateChartData();
-    } catch (error) {
-      setError(
-        isQuotaOrRateLimitError(error)
-          ? QUOTA_ERROR_MESSAGE_HI
-          : "Something went wrong while consulting the stars. Please try again.",
-      );
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
     } finally {
       setLoading(false);
     }
   };
 
-  const translateToHindi = async () => {
-    if (!html) return;
-    try {
-      setTranslating(true);
-      setError(null);
-      const response = await callGemini({
-        model: "gemini-3.5-flash",
-        input: `Translate the following Kundli reading (given as HTML) into natural, fluent Hindi using Devanagari script. Keep all HTML tags (h1, h2, h3, p, ul, li, table, tr, th, td, strong, etc.) and their structure exactly as they are — translate only the visible text content inside the tags. Do not add commentary before or after. Do not wrap the output in markdown code fences.
+  const handleChatSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void askQuestion(messageInput);
+  };
 
-HTML to translate:
-${html}`,
-      });
-      const text = response.output_text ?? "";
-      setHtml(text.trim());
-      setLanguage("hi");
-    } catch (error) {
-      console.error(error);
-      setError(
-        isQuotaOrRateLimitError(error)
-          ? QUOTA_ERROR_MESSAGE_HI
-          : "Could not translate this reading to Hindi. Please try again.",
-      );
-    } finally {
-      setTranslating(false);
+  const openSavedReading = (record: KundaliRecord, index: number) => {
+    setInput({
+      name: record.name,
+      dob: record.dob,
+      bot: record.bot,
+      bop: record.bop,
+      gender: record.gender,
+    });
+    setChartData(record.chart ?? null);
+    setMessages(
+      record.content
+        ? [{ role: "assistant", content: record.content }]
+        : [],
+    );
+    setActiveIndex(index);
+    setSavedLocally(Boolean(record.content));
+    setError(null);
+    setStage("chat");
+  };
+
+  const removeSavedReading = (index: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const updated = deleteKundaliRecord(index);
+    setKundali(updated);
+    if (activeIndex === index) setActiveIndex(null);
+    else if (activeIndex !== null && index < activeIndex) {
+      setActiveIndex(activeIndex - 1);
     }
   };
 
-  const handlePlayPause = () => {
-    if (!speechSupported || !html) return;
+  const saveChatLocally = () => {
+    const lastAssistantMessage = [...messages]
+      .reverse()
+      .find((message) => message.role === "assistant");
+    if (!lastAssistantMessage) return;
 
-    const synth = window.speechSynthesis;
-    if (speechState === "speaking") {
-      synth.pause();
-      setSpeechState("paused");
-      return;
-    }
-    if (speechState === "paused") {
-      synth.resume();
-      setSpeechState("speaking");
-      return;
-    }
-
-    const text = stripHtmlToText(html);
-    if (!text) return;
-
-    synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const preferredLang = language === "hi" ? "hi-IN" : "en-US";
-    const voices = synth.getVoices?.() ?? [];
-    const preferredVoice =
-      voices.find((voice) =>
-        voice.lang.toLowerCase().startsWith(preferredLang.slice(0, 2)),
-      ) ??
-      voices.find((voice) => voice.lang.toLowerCase().startsWith("en")) ??
-      voices.find((voice) => voice.lang.toLowerCase().startsWith("hi")) ??
-      null;
-
-    utterance.lang = preferredLang;
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    if (preferredVoice) utterance.voice = preferredVoice;
-    utterance.onend = () => setSpeechState("idle");
-    utterance.onerror = () => setSpeechState("idle");
-
-    try {
-      synth.speak(utterance);
-      setSpeechState("speaking");
-    } catch {
-      setSpeechState("idle");
-    }
+    const updated = saveKundaliRecord({
+      ...input,
+      content: lastAssistantMessage.content,
+      chart: chartData,
+    });
+    setKundali(updated);
+    setActiveIndex(updated.length - 1);
+    setSavedLocally(true);
+    setError(null);
   };
 
-  const handleStopSpeech = () => {
-    if (!speechSupported) return;
-    window.speechSynthesis.cancel();
-    setSpeechState("idle");
-  };
-
-  const handleDownloadPdf = () => {
-    if (!html) return;
-
-    const printRoot = document.getElementById("printArea");
-    if (!printRoot) {
-      window.print();
-      return;
-    }
-
-    const printableNode = printRoot.cloneNode(true) as HTMLElement;
-    printableNode
-      .querySelectorAll(".no-print")
-      .forEach((node) => node.remove());
-
-    const printWindow = window.open("", "_blank", "width=1200,height=900");
-    if (!printWindow) {
-      window.print();
-      return;
-    }
-
-    const printableHtml = printableNode.innerHTML;
-    printWindow.document.write(`<!doctype html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <title>Kundali Reading</title>
-          <style>
-            @page { size: A4 portrait; margin: 12mm; }
-            :root {
-              --bg: #ffffff;
-              --surface: #fffaf2;
-              --text: #111111;
-              --muted: #4b4b4b;
-              --gold: #b77c2b;
-              --border: rgba(183,124,43,0.35);
-            }
-            * { box-sizing: border-box; }
-            html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Arial, sans-serif; }
-            body { padding: 0; }
-            .print-wrapper { width: 100%; max-width: 100%; padding: 12px; }
-            .print-wrapper h1, .print-wrapper h2, .print-wrapper h3 {
-              color: var(--gold);
-              font-family: Georgia, serif;
-              margin: 0 0 12px;
-              page-break-after: avoid;
-            }
-            .print-wrapper p, .print-wrapper li, .print-wrapper td, .print-wrapper th {
-              color: var(--text);
-              font-size: 12.5px;
-              line-height: 1.7;
-            }
-            .print-wrapper table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 16px 0;
-              page-break-inside: auto;
-            }
-            .print-wrapper th, .print-wrapper td {
-              border: 1px solid var(--border);
-              padding: 7px 8px;
-              text-align: left;
-              vertical-align: top;
-            }
-            .print-wrapper th {
-              background: #f7e9c8;
-              color: #1a140d;
-            }
-            .print-wrapper ul, .print-wrapper ol { padding-left: 20px; margin: 12px 0; }
-            .print-wrapper .prose-kundli {
-              color: var(--text);
-              overflow: visible;
-            }
-            .print-wrapper .prose-kundli h1,
-            .print-wrapper .prose-kundli h2,
-            .print-wrapper .prose-kundli h3 {
-              page-break-after: avoid;
-            }
-            .print-wrapper .prose-kundli p,
-            .print-wrapper .prose-kundli ul,
-            .print-wrapper .prose-kundli li,
-            .print-wrapper .prose-kundli th,
-            .print-wrapper .prose-kundli td {
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-            svg { max-width: 100%; height: auto; display: block; margin: 0 auto 12px; }
-            @media print {
-              body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-wrapper">${printableHtml}</div>
-          <script>
-            window.onload = function () {
-              setTimeout(function () {
-                window.print();
-                setTimeout(function () { window.close(); }, 250);
-              }, 300);
-            };
-          </script>
-        </body>
-      </html>`);
-    printWindow.document.close();
+  const backToDetails = () => {
+    setStage("details");
+    setError(null);
   };
 
   return (
-    <div
-      id="mainGrid"
-      className="grid lg:grid-cols-[380px_1fr] gap-6 items-start"
-    >
-      {/* Left column: form + saved list */}
-      <div className="space-y-6 lg:sticky lg:top-8 no-print">
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
-            जन्म विवरण &middot; Birth details
-          </h2>
-          <p className="text-xs text-[#afbdd7] mb-5">
-            Accuracy of time and place matters most for house-based predictions.
-          </p>
+    <div className="mx-auto max-w-4xl">
+      {stage === "details" ? (
+        <section className="mx-auto max-w-2xl rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/85 p-5 shadow-xl shadow-black/30 backdrop-blur sm:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-xs uppercase tracking-[0.22em] text-[#d8b36a]">
+              Personalized Jyotish
+            </p>
+            <h2 className="mt-2 font-display text-3xl font-semibold text-[#f5efe6]">
+              जन्म विवरण
+            </h2>
+            <p className="mt-2 text-sm text-[#afbdd7]">
+              Add your birth details to start a personal Kundli conversation.
+            </p>
+          </div>
 
-          <div className="space-y-4">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              startChat();
+            }}
+            className="space-y-4"
+          >
             {BIRTH_FIELDS.map((field) => (
               <div key={field.key}>
                 <label
                   htmlFor={field.key}
-                  className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
+                  className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
                 >
                   {field.label}
                 </label>
@@ -513,8 +302,11 @@ ${html}`,
                   placeholder={field.placeholder}
                   value={input[field.key]}
                   name={field.key}
-                  onChange={onchangeHandle}
-                  className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40 transition-colors"
+                  required
+                  onChange={(event) =>
+                    setInput({ ...input, [event.target.name]: event.target.value })
+                  }
+                  className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-3 text-sm text-[#f5e6d3] outline-none transition-colors placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
                 />
               </div>
             ))}
@@ -522,16 +314,17 @@ ${html}`,
             <div>
               <label
                 htmlFor="gender"
-                className="block text-xs font-medium text-[#f4d7a7] mb-1.5"
+                className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
               >
-                Gender
+                Gender (optional)
               </label>
               <select
                 id="gender"
-                name="gender"
                 value={input.gender}
-                onChange={onchangeHandle}
-                className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40 transition-colors"
+                onChange={(event) =>
+                  setInput({ ...input, gender: event.target.value })
+                }
+                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-3 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70"
               >
                 <option value="">Prefer not to say</option>
                 <option value="Female">Female</option>
@@ -541,250 +334,292 @@ ${html}`,
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">
+              <p className="mb-1.5 block text-xs font-medium text-[#f4d7a7]">
                 Reading language
-              </label>
+              </p>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setLanguage("en")}
-                  className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
-                    language === "en"
-                      ? "bg-[#d8b36a]/15 border-[#d8b36a]/60 text-[#d8b36a]"
-                      : "bg-[#111d31] border-[#d8b36a]/15 text-[#afbdd7] hover:border-[#d8b36a]/40"
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLanguage("hi")}
-                  className={`rounded-lg px-3 py-2 text-sm border transition-colors ${
-                    language === "hi"
-                      ? "bg-[#d8b36a]/15 border-[#d8b36a]/60 text-[#d8b36a]"
-                      : "bg-[#111d31] border-[#d8b36a]/15 text-[#afbdd7] hover:border-[#d8b36a]/40"
-                  }`}
-                >
-                  हिंदी
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <p className="mt-4 text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <div className="mt-5 flex flex-col gap-2.5">
-            <button
-              onClick={createShayari}
-              disabled={loading}
-              className="w-full rounded-lg bg-[#d8b36a] hover:bg-[#c99a58] disabled:bg-[#7a5c2c] disabled:cursor-not-allowed text-[#0b1324] font-display font-semibold text-sm py-2.5 transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <span className="h-3.5 w-3.5 rounded-full border-2 border-[#0b1324]/40 border-t-[#0b1324] animate-spin" />
-                  Consulting the stars…
-                </>
-              ) : (
-                "Generate reading"
-              )}
-            </button>
-            <button
-              onClick={() => void saveLocally()}
-              disabled={!html || loading}
-              className="w-full rounded-lg border border-[#d8b36a]/25 hover:border-[#d8b36a]/60 hover:text-[#f4d7a7] disabled:opacity-40 disabled:cursor-not-allowed text-[#f5e6d3] text-sm py-2.5 transition-colors"
-            >
-              Save this reading
-            </button>
-          </div>
-        </div>
-
-        {kundali.length > 0 && (
-          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-            <h3 className="font-display text-lg font-semibold text-[#f5efe6] mb-3">
-              Saved readings
-            </h3>
-            <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
-              {kundali.map((item, index) => (
-                <li key={index}>
+                {(["en", "hi"] as const).map((value) => (
                   <button
-                    onClick={() => getData(item, index)}
-                    className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border ${
-                      activeIndex === index
-                        ? "bg-[#d8b36a]/15 border-[#d8b36a]/50 text-[#d8b36a]"
-                        : "bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#e3cbb0]"
+                    key={value}
+                    type="button"
+                    onClick={() => setLanguage(value)}
+                    className={`rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                      language === value
+                        ? "border-[#d8b36a]/60 bg-[#d8b36a]/15 text-[#d8b36a]"
+                        : "border-[#d8b36a]/15 bg-[#111d31] text-[#afbdd7] hover:border-[#d8b36a]/40"
                     }`}
                   >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">
-                        {item.name || "Untitled"}
-                      </span>
-                      <span className="block text-xs text-[#afbdd7] truncate">
-                        {item.dob}
-                      </span>
-                    </span>
-                    <span
-                      role="button"
-                      onClick={(e) => deleteData(index, e)}
-                      className="shrink-0 text-[#afbdd7] hover:text-[#f0958a] text-xs px-1.5 py-0.5 rounded transition-colors"
-                      aria-label={`Delete ${item.name}`}
-                    >
-                      ✕
-                    </span>
+                    {value === "en" ? "English" : "हिंदी"}
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Right column: reading */}
-      <div
-        id="printArea"
-        className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 sm:p-8 min-h-[420px] shadow-xl shadow-black/30"
-      >
-        {!html && !loading && (
-          <div className="h-full flex flex-col items-center justify-center text-center py-20 text-[#8ea1c2] no-print">
-            <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
-              <img src="/logo.png" alt="" />
-            </div>
-            <p className="font-display text-xl font-semibold text-[#afbdd7] mb-1">
-              Your reading will appear here
-            </p>
-            <p className="text-sm max-w-sm">
-              Fill in your birth details and generate a reading, or select a
-              saved one from the left.
-            </p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="h-full flex flex-col items-center justify-center py-20 text-center no-print">
-            <div className="h-8 w-8 rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] animate-spin mb-4" />
-            <p className="text-sm text-[#afbdd7]">
-              Mapping planetary placements and dashas…
-            </p>
-          </div>
-        )}
-
-        {!loading && html && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 no-print">
-              <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4">
-                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">
-                  Name
-                </p>
-                <p className="font-display text-base font-semibold text-[#f5efe6]">
-                  {input.name || "—"}
-                </p>
-                <p className="text-xs text-[#afbdd7] mt-1">
-                  {input.dob} {input.bot ? `· ${input.bot}` : ""}
-                </p>
-                <p className="text-xs text-[#afbdd7] truncate">{input.bop}</p>
-              </div>
-              <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4 flex flex-col justify-center">
-                <p className="text-[10px] uppercase tracking-wide text-[#afbdd7] mb-1">
-                  Lagna &middot; Ayanamsa
-                </p>
-                <p className="font-display text-base font-semibold text-[#f5efe6]">
-                  {chartData?.lagna || (chartLoading ? "Calculating…" : "—")}
-                </p>
-                <p className="text-xs text-[#afbdd7] mt-1">
-                  {chartData?.ayanamsa || ""}
-                </p>
+                ))}
               </div>
             </div>
 
-            <div className="flex flex-wrap justify-end gap-2 mb-4 no-print">
-              <button
-                onClick={translateToHindi}
-                disabled={translating || language === "hi"}
-                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#d8b36a]/50 hover:text-[#f4d7a7] disabled:opacity-40 disabled:cursor-not-allowed text-[#e3cbb0] px-3 py-1.5 transition-colors"
+            {error && (
+              <p
+                role="alert"
+                className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#f0958a]"
               >
-                {translating ? (
-                  <>
-                    <span className="h-3 w-3 rounded-full border-2 border-[#f4d7a7]/30 border-t-[#f4d7a7] animate-spin" />
-                    Hindi mein badla ja raha hai…
-                  </>
-                ) : language === "hi" ? (
-                  "हिंदी में उपलब्ध"
-                ) : (
-                  "हिंदी में अनुवाद करें"
-                )}
-              </button>
+                {error}
+              </p>
+            )}
 
-              {speechSupported && (
-                <>
+            <button
+              type="submit"
+              disabled={!isFormComplete}
+              className="w-full rounded-lg bg-[#d8b36a] py-3 font-display text-base font-semibold text-[#0b1324] transition-colors hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Continue to Kundli chat
+            </button>
+          </form>
+
+          {kundali.length > 0 && (
+            <div className="mt-7 border-t border-[#d8b36a]/15 pt-5">
+              <h3 className="mb-3 font-display text-lg font-semibold text-[#f5efe6]">
+                Saved readings
+              </h3>
+              <ul className="space-y-2">
+                {kundali.map((record, index) => (
+                  <li key={`${record.name}-${record.dob}-${index}`}>
+                    <div
+                      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
+                        activeIndex === index
+                          ? "border-[#d8b36a]/50 bg-[#d8b36a]/15 text-[#d8b36a]"
+                          : "border-[#d8b36a]/10 text-[#e3cbb0] hover:border-[#d8b36a]/30"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => openSavedReading(record, index)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <span className="block truncate font-medium">
+                          {record.name || "Untitled"}
+                        </span>
+                        <span className="block truncate text-xs text-[#afbdd7]">
+                          {record.dob}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => removeSavedReading(index, event)}
+                        className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[#afbdd7] transition-colors hover:text-[#f0958a]"
+                        aria-label={`Delete ${record.name}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      ) : (
+        <section className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 shadow-xl shadow-black/30">
+          <header className="border-b border-[#d8b36a]/15 bg-[#0d1a2e]/90 p-4 sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="font-display text-xl font-semibold text-[#f5efe6]">
+                  Kundli chat
+                </h2>
+                <p className="truncate text-xs text-[#afbdd7]">
+                  {input.name} · {input.dob} · {input.bop}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLanguage(language === "en" ? "hi" : "en")}
+                  className="rounded-lg border border-[#d8b36a]/20 px-3 py-2 text-xs text-[#e3cbb0] hover:border-[#d8b36a]/50"
+                >
+                  {language === "en" ? "हिंदी" : "English"}
+                </button>
+                {messages.some((message) => message.role === "assistant") && (
                   <button
-                    onClick={handlePlayPause}
-                    className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#d8b36a]/50 hover:text-[#d8b36a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
+                    type="button"
+                    onClick={saveChatLocally}
+                    disabled={savedLocally}
+                    className="rounded-lg border border-[#d8b36a]/30 px-3 py-2 text-xs text-[#d8b36a] hover:border-[#d8b36a]/60 disabled:opacity-50"
                   >
-                    {speechState === "speaking"
-                      ? "⏸ रोकें"
-                      : speechState === "paused"
-                        ? "▶ फिर से सुनें"
-                        : "🔊 रिस्पॉन्स सुनें"}
+                    {savedLocally ? "Saved" : "Save on this device"}
                   </button>
-                  {speechState !== "idle" && (
-                    <button
-                      onClick={handleStopSpeech}
-                      className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/20 hover:border-[#f0958a]/50 hover:text-[#f0958a] text-[#e3cbb0] px-3 py-1.5 transition-colors"
-                    >
-                      ⏹ बंद करें
-                    </button>
-                  )}
-                </>
-              )}
-
-              <button
-                onClick={handleDownloadPdf}
-                className="text-xs flex items-center gap-1.5 rounded-lg border border-[#d8b36a]/50 hover:border-[#d8b36a] text-[#d8b36a] px-3 py-1.5 transition-colors"
-              >
-                ⬇ चार्ट सहित डाउनलोड करें
-              </button>
+                )}
+                <button
+                  type="button"
+                  onClick={backToDetails}
+                  className="rounded-lg border border-[#d8b36a]/20 px-3 py-2 text-xs text-[#e3cbb0] hover:border-[#d8b36a]/50"
+                >
+                  Edit details
+                </button>
+              </div>
             </div>
-
             {(chartLoading || chartData) && (
-              <div className="mb-6 rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/60 p-4">
-                <h3 className="font-display text-lg font-semibold text-[#d8b36a] mb-2 text-center">
-                  Janma Kundali (Birth Chart)
-                </h3>
-                {chartLoading && !chartData && (
-                  <p className="text-xs text-[#afbdd7] text-center py-6 no-print">
-                    चार्ट तैयार किया जा रहा है…
+              <div className="mt-4 rounded-xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-3">
+                {chartLoading && !chartData ? (
+                  <p className="text-center text-xs text-[#afbdd7]">
+                    Preparing your birth chart…
                   </p>
-                )}
-                {chartData && (
-                  <>
-                    <KundaliChartSVG data={chartData} />
-                    <p className="text-center text-xs text-[#afbdd7] mt-3">
-                      {chartData.lagna ? `Lagna: ${chartData.lagna}` : ""}
-                      {chartData.lagna && chartData.ayanamsa ? " · " : ""}
-                      {chartData.ayanamsa
-                        ? `Ayanamsa: ${chartData.ayanamsa}`
-                        : ""}
-                    </p>
-                    <p className="text-center text-[10px] text-[#8ea1c2] mt-1">
-                      North Indian style chart, AI-computed from your reading —
-                      verify against a certified astrologer for critical
-                      decisions.
-                    </p>
-                  </>
-                )}
+                ) : chartData ? (
+                  <details>
+                    <summary className="cursor-pointer text-center text-sm text-[#d8b36a]">
+                      Birth chart · {chartData.lagna || "Kundli"}
+                    </summary>
+                    <div className="mx-auto mt-3 max-w-md">
+                      <KundaliChartSVG data={chartData} />
+                      <p className="text-center text-xs text-[#afbdd7]">
+                        {chartData.ayanamsa || ""}
+                      </p>
+                    </div>
+                  </details>
+                ) : null}
+              </div>
+            )}
+          </header>
+
+          <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+            {messages.length === 0 && (
+              <div className="rounded-xl border border-[#d8b36a]/15 bg-[#111d31]/60 p-4">
+                <p className="font-medium text-[#f5efe6]">
+                  {language === "hi"
+                    ? `नमस्ते ${input.name}! अपनी कुंडली के बारे में क्या जानना चाहेंगे?`
+                    : `Hi ${input.name}! What would you like to know about your Kundli?`}
+                </p>
+                <p className="mt-1 text-sm text-[#afbdd7]">
+                  {language === "hi"
+                    ? "नीचे कोई विषय चुनें या अपना सवाल सीधे लिखें।"
+                    : "Choose a topic below or type your own question."}
+                </p>
               </div>
             )}
 
-            <div
-              className="prose-kundli"
-              dangerouslySetInnerHTML={{ __html: html }}
-            />
-          </>
-        )}
-      </div>
+            {messages.map((message, index) => (
+              <div
+                key={`${message.role}-${index}`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <article
+                  className={`max-w-[95%] rounded-2xl px-4 py-3 sm:max-w-[85%] ${
+                    message.role === "user"
+                      ? "bg-[#d8b36a]/15 text-[#f5e6d3]"
+                      : "border border-[#d8b36a]/15 bg-[#111d31]/75 text-[#edf2fb]"
+                  }`}
+                >
+                  {message.role === "assistant" ? (
+                    <div
+                      className="prose-kundli text-sm"
+                      dangerouslySetInnerHTML={{ __html: message.content }}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                  )}
+                </article>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl border border-[#d8b36a]/15 bg-[#111d31]/75 px-4 py-3 text-sm text-[#afbdd7]">
+                  <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] align-[-2px]" />
+                  {language === "hi" ? "सोच रहा हूँ…" : "Thinking…"}
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <p
+                role="alert"
+                className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-sm text-[#f0958a]"
+              >
+                {error}
+              </p>
+            )}
+            <div ref={messageEndRef} />
+          </div>
+
+          <footer className="border-t border-[#d8b36a]/15 bg-[#0d1a2e]/90 p-4 sm:px-6">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() =>
+                  void askQuestion(
+                    language === "hi"
+                      ? "मेरी कुंडली के सभी विषयों का विस्तृत विश्लेषण दें।"
+                      : "Give me a detailed reading covering all topics in my Kundli.",
+                    ALL_TOPICS_ID,
+                  )
+                }
+                className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                  selectedTopic === ALL_TOPICS_ID
+                    ? "border-[#d8b36a] bg-[#d8b36a]/20 text-[#f8d27a]"
+                    : "border-[#d8b36a]/30 text-[#f8d27a] hover:bg-[#d8b36a]/10"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {language === "hi" ? "सभी विषय" : "All topics"}
+              </button>
+              {TOPICS.map((topic) => (
+                <button
+                  key={topic.id}
+                  type="button"
+                  disabled={loading}
+                  onClick={() =>
+                    void askQuestion(
+                      language === "hi"
+                        ? `${topic.hi} के बारे में मेरी कुंडली के अनुसार बताएं।`
+                        : `Tell me about ${topic.en.toLowerCase()} according to my Kundli.`,
+                      topic.id,
+                    )
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    selectedTopic === topic.id
+                      ? "border-[#d8b36a] bg-[#d8b36a]/20 text-[#f8d27a]"
+                      : "border-[#d8b36a]/20 text-[#e3cbb0] hover:border-[#d8b36a]/50 hover:text-[#f8d27a]"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  {topic[language]}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleChatSubmit} className="flex items-end gap-2">
+              <label className="sr-only" htmlFor="kundli-chat-input">
+                Ask a question about your Kundli
+              </label>
+              <textarea
+                id="kundli-chat-input"
+                value={messageInput}
+                onChange={(event) => setMessageInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                placeholder={
+                  language === "hi"
+                    ? "अपनी कुंडली के बारे में कुछ भी पूछें…"
+                    : "Ask anything about your Kundli…"
+                }
+                rows={1}
+                className="max-h-32 min-h-12 flex-1 resize-y rounded-xl border border-[#d8b36a]/20 bg-[#111d31] px-4 py-3 text-sm text-[#f5e6d3] outline-none placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70"
+              />
+              <button
+                type="submit"
+                disabled={!messageInput.trim() || loading}
+                className="h-12 shrink-0 rounded-xl bg-[#d8b36a] px-5 font-semibold text-[#0b1324] transition-colors hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {language === "hi" ? "भेजें" : "Send"}
+              </button>
+            </form>
+            <p className="mt-2 text-[10px] text-[#8ea1c2]">
+              {language === "hi"
+                ? "ज्योतिषीय मार्गदर्शन निश्चित भविष्यवाणी या पेशेवर सलाह का विकल्प नहीं है।"
+                : "Astrology is guidance, not a guaranteed prediction or a substitute for professional advice."}
+            </p>
+          </footer>
+        </section>
+      )}
     </div>
   );
 }
