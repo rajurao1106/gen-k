@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   deleteUserDetail,
   fetchAllUserDetails,
@@ -7,7 +7,7 @@ import {
 } from "../lib/api";
 
 export default function UserDataPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [records, setRecords] = useState<UserDetailRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,7 +19,7 @@ export default function UserDataPage() {
 
   const logout = () => {
     localStorage.removeItem("genk_admin_session");
-    navigate("/login", { replace: true });
+    router.replace("/login");
   };
 
   const loadRecords = async () => {
@@ -37,12 +37,12 @@ export default function UserDataPage() {
 
   useEffect(() => {
     if (localStorage.getItem("genk_admin_session") !== "true") {
-      navigate("/login", { replace: true });
+      router.replace("/login");
       return;
     }
 
     void loadRecords();
-  }, [navigate]);
+  }, [router]);
 
   const filteredRecords = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -155,7 +155,7 @@ export default function UserDataPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() => router.replace("/")}
               className="rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-4 py-2 text-sm text-[#f5efe6] transition hover:border-[#d8b36a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a]"
             >
               Home

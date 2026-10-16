@@ -1,20 +1,16 @@
-import {
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
-import { useMemo, useState } from "react";
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { HamburgerButton, Sidebar } from "./components/Sidebar";
 import type { PageKey } from "./types";
-import KundaliPage from "./pages/KundaliPage";
-import KundaliMilanPage from "./pages/KundaliMilanPage";
-import NumerologyPage from "./pages/NumerologyPage";
-import MahadashaPage from "./pages/MahadashaPage";
-import LoginPage from "./pages/LoginPage";
-import UserDataPage from "./pages/UserDataPage";
-import AIFriendPage from "./pages/AIFriendPage";
+import KundaliPage from "./features/KundaliPage";
+import KundaliMilanPage from "./features/KundaliMilanPage";
+import NumerologyPage from "./features/NumerologyPage";
+import MahadashaPage from "./features/MahadashaPage";
+import LoginPage from "./features/LoginPage";
+import UserDataPage from "./features/UserDataPage";
+import AIFriendPage from "./features/AIFriendPage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   home: { hi: "Home", sub: "Introduction & quick access" },
@@ -35,7 +31,7 @@ const PAGE_ROUTES: Record<PageKey, string> = {
 };
 
 function HomeIntroPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const cards = [
     {
       label: "कुंडली",
@@ -79,7 +75,7 @@ function HomeIntroPage() {
           <button
             key={card.label}
             type="button"
-            onClick={() => navigate(card.path)}
+            onClick={() => router.push(card.path)}
             className="rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)]"
           >
             <p className="font-display text-2xl font-semibold text-[#f8d27a]">
@@ -102,10 +98,10 @@ const isAdminAuthenticated = () => {
 };
 
 function KundaliExperience() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const page = useMemo<PageKey>(() => {
-    switch (location.pathname) {
+    switch (pathname) {
       case "/milan":
         return "milan";
       case "/numerology":
@@ -119,7 +115,7 @@ function KundaliExperience() {
       default:
         return "home";
     }
-  }, [location.pathname]);
+  }, [pathname]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -265,7 +261,7 @@ function KundaliExperience() {
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
           activePage={page}
-          onNavigate={(nextPage) => navigate(PAGE_ROUTES[nextPage])}
+          onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
         />
 
         <div className="min-w-0 flex-1 ">
@@ -304,26 +300,18 @@ function KundaliExperience() {
 }
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<KundaliExperience />} />
-      <Route path="/kundali" element={<KundaliExperience />} />
-      <Route path="/ai-friend" element={<KundaliExperience />} />
-      <Route path="/milan" element={<KundaliExperience />} />
-      <Route path="/numerology" element={<KundaliExperience />} />
-      <Route path="/mahadasha" element={<KundaliExperience />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/user-data"
-        element={
-          isAdminAuthenticated() ? (
-            <UserDataPage />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (pathname === "/user-data" && !isAdminAuthenticated()) {
+      router.replace("/login");
+    }
+  }, [pathname, router]);
+
+  if (pathname === "/login") return <LoginPage />;
+  if (pathname === "/user-data") {
+    return isAdminAuthenticated() ? <UserDataPage /> : null;
+  }
+  return <KundaliExperience />;
 }

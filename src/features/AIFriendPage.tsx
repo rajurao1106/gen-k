@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   callGemini,
   isQuotaOrRateLimitError,
@@ -129,7 +129,7 @@ function FriendAvatar() {
 }
 
 export default function AIFriendPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [profiles] = useState(() => getUserKundaliProfiles());
   const [selectedProfileId, setSelectedProfileId] = useState(() => {
     const savedProfileId = localStorage.getItem("ai_friend_selected_profile");
@@ -224,7 +224,7 @@ export default function AIFriendPage() {
     setVoiceError("");
   };
 
-  const addUser = () => navigate("/kundali?newProfile=1");
+  const addUser = () => router.push("/kundali?newProfile=1");
 
   const handleSampleChange = (file: File | null) => {
     setVoiceError("");

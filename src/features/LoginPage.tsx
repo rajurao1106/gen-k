@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ;
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
 export default function LoginPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -13,7 +13,7 @@ export default function LoginPage() {
 
     if (password === ADMIN_PASSWORD) {
       localStorage.setItem("genk_admin_session", "true");
-      navigate("/user-data");
+      router.push("/user-data");
       return;
     }
 

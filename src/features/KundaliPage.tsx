@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 import {
   callGemini,
   extractJson,
@@ -55,7 +55,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function KundaliPage() {
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const [input, setInput] = useState(() => {
     if (searchParams.get("newProfile") === "1") {
       return {

@@ -9,7 +9,7 @@ export type SavedVoiceSample = {
 };
 
 const CHATTERBOX_URL =
-  import.meta.env.VITE_CHATTERBOX_URL || "http://127.0.0.1:8001";
+  process.env.NEXT_PUBLIC_CHATTERBOX_URL || "http://127.0.0.1:8001";
 const DATABASE_NAME = "gen-k-ai-friend";
 const DATABASE_VERSION = 1;
 const STORE_NAME = "voice-samples";
