@@ -226,7 +226,7 @@ export default function NumerologyPage() {
       setResult(null);
 
       const response = await callGemini({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         input: `You are a numerology expert. Compute a Pythagorean-style numerology reading for this person.
 
 Name: ${name}

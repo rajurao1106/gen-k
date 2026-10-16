@@ -3,6 +3,7 @@ export type NavIconName =
   | "calendar"
   | "flag"
   | "user"
+  | "sparkles"
   | "diamond"
   | "heart"
   | "book"
@@ -49,6 +50,13 @@ export function NavIcon({ name }: { name: NavIconName }) {
         <svg {...common}>
           <circle cx="12" cy="8" r="4" />
           <path d="M4 21c1.6-4 5-6 8-6s6.4 2 8 6" />
+        </svg>
+      );
+    case "sparkles":
+      return (
+        <svg {...common}>
+          <path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z" />
+          <path d="m19 14 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14z" />
         </svg>
       );
     case "diamond":

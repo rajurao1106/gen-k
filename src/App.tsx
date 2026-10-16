@@ -14,10 +14,12 @@ import NumerologyPage from "./pages/NumerologyPage";
 import MahadashaPage from "./pages/MahadashaPage";
 import LoginPage from "./pages/LoginPage";
 import UserDataPage from "./pages/UserDataPage";
+import AIFriendPage from "./pages/AIFriendPage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   home: { hi: "Home", sub: "Introduction & quick access" },
   kundali: { hi: "कुंडली", sub: "Personalized life reading" },
+  "ai-friend": { hi: "AI Friend", sub: "Your personal voice companion" },
   milan: { hi: "कुंडली मिलान", sub: "Ashtakoot compatibility match" },
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
@@ -26,6 +28,7 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
 const PAGE_ROUTES: Record<PageKey, string> = {
   home: "/",
   kundali: "/kundali",
+  "ai-friend": "/ai-friend",
   milan: "/milan",
   numerology: "/numerology",
   mahadasha: "/mahadasha",
@@ -111,6 +114,8 @@ function KundaliExperience() {
         return "mahadasha";
       case "/kundali":
         return "kundali";
+      case "/ai-friend":
+        return "ai-friend";
       default:
         return "home";
     }
@@ -287,6 +292,7 @@ function KundaliExperience() {
           <div className="relative max-w-6xl h-screen overflow-y-scroll  mx-auto px-4 sm:px-6 lg:px-8 py-8 font-body">
             {page === "home" && <HomeIntroPage />}
             {page === "kundali" && <KundaliPage />}
+            {page === "ai-friend" && <AIFriendPage />}
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}
             {page === "mahadasha" && <MahadashaPage />}
@@ -302,6 +308,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<KundaliExperience />} />
       <Route path="/kundali" element={<KundaliExperience />} />
+      <Route path="/ai-friend" element={<KundaliExperience />} />
       <Route path="/milan" element={<KundaliExperience />} />
       <Route path="/numerology" element={<KundaliExperience />} />
       <Route path="/mahadasha" element={<KundaliExperience />} />

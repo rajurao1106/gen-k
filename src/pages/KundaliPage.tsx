@@ -1,5 +1,6 @@
 import { marked } from "marked";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   callGemini,
   extractJson,
@@ -10,6 +11,9 @@ import {
   deleteKundaliRecord,
   getSavedKundalis,
   saveKundaliRecord,
+  getUserKundaliProfile,
+  getUserKundaliProfiles,
+  saveUserKundaliProfile,
 } from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
@@ -51,12 +55,26 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function KundaliPage() {
-  const [input, setInput] = useState({
-    name: "",
-    dob: "",
-    bot: "",
-    bop: "",
-    gender: "",
+  const [searchParams] = useSearchParams();
+  const [input, setInput] = useState(() => {
+    if (searchParams.get("newProfile") === "1") {
+      return {
+        name: "",
+        dob: "",
+        bot: "",
+        bop: "",
+        gender: "",
+      };
+    }
+    return (
+      getUserKundaliProfile() ?? {
+        name: "",
+        dob: "",
+        bot: "",
+        bop: "",
+        gender: "",
+      }
+    );
   });
   const [language, setLanguage] = useState<"en" | "hi">("en");
   const [stage, setStage] = useState<"details" | "chat">("details");
@@ -70,6 +88,7 @@ export default function KundaliPage() {
   const [kundali, setKundali] = useState<KundaliRecord[]>(() =>
     getSavedKundalis(),
   );
+  const [profiles, setProfiles] = useState(() => getUserKundaliProfiles());
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [savedLocally, setSavedLocally] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
@@ -79,7 +98,8 @@ export default function KundaliPage() {
   }, [messages, loading]);
 
   const isFormComplete = useMemo(
-    () => Boolean(input.name.trim() && input.dob && input.bot && input.bop.trim()),
+    () =>
+      Boolean(input.name.trim() && input.dob && input.bot && input.bop.trim()),
     [input],
   );
 
@@ -87,7 +107,7 @@ export default function KundaliPage() {
     try {
       setChartLoading(true);
       const response = await callGemini({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         input: `Based on this person's exact birth details, compute their Vedic (sidereal) birth chart.
 
 Name: ${input.name}
@@ -116,6 +136,8 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
       return;
     }
     setError(null);
+    saveUserKundaliProfile(input);
+    setProfiles(getUserKundaliProfiles());
     setMessages([]);
     setSelectedTopic(null);
     setSavedLocally(false);
@@ -154,7 +176,7 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
 
     try {
       const response = await callGemini({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         input: `You are an expert Vedic astrology (Jyotish) assistant. Give personalized, balanced guidance based on the user's birth details and the current conversation.
 
 Birth details:
@@ -223,14 +245,30 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
     });
     setChartData(record.chart ?? null);
     setMessages(
-      record.content
-        ? [{ role: "assistant", content: record.content }]
-        : [],
+      record.content ? [{ role: "assistant", content: record.content }] : [],
     );
     setActiveIndex(index);
     setSavedLocally(Boolean(record.content));
     setError(null);
     setStage("chat");
+  };
+
+  const selectProfile = (profile: (typeof profiles)[number]) => {
+    setInput(profile);
+    setActiveIndex(null);
+    setError(null);
+  };
+
+  const addAnotherUser = () => {
+    setInput({
+      name: "",
+      dob: "",
+      bot: "",
+      bop: "",
+      gender: "",
+    });
+    setActiveIndex(null);
+    setError(null);
   };
 
   const removeSavedReading = (index: number, event: React.MouseEvent) => {
@@ -304,7 +342,10 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
                   name={field.key}
                   required
                   onChange={(event) =>
-                    setInput({ ...input, [event.target.name]: event.target.value })
+                    setInput({
+                      ...input,
+                      [event.target.name]: event.target.value,
+                    })
                   }
                   className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-3 text-sm text-[#f5e6d3] outline-none transition-colors placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
                 />
@@ -372,6 +413,63 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
               Continue to Kundli chat
             </button>
           </form>
+
+          <div className="mt-7 border-t border-[#d8b36a]/15 pt-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-semibold text-[#f5efe6]">
+                  Saved people
+                </h3>
+                <p className="text-xs text-[#afbdd7]">
+                  Choose a saved profile or add another person.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addAnotherUser}
+                className="shrink-0 rounded-lg border border-[#d8b36a]/30 px-3 py-2 text-xs text-[#f8d27a] hover:bg-[#d8b36a]/10"
+              >
+                + Add user
+              </button>
+            </div>
+            {profiles.length > 0 ? (
+              <ul className="space-y-2">
+                {profiles.map((profile) => {
+                  const selected =
+                    input.name === profile.name &&
+                    input.dob === profile.dob &&
+                    input.bot === profile.bot &&
+                    input.bop === profile.bop;
+                  return (
+                    <li
+                      key={`${profile.name}-${profile.dob}-${profile.bot}-${profile.bop}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => selectProfile(profile)}
+                        className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                          selected
+                            ? "border-[#d8b36a]/50 bg-[#d8b36a]/15"
+                            : "border-[#d8b36a]/10 hover:border-[#d8b36a]/30"
+                        }`}
+                      >
+                        <span className="block truncate text-sm font-medium text-[#f5e6d3]">
+                          {profile.name}
+                        </span>
+                        <span className="block truncate text-xs text-[#afbdd7]">
+                          {profile.dob} · {profile.bot} · {profile.bop}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="rounded-lg border border-[#d8b36a]/10 bg-[#111d31]/60 px-3 py-3 text-xs text-[#afbdd7]">
+                No saved people yet. Add birth details above and continue.
+              </p>
+            )}
+          </div>
 
           {kundali.length > 0 && (
             <div className="mt-7 border-t border-[#d8b36a]/15 pt-5">
@@ -511,7 +609,9 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
                       dangerouslySetInnerHTML={{ __html: message.content }}
                     />
                   ) : (
-                    <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                    <p className="whitespace-pre-wrap text-sm">
+                      {message.content}
+                    </p>
                   )}
                 </article>
               </div>

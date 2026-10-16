@@ -14,7 +14,18 @@ export type KundaliRecord = {
   chart?: ChartData | null;
 };
 
-export type PageKey = "home" | "kundali" | "milan" | "numerology" | "mahadasha";
+export type KundaliProfile = Pick<
+  KundaliRecord,
+  "name" | "dob" | "bot" | "bop" | "gender"
+>;
+
+export type PageKey =
+  | "home"
+  | "kundali"
+  | "ai-friend"
+  | "milan"
+  | "numerology"
+  | "mahadasha";
 
 export type FieldKey = "name" | "dob" | "bot" | "bop" | "gender";
 
