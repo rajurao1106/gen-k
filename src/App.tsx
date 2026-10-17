@@ -22,7 +22,7 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
 };
 
 const PAGE_ROUTES: Record<PageKey, string> = {
-  home: "/",
+  home: "/dashboard",
   kundali: "/kundali",
   "ai-friend": "/ai-friend",
   milan: "/milan",
@@ -53,6 +53,11 @@ function HomeIntroPage() {
       desc: "Timeline and major life phases",
       path: "/mahadasha",
     },
+    {
+      label: "AI Friend",
+      desc: "Ask questions and explore your chart",
+      path: "/ai-friend",
+    },
   ];
 
   return (
@@ -70,7 +75,7 @@ function HomeIntroPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
           <button
             key={card.label}
@@ -275,9 +280,15 @@ function KundaliExperience() {
                 <img src="/logo.png" alt="" />
               </div> */}
               <div>
-                <h1 className="font-display text-lg sm:text-xl font-semibold tracking-wide text-[#f5efe6]">
-                  Gen-K &middot; {PAGE_TITLES[page].hi}
-                </h1>
+                {page === "home" ? (
+                  <h1 className="font-display text-lg font-semibold tracking-wide text-[#f5efe6] sm:text-xl">
+                    Gen-K &middot; {PAGE_TITLES[page].hi}
+                  </h1>
+                ) : (
+                  <p className="font-display text-lg font-semibold tracking-wide text-[#f5efe6] sm:text-xl">
+                    Gen-K &middot; {PAGE_TITLES[page].hi}
+                  </p>
+                )}
                 <p className="text-[10px] sm:text-xs text-[#afbdd7] tracking-wide">
                   {PAGE_TITLES[page].sub}
                 </p>
@@ -285,7 +296,7 @@ function KundaliExperience() {
             </div>
           </header>
 
-          <div className="relative max-w-6xl h-screen overflow-y-scroll  mx-auto px-4 sm:px-6 lg:px-8 py-8 font-body">
+          <div className="relative mx-auto max-w-6xl px-4 py-8 font-body sm:px-6 lg:px-8">
             {page === "home" && <HomeIntroPage />}
             {page === "kundali" && <KundaliPage />}
             {page === "ai-friend" && <AIFriendPage />}

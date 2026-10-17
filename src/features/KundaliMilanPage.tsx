@@ -351,9 +351,9 @@ Rules:
         <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
           <img src="/logo.png" alt="" />
         </div>
-        <p className="font-display text-xl font-semibold text-[#afbdd7] mb-2">
+        <h1 className="font-display text-xl font-semibold text-[#afbdd7] mb-2">
           कुंडली मिलान
-        </p>
+        </h1>
         <p className="text-sm text-[#afbdd7] max-w-md mx-auto">
           Guna Milan ke liye kam se kam 2 saved readings chahiye. पहले "कुंडली"
           page se दो लोगों की readings generate karke save karein, फिर यहाँ वापस
@@ -366,9 +366,9 @@ Rules:
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
+        <h1 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
           कुंडली मिलान
-        </h2>
+        </h1>
         <p className="text-xs text-[#afbdd7] mb-5">
           Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।
         </p>

@@ -277,9 +277,9 @@ Rules:
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h2 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
+        <h1 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
           न्यूमरोलॉजी
-        </h2>
+        </h1>
         <p className="text-xs text-[#afbdd7] mb-5">
           Naam aur date of birth se aapke ank (numbers) nikalte hain।
         </p>

@@ -311,9 +311,9 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
             <p className="text-xs uppercase tracking-[0.22em] text-[#d8b36a]">
               Personalized Jyotish
             </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-[#f5efe6]">
-              जन्म विवरण
-            </h2>
+            <h1 className="mt-2 font-display text-3xl font-semibold text-[#f5efe6]">
+              जन्म कुंडली
+            </h1>
             <p className="mt-2 text-sm text-[#afbdd7]">
               Add your birth details to start a personal Kundli conversation.
             </p>
