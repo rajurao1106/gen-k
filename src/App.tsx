@@ -62,32 +62,32 @@ function HomeIntroPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-[#f2c36b]/20 bg-[#10273d]/80 p-6 shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
+      <div className="rounded-3xl border border-[#f2c36b]/20 bg-[#10273d]/80 p-5 shadow-[0_20px_40px_rgba(0,0,0,0.18)] sm:p-6">
         <p className="text-xs uppercase tracking-[0.22em] text-[#f2c36b]">
           Welcome
         </p>
-        <h2 className="mt-3 font-display text-3xl font-bold text-[#f9f3eb]">
+        <h2 className="mt-3 font-display text-2xl font-bold text-[#f9f3eb] sm:text-3xl">
           Gen-K Astrology
         </h2>
-        <p className="mt-3 max-w-2xl text-sm text-[#d9e5f7]">
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d9e5f7] sm:text-base">
           Your spiritual companion for kundali insights, love compatibility,
           numerology and mahadasha guidance.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <button
             key={card.label}
             type="button"
             onClick={() => router.push(card.path)}
-            className="rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)]"
+            className="group min-h-36 rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b] sm:min-h-40 sm:p-5"
           >
-            <p className="font-display text-2xl font-semibold text-[#f8d27a]">
+            <p className="font-display text-xl font-semibold text-[#f8d27a] transition-colors group-hover:text-[#ffdf9a] sm:text-2xl">
               {card.label}
             </p>
-            <p className="mt-2 text-sm text-[#d9e5f7]">{card.desc}</p>
-            <span className="mt-4 inline-block text-xs uppercase tracking-wide text-[#f8d27a]">
+            <p className="mt-2 text-sm leading-5 text-[#d9e5f7] sm:leading-6">{card.desc}</p>
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[#f8d27a]">
               Open page →
             </span>
           </button>
