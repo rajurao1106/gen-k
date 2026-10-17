@@ -20,11 +20,30 @@ Next.js runs at `http://localhost:3000`; the Express API runs at
 `http://localhost:5000`. `npm run build` creates a production Next.js build,
 and `npm start` serves that build.
 
-## Deployment and SEO
+## Deploy to Vercel
 
-Import the repository into Vercel and keep the project framework set to
-**Next.js**. Vercel builds the App Router pages and routes `/api/*` requests to
-the existing Express serverless handler.
+Import this repository into Vercel and use these project settings:
+
+- **Root Directory:** repository root (`./`, where `package.json` lives)
+- **Framework Preset:** Next.js
+- **Install Command:** `npm ci`
+- **Build Command:** `npm run build`
+- **Output Directory:** leave the default / empty
+
+The root `vercel.json` declares the framework, install command, production
+build command and API rewrite. Do not use `npm run dev` as the Vercel Build
+Command: it starts the local Next.js development server and Express watcher,
+which keep running instead of producing a deployment build. The Express API is
+served on Vercel through `api/index.js`; keep the `api/` and `server/` folders
+in the project.
+
+After importing, configure the environment variables listed below in Vercel
+for **Production**, **Preview** and/or **Development**, as needed. Push changes
+to the connected Git branch to trigger a deployment. If an older deployment
+is stuck in `Building`, cancel that deployment in Vercel and inspect the new
+deployment's Build Logs; it should run `npm run build`, not `npm run dev`.
+
+## SEO
 
 Set `NEXT_PUBLIC_SITE_URL` in Vercel to the production site's canonical origin
 (for example, `https://your-domain.com`, without a trailing slash). If omitted,
