@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   callGemini,
@@ -22,21 +29,33 @@ import {
   type VoiceSampleLanguage,
 } from "../lib/voiceStorage";
 
+// ---------------------------------------------------------------------------
+// AI Friend - orb UI
+//
+// Flow:
+//  * Default input is the mic. The keyboard button swaps the bottom bar for a
+//    text field (and back).
+//  * Reply mode toggle (top right):
+//      Text  -> normal chat bubbles, small orb on top.
+//      Voice -> big orb in the middle; the reply text slides bottom-to-top
+//               under it, in sync with the audio (saved Chatterbox voice if
+//               the profile has one, otherwise the browser's own voice).
+//
+// Accent colour: change --af-accent in STYLES (e.g. #d8b36a to match the
+// gold used in the rest of the app).
+// ---------------------------------------------------------------------------
+
 const MAX_SAMPLE_SIZE = 16 * 1024 * 1024;
 
-type SpeechRecognitionResult = {
-  readonly transcript: string;
-};
-
-type SpeechRecognitionEvent = Event & {
-  readonly results: ArrayLike<ArrayLike<SpeechRecognitionResult>>;
-};
-
+type SRAlt = { readonly transcript: string };
+type SRResult = ArrayLike<SRAlt> & { readonly isFinal: boolean };
+type SREvent = Event & { readonly results: ArrayLike<SRResult> };
 type BrowserSpeechRecognition = {
   lang: string;
   interimResults: boolean;
+  continuous: boolean;
   maxAlternatives: number;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onresult: ((event: SREvent) => void) | null;
   onerror: ((event: Event) => void) | null;
   onend: (() => void) | null;
   start(): void;
@@ -51,6 +70,208 @@ declare global {
   }
 }
 
+type Lang = "en" | "hi";
+type Mode = "text" | "voice";
+type Phase = "idle" | "thinking" | "playing" | "done";
+type Player = { progress: () => number; stop: () => void; done: Promise<void> };
+
+const T = {
+  en: {
+    online: "Online",
+    listening: "Listening…",
+    thinking: "Thinking…",
+    speaking: "Speaking…",
+    hint: "Tap the mic and ask anything.",
+    placeholder: "Type your question",
+    text: "Text",
+    voice: "Voice",
+    empty: "Your conversation will appear here.",
+    replyMode: "Reply mode",
+    settings: "Settings",
+    user: "User",
+    addUser: "Add user",
+    language: "Language",
+    clear: "Clear chat",
+    myVoice: "My voice",
+    voiceOn: "Replies use this voice.",
+    voiceOff: "No voice sample saved. A browser voice is used.",
+    remove: "Remove",
+    save: "Save voice",
+    consent: "This is my own voice, or I have permission to use it.",
+    noProfile: "Add your birth details to start talking.",
+    blocked: "The browser blocked audio. Tap the orb to replay.",
+    typeInstead: "Type instead",
+    speak: "Speak",
+    stop: "Stop",
+    send: "Send",
+    close: "Close",
+    orbStop: "Stop reply",
+    orbPlay: "Replay reply",
+    noMic: "Speech recognition is not supported here. Try Chrome or Edge.",
+    micFail: "Could not use the microphone. Check permission and try again.",
+    saveFail: "This chat could not be saved in this browser.",
+    sampleBig: "The audio sample must be 16 MB or smaller.",
+    sampleType: "Choose a WAV, MP3, FLAC, or OGG file.",
+    emptyReply: "AI Friend returned an empty reply.",
+    failed: "AI Friend could not reply. Please try again.",
+  },
+  hi: {
+    online: "ऑनलाइन",
+    listening: "सुन रहा हूँ…",
+    thinking: "सोच रहा हूँ…",
+    speaking: "बोल रहा हूँ…",
+    hint: "माइक दबाकर कुछ भी पूछें।",
+    placeholder: "अपना सवाल लिखें",
+    text: "टेक्स्ट",
+    voice: "वॉइस",
+    empty: "आपकी बातचीत यहाँ दिखेगी।",
+    replyMode: "जवाब का तरीका",
+    settings: "सेटिंग्स",
+    user: "User चुनें",
+    addUser: "User जोड़ें",
+    language: "भाषा",
+    clear: "चैट साफ़ करें",
+    myVoice: "मेरी आवाज़",
+    voiceOn: "जवाब इसी आवाज़ में आएँगे।",
+    voiceOff: "कोई voice sample नहीं है। Browser की आवाज़ इस्तेमाल होगी।",
+    remove: "हटाएँ",
+    save: "Voice सेव करें",
+    consent: "यह मेरी अपनी आवाज़ है, या मेरे पास इसकी अनुमति है।",
+    noProfile: "बात शुरू करने के लिए पहले जन्म विवरण जोड़ें।",
+    blocked: "Browser ने audio रोक दिया। Orb पर टैप करके दोबारा सुनें।",
+    typeInstead: "टाइप करें",
+    speak: "बोलें",
+    stop: "रोकें",
+    send: "भेजें",
+    close: "बंद करें",
+    orbStop: "जवाब रोकें",
+    orbPlay: "जवाब फिर सुनें",
+    noMic: "इस browser में speech recognition नहीं है। Chrome या Edge आज़माएँ।",
+    micFail: "Microphone नहीं चला। Permission देखकर दोबारा कोशिश करें।",
+    saveFail: "यह चैट इस browser में सेव नहीं हो सकी।",
+    sampleBig: "Audio sample 16 MB या उससे छोटा होना चाहिए।",
+    sampleType: "WAV, MP3, FLAC या OGG file चुनें।",
+    emptyReply: "AI Friend ने खाली जवाब दिया।",
+    failed: "AI Friend जवाब नहीं दे सका। दोबारा कोशिश करें।",
+  },
+} as const;
+
+const STYLES = `
+.af{--af-accent:#c8f53c;--af-ink:#07080b;--af-dim:rgba(255,255,255,.58);--af-violet:#6d5bd0;color:#f4f4f0}
+.af button:focus-visible,.af input:focus-visible,.af select:focus-visible{outline:2px solid var(--af-accent);outline-offset:2px}
+.af-orb{--morph:11s;--spin:18s;--pulse:6s;position:relative;aspect-ratio:1;animation:af-pulse var(--pulse) ease-in-out infinite;transition:width .5s ease,height .5s ease}
+.af-orb[data-s=listening]{--morph:4s;--spin:6s;--pulse:1.6s}
+.af-orb[data-s=thinking]{--morph:3s;--spin:2.4s;--pulse:2.4s}
+.af-orb[data-s=speaking]{--morph:2.6s;--spin:8s;--pulse:.9s}
+.af-blob{position:absolute;inset:0;border-radius:46% 54% 52% 48%/50% 44% 56% 50%;
+background:radial-gradient(circle at 50% 50%,#04050a 34%,transparent 60%),conic-gradient(from 0deg,#56d4ff,#6f5cff,#ff5fa8,#ffd27a,#47f0c0,#56d4ff);
+box-shadow:0 0 48px rgba(111,92,255,.35),inset 0 0 22px rgba(255,255,255,.55);
+animation:af-morph var(--morph) ease-in-out infinite,af-spin var(--spin) linear infinite}
+.af-sheen{position:absolute;inset:6%;border-radius:50%;pointer-events:none;mix-blend-mode:screen;
+background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.75),transparent 42%),radial-gradient(circle at 75% 80%,rgba(255,255,255,.25),transparent 40%)}
+.af-ring{position:absolute;inset:0;border-radius:9999px;border:1px solid var(--af-accent);animation:af-ring 2.2s ease-out infinite}
+.af-fade{-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);scrollbar-width:none}
+@keyframes af-morph{0%,100%{border-radius:46% 54% 52% 48%/50% 44% 56% 50%}33%{border-radius:55% 45% 42% 58%/46% 56% 44% 54%}66%{border-radius:42% 58% 56% 44%/56% 42% 58% 44%}}
+@keyframes af-spin{to{transform:rotate(360deg)}}
+@keyframes af-pulse{0%,100%{scale:1}50%{scale:1.04}}
+@keyframes af-ring{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.9);opacity:0}}
+@media (prefers-reduced-motion:reduce){.af-orb,.af-blob,.af-ring{animation:none}}
+`;
+
+const ICONS = {
+  mic: "M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3ZM6 11a6 6 0 0 0 12 0M12 17v4M9 21h6",
+  keyboard: "M3 7h18v10H3zM7 11h.01M11 11h.01M15 11h.01M7 14h10",
+  x: "M6 6l12 12M18 6 6 18",
+  send: "M12 19V5m-6 6 6-6 6 6",
+  sliders: "M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4",
+} as const;
+
+function Icon({ name, className = "h-6 w-6" }: { name: keyof typeof ICONS; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
+
+function RoundButton({
+  label,
+  tone,
+  onClick,
+  children,
+  type = "button",
+  disabled,
+}: {
+  label: string;
+  tone: "violet" | "dark" | "accent";
+  onClick?: () => void;
+  children: ReactNode;
+  type?: "button" | "submit";
+  disabled?: boolean;
+}) {
+  const tones = {
+    violet: "bg-[var(--af-violet)] text-white",
+    dark: "bg-white/10 text-white/80",
+    accent: "bg-[var(--af-accent)] text-[var(--af-ink)]",
+  };
+  return (
+    <button type={type} onClick={onClick} disabled={disabled} aria-label={label} title={label}
+      className={`grid h-12 w-12 shrink-0 place-items-center rounded-full transition-transform active:scale-95 disabled:opacity-40 ${tones[tone]}`}>
+      {children}
+    </button>
+  );
+}
+
+// ---- audio players (all expose progress 0..1 so the text can follow) -------
+
+function timerPlayer(text: string): Player {
+  const ms = Math.max(3000, text.split(/\s+/).length * 380);
+  const t0 = performance.now();
+  let finish!: () => void;
+  const done = new Promise<void>((resolve) => { finish = resolve; });
+  const id = window.setTimeout(finish, ms);
+  return {
+    done,
+    progress: () => Math.min(1, (performance.now() - t0) / ms),
+    stop: () => { window.clearTimeout(id); finish(); },
+  };
+}
+
+// Browser voice, spoken sentence by sentence (long utterances get cut off in
+// Chrome). Progress is estimated from characters spoken.
+function speakBrowser(text: string, lang: Lang): Player {
+  const synth = window.speechSynthesis;
+  if (!synth) return timerPlayer(text);
+  synth.cancel();
+  const parts = (text.match(/[^.!?।\n]+[.!?।]*/g) ?? [text]).map((s) => s.trim()).filter(Boolean);
+  const total = parts.reduce((n, s) => n + s.length, 0) || 1;
+  const cps = lang === "hi" ? 11 : 14;
+  let doneChars = 0, idx = 0, t0 = performance.now(), stopped = false;
+  let finish!: () => void;
+  const done = new Promise<void>((resolve) => { finish = resolve; });
+  const next = () => {
+    if (stopped || idx >= parts.length) { finish(); return; }
+    const part = parts[idx];
+    const utterance = new SpeechSynthesisUtterance(part);
+    utterance.lang = lang === "hi" ? "hi-IN" : "en-US";
+    t0 = performance.now();
+    const advance = () => { doneChars += part.length; idx += 1; next(); };
+    utterance.onend = advance;
+    utterance.onerror = advance;
+    synth.speak(utterance);
+  };
+  next();
+  return {
+    done,
+    stop: () => { stopped = true; synth.cancel(); finish(); },
+    progress: () => {
+      const cur = idx < parts.length ? parts[idx].length : 0;
+      const frac = Math.min(0.98, ((performance.now() - t0) / 1000 * cps) / Math.max(cur, 1));
+      return Math.min(1, (doneChars + cur * frac) / total);
+    },
+  };
+}
+
 function loadProfileChat(profile: ReturnType<typeof getUserKundaliProfile>) {
   if (!profile) return [];
   try {
@@ -61,282 +282,205 @@ function loadProfileChat(profile: ReturnType<typeof getUserKundaliProfile>) {
   }
 }
 
-function FriendAvatar() {
-  return (
-    <svg
-      viewBox="0 0 260 300"
-      role="img"
-      aria-label="AI Friend illustrated human avatar"
-      className="relative mx-auto w-full max-w-[260px] drop-shadow-[0_20px_30px_rgba(0,0,0,0.38)]"
-    >
-      <defs>
-        <linearGradient id="friend-shirt" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="#36728c" />
-          <stop offset="1" stopColor="#18364d" />
-        </linearGradient>
-        <linearGradient id="friend-skin" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="#f4c6a2" />
-          <stop offset="1" stopColor="#d99573" />
-        </linearGradient>
-        <linearGradient id="friend-hair" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="#352c34" />
-          <stop offset="1" stopColor="#151923" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="130" cy="281" rx="82" ry="13" fill="#050d18" opacity=".45" />
-      <path
-        d="M39 280c5-53 35-81 91-81s86 28 91 81H39Z"
-        fill="url(#friend-shirt)"
-      />
-      <path d="m100 198 30 37 31-37-11-23h-39l-11 23Z" fill="#d99573" />
-      <path
-        d="M76 105c0-48 23-73 57-73 39 0 59 29 55 78l-5 47c-3 28-23 49-51 49-28 0-48-21-51-49l-5-52Z"
-        fill="url(#friend-skin)"
-      />
-      <path
-        d="M76 117c-8-18-8-48 2-66 11-21 34-34 58-34 32 0 55 20 61 51 4 20-1 42-5 54l-12-29c-19 1-41-7-54-22-11 19-29 28-47 30l-3 16Z"
-        fill="url(#friend-hair)"
-      />
-      <path
-        d="M82 109c-14-7-22 2-19 19 2 12 8 20 17 20M179 108c13-7 21 2 18 19-2 12-8 20-17 20"
-        fill="url(#friend-skin)"
-      />
-      <path
-        d="M97 123c7-5 15-5 22 0M141 123c7-5 15-5 22 0"
-        fill="none"
-        stroke="#593d37"
-        strokeLinecap="round"
-        strokeWidth="3"
-      />
-      <ellipse cx="108" cy="134" rx="3.5" ry="4.5" fill="#26303c" />
-      <ellipse cx="151" cy="134" rx="3.5" ry="4.5" fill="#26303c" />
-      <path
-        d="m128 135-5 20 9 2"
-        fill="none"
-        stroke="#bd7d66"
-        strokeLinecap="round"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M116 168q13 10 27 0"
-        fill="none"
-        stroke="#8b4b48"
-        strokeLinecap="round"
-        strokeWidth="3"
-      />
-    </svg>
-  );
+function lastExchange(messages: StoredChatMessage[]) {
+  const answer = [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "";
+  const question = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  return { question, answer: answer.replace(/[*_#`>~]+/g, "") };
 }
 
 export default function AIFriendPage() {
   const router = useRouter();
   const [profiles] = useState(() => getUserKundaliProfiles());
   const [selectedProfileId, setSelectedProfileId] = useState(() => {
-    const savedProfileId = localStorage.getItem("ai_friend_selected_profile");
-    if (
-      savedProfileId &&
-      profiles.some(
-        (profile) => getKundaliProfileId(profile) === savedProfileId,
-      )
-    ) {
-      return savedProfileId;
-    }
-    const defaultProfile = getUserKundaliProfile() ?? profiles[0];
-    return defaultProfile ? getKundaliProfileId(defaultProfile) : "";
+    const saved = localStorage.getItem("ai_friend_selected_profile");
+    if (saved && profiles.some((p) => getKundaliProfileId(p) === saved)) return saved;
+    const fallback = getUserKundaliProfile() ?? profiles[0];
+    return fallback ? getKundaliProfileId(fallback) : "";
   });
-  const initialProfile =
-    profiles.find((item) => getKundaliProfileId(item) === selectedProfileId) ??
-    profiles[0] ??
-    null;
-  const [language, setLanguage] = useState<"en" | "hi">("en");
-  const [messages, setMessages] = useState<StoredChatMessage[]>(() =>
-    loadProfileChat(initialProfile),
+  const profile = profiles.find((p) => getKundaliProfileId(p) === selectedProfileId) ?? profiles[0] ?? null;
+
+  const [language, setLanguage] = useState<Lang>("en");
+  const [mode, setMode] = useState<Mode>(() =>
+    localStorage.getItem("ai_friend_reply_mode") === "text" ? "text" : "voice",
   );
-  const [messageInput, setMessageInput] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
+  const [messages, setMessages] = useState<StoredChatMessage[]>(() => loadProfileChat(profile));
+  const [stage, setStage] = useState(() => lastExchange(loadProfileChat(profile)));
+  const [phase, setPhase] = useState<Phase>(() => (stage.answer ? "done" : "idle"));
+  const [typing, setTyping] = useState(false);
+  const [input, setInput] = useState("");
+  const [interim, setInterim] = useState("");
   const [listening, setListening] = useState(false);
-  const [speakReplies, setSpeakReplies] = useState(true);
-  const [generatingSpeech, setGeneratingSpeech] = useState(false);
   const [chatError, setChatError] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
-  const [sampleLanguage, setSampleLanguage] =
-    useState<VoiceSampleLanguage>("hi");
-  const [sampleFile, setSampleFile] = useState<File | null>(null);
-  const [consentConfirmed, setConsentConfirmed] = useState(false);
-  const [savingSample, setSavingSample] = useState(false);
-  const [loadingSample, setLoadingSample] = useState(true);
-  const [voiceError, setVoiceError] = useState("");
+  const [sheet, setSheet] = useState(false);
+
   const [voiceSample, setVoiceSample] = useState<SavedVoiceSample | null>(null);
+  const [loadingSample, setLoadingSample] = useState(true);
+  const [sampleLanguage, setSampleLanguage] = useState<VoiceSampleLanguage>("hi");
+  const [sampleFile, setSampleFile] = useState<File | null>(null);
+  const [consent, setConsent] = useState(false);
+  const [savingSample, setSavingSample] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const profile =
-    profiles.find((item) => getKundaliProfileId(item) === selectedProfileId) ??
-    profiles[0] ??
-    null;
+  const playerRef = useRef<Player | null>(null);
+  const playToken = useRef(0);
+  const busyRef = useRef(false);
+  const blobRef = useRef<{ key: string; blob: Blob } | null>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const t = T[language];
+  const voiceMode = mode === "voice";
+  const orbState = listening ? "listening" : phase === "thinking" ? "thinking" : phase === "playing" ? "speaking" : "idle";
+  const statusText = listening ? t.listening : phase === "thinking" ? t.thinking : phase === "playing" ? t.speaking : t.online;
+
+  // ---- text slide: bottom -> top, following audio progress -----------------
+  const applyProgress = (p: number) => {
+    const view = viewRef.current, el = textRef.current;
+    if (!view || !el) return;
+    const c = view.clientHeight, h = el.offsetHeight;
+    const start = c * 0.45, end = Math.min(0, c - h);
+    el.style.transform = `translateY(${start + (end - start) * p}px)`;
+  };
+
+  useLayoutEffect(() => {
+    if (phase === "playing") applyProgress(playerRef.current?.progress() ?? 0);
+  }, [phase, stage.answer]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, sendingMessage, generatingSpeech]);
-
-  useEffect(
-    () => () => {
-      recognitionRef.current?.abort();
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    },
-    [audioUrl],
-  );
+    if (phase !== "playing") return;
+    let raf = 0;
+    const tick = () => {
+      applyProgress(playerRef.current?.progress() ?? 0);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [phase]);
 
   useEffect(() => {
-    let isCurrentProfile = true;
+    const view = viewRef.current, el = textRef.current;
+    if (!view || !el || phase === "playing") return;
+    el.style.transform = "";
+    if (phase === "done") view.scrollTop = view.scrollHeight;
+  }, [phase, stage.answer, mode]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, phase, mode]);
+
+  useEffect(() => () => {
+    playToken.current += 1;
+    playerRef.current?.stop();
+    recognitionRef.current?.abort();
+    window.speechSynthesis?.cancel();
+  }, []);
+
+  useEffect(() => {
+    let current = true;
     getVoiceSample(selectedProfileId)
-      .then((sample) => {
-        if (isCurrentProfile) setVoiceSample(sample);
-      })
+      .then((sample) => { if (current) setVoiceSample(sample); })
       .catch((error: unknown) => {
         console.error("Could not load the locally saved voice sample:", error);
-        if (isCurrentProfile) {
-          setVoiceError("Could not load this profile's saved voice sample.");
-        }
       })
-      .finally(() => {
-        if (isCurrentProfile) setLoadingSample(false);
-      });
-    return () => {
-      isCurrentProfile = false;
-    };
+      .finally(() => { if (current) setLoadingSample(false); });
+    return () => { current = false; };
   }, [selectedProfileId]);
 
-  const selectProfile = (profileId: string) => {
-    recognitionRef.current?.abort();
-    setListening(false);
-    const nextProfile =
-      profiles.find((item) => getKundaliProfileId(item) === profileId) ?? null;
-    setSelectedProfileId(profileId);
-    localStorage.setItem("ai_friend_selected_profile", profileId);
-    setMessages(loadProfileChat(nextProfile));
-    setMessageInput("");
-    setChatError("");
-    setAudioUrl("");
-    setLoadingSample(true);
-    setVoiceSample(null);
-    setSampleFile(null);
-    setConsentConfirmed(false);
-    setVoiceError("");
+  // ---- playback ---------------------------------------------------------------
+  const stopPlayback = () => {
+    playToken.current += 1;
+    playerRef.current?.stop();
+    playerRef.current = null;
+    window.speechSynthesis?.cancel();
   };
 
-  const addUser = () => router.push("/kundali?newProfile=1");
-
-  const handleSampleChange = (file: File | null) => {
-    setVoiceError("");
-    setConsentConfirmed(false);
-    if (file && file.size > MAX_SAMPLE_SIZE) {
-      setSampleFile(null);
-      setVoiceError(
-        language === "hi"
-          ? "Audio sample 16 MB ya usse chhoti honi chahiye."
-          : "The audio sample must be 16 MB or smaller.",
-      );
-      return;
+  const createPlayer = async (text: string): Promise<Player> => {
+    if (voiceSample) {
+      try {
+        const key = `${language}|${text}`;
+        const blob = blobRef.current?.key === key
+          ? blobRef.current.blob
+          : await synthesizeWithSavedVoice(voiceSample, text, language);
+        blobRef.current = { key, blob };
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        let finish!: () => void;
+        const done = new Promise<void>((resolve) => { finish = resolve; });
+        audio.onended = () => finish();
+        audio.onerror = () => finish();
+        try {
+          await audio.play();
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          throw error;
+        }
+        return {
+          done,
+          progress: () => (Number.isFinite(audio.duration) && audio.duration > 0 ? audio.currentTime / audio.duration : 0),
+          stop: () => { audio.pause(); URL.revokeObjectURL(url); finish(); },
+        };
+      } catch (error) {
+        console.error("Saved-voice playback failed, using the browser voice:", error);
+        setChatError(error instanceof Error && error.name !== "NotAllowedError" ? error.message : t.blocked);
+      }
     }
-    if (
-      file &&
-      !file.type.startsWith("audio/") &&
-      !/\.(wav|mp3|flac|ogg|oga)$/i.test(file.name)
-    ) {
-      setSampleFile(null);
-      setVoiceError(
-        language === "hi"
-          ? "WAV, MP3, FLAC, ya OGG audio file chunen."
-          : "Choose a WAV, MP3, FLAC, or OGG audio file.",
-      );
-      return;
-    }
-    setSampleFile(file);
+    return speakBrowser(text, language);
   };
 
-  const saveSampleForProfile = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
-    if (!profile || !sampleFile || !consentConfirmed || savingSample) return;
-    try {
-      setSavingSample(true);
-      setVoiceError("");
-      const profileId = getKundaliProfileId(profile);
-      setVoiceSample(
-        await saveVoiceSample(profileId, sampleFile, sampleLanguage),
-      );
-      setSampleFile(null);
-      setConsentConfirmed(false);
-    } catch (error) {
-      console.error("Could not save the local Chatterbox voice sample:", error);
-      setVoiceError(
-        error instanceof Error
-          ? error.message
-          : language === "hi"
-            ? "Voice sample save nahi hua. Browser storage check karke dobara koshish karein."
-            : "The voice sample could not be saved. Check browser storage and try again.",
-      );
-    } finally {
-      setSavingSample(false);
-    }
+  const runPlayback = async (text: string) => {
+    stopPlayback();
+    const token = playToken.current;
+    setPhase("thinking");
+    const player = await createPlayer(text);
+    if (token !== playToken.current) { player.stop(); return; }
+    playerRef.current = player;
+    setPhase("playing");
+    await player.done;
+    if (token === playToken.current) { playerRef.current = null; setPhase("done"); }
   };
 
-  const removeVoiceFromProfile = async () => {
+  const onOrb = () => {
+    if (!voiceMode) return;
+    if (phase === "playing") { stopPlayback(); setPhase("done"); }
+    else if (phase !== "thinking" && stage.answer) void runPlayback(stage.answer);
+  };
+
+  // ---- chat -------------------------------------------------------------------
+  const persist = (next: StoredChatMessage[]) => {
     if (!profile) return;
     try {
-      await deleteVoiceSample(getKundaliProfileId(profile));
-      setVoiceSample(null);
-      setVoiceError("");
+      saveAIFriendChat(profile, next);
     } catch (error) {
-      console.error(
-        "Could not remove the local Chatterbox voice sample:",
-        error,
-      );
-      setVoiceError(
-        language === "hi"
-          ? "Voice sample remove nahi hua. Dobara koshish karein."
-          : "The voice sample could not be removed. Please try again.",
-      );
+      console.error("Could not save this profile's AI Friend chat:", error);
+      setChatError(t.saveFail);
     }
   };
 
-  const sendMessage = async (message = messageInput) => {
-    const question = message.trim();
-    if (!profile || !question || sendingMessage) return;
-
-    const priorMessages = messages.slice(-10);
-    const userMessages = [
-      ...messages,
-      { role: "user" as const, content: question },
-    ];
-    setMessages(userMessages);
-    try {
-      saveAIFriendChat(profile, userMessages);
-    } catch (error) {
-      console.error("Could not save this profile's AI Friend chat:", error);
-      setChatError(
-        language === "hi"
-          ? "Chat save nahi ho saki; jawab ke liye phir bhi koshish kar raha hoon."
-          : "This chat could not be saved; I will still try to get a reply.",
-      );
-    }
-    setMessageInput("");
+  const sendMessage = async (raw: string) => {
+    const question = raw.trim();
+    if (!profile || !question || busyRef.current) return;
+    busyRef.current = true;
+    stopPlayback();
+    const spoken = mode === "voice";
+    const history = messages.slice(-6);
+    const withUser = [...messages, { role: "user" as const, content: question }];
+    setMessages(withUser);
+    persist(withUser);
+    setInput("");
+    setInterim("");
     setChatError("");
-    setSendingMessage(true);
-    setGeneratingSpeech(false);
-    setAudioUrl("");
+    setStage({ question, answer: "" });
+    setPhase("thinking");
 
+    let shown = "";
     try {
-      const conversation = priorMessages
-        .map(
-          (entry) =>
-            `${entry.role === "user" ? "User" : "AI Friend"}: ${entry.content}`,
-        )
+      const conversation = history
+        .map((e) => `${e.role === "user" ? "User" : "AI Friend"}: ${e.content.slice(0, 600)}`)
         .join("\n");
       const response = await callGemini({
-        model: "gemini-3.5-flash-lite",
-        input: `You are ${profile.name}'s warm, thoughtful AI Friend. Use the user's saved birth details as personal context, but do not claim astrology is scientifically certain. Be kind, conversational, and answer the actual question. Do not invent horoscope/chart placements. Keep safety-sensitive advice cautious and encourage professional help where appropriate.
+        model: "gemini-3.6-flash",
+        input: `You are ${profile.name}'s warm, thoughtful AI Friend. Use the user's saved birth details as personal context, but do not claim astrology is scientifically certain. Be kind, conversational, and answer the actual question. Do not invent horoscope/chart placements. Keep safety-sensitive advice cautious and encourage professional help where appropriate.${spoken ? " This reply will be read aloud: use 3 to 6 short plain sentences, with no markdown, lists or emojis." : ""}
 
 User details:
 - Name: ${profile.name}
@@ -351,604 +495,344 @@ User: ${question}
 AI Friend:`,
       });
       const answer = response.output_text?.trim();
-      if (!answer) throw new Error("AI Friend returned an empty response.");
-
-      const assistantMessage: StoredChatMessage = {
-        role: "assistant",
-        content: answer,
-      };
-      const nextMessages = [...userMessages, assistantMessage];
-      setMessages(nextMessages);
-      try {
-        saveAIFriendChat(profile, nextMessages);
-      } catch (error) {
-        console.error("Could not save this profile's AI Friend chat:", error);
-        setChatError(
-          language === "hi"
-            ? "Jawab aa gaya, lekin chat is browser mein save nahi ho saki."
-            : "The reply arrived, but this chat could not be saved in this browser.",
-        );
-      }
-
-      if (speakReplies && voiceSample) {
-        setGeneratingSpeech(true);
-        try {
-          const audio = await synthesizeWithSavedVoice(
-            voiceSample,
-            answer,
-            language,
-          );
-          setAudioUrl(URL.createObjectURL(audio));
-        } catch (error) {
-          console.error("Chatterbox speech generation failed:", error);
-          setChatError(
-            error instanceof Error
-              ? error.message
-              : "Could not generate speech with the saved voice sample.",
-          );
-        } finally {
-          setGeneratingSpeech(false);
-        }
-      }
+      if (!answer) throw new Error(t.emptyReply);
+      const next = [...withUser, { role: "assistant" as const, content: answer }];
+      setMessages(next);
+      persist(next);
+      shown = answer.replace(/[*_#`>~]+/g, "");
+      setStage({ question, answer: shown });
     } catch (error) {
       console.error("AI Friend chat request failed:", error);
       setChatError(
-        isQuotaOrRateLimitError(error)
-          ? QUOTA_ERROR_MESSAGE_HI
-          : error instanceof Error
-            ? error.message
-            : language === "hi"
-              ? "AI Friend se jawab nahi mila. Dobara koshish karein."
-              : "AI Friend could not reply. Please try again.",
+        isQuotaOrRateLimitError(error) ? QUOTA_ERROR_MESSAGE_HI : error instanceof Error ? error.message : t.failed,
       );
     } finally {
-      setSendingMessage(false);
+      busyRef.current = false;
     }
+    if (!shown) setPhase("idle");
+    else if (spoken) void runPlayback(shown);
+    else setPhase("done");
   };
 
-  const startListening = () => {
-    const Recognition =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!Recognition) {
-      setChatError(
-        language === "hi"
-          ? "Is browser mein speech recognition support nahi hai. Chrome ya Edge try karein."
-          : "Speech recognition is not supported by this browser. Try Chrome or Edge.",
-      );
-      return;
-    }
-
+  const toggleMic = () => {
+    if (listening) { recognitionRef.current?.stop(); return; }
+    const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!Recognition) { setChatError(t.noMic); return; }
+    stopPlayback();
+    if (phase === "playing") setPhase("done");
     recognitionRef.current?.abort();
     const recognition = new Recognition();
     recognition.lang = language === "hi" ? "hi-IN" : "en-US";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim();
-      setListening(false);
-      if (transcript) void sendMessage(transcript);
+      const results = Array.from(event.results);
+      const transcript = results.map((r) => r[0]?.transcript ?? "").join(" ").trim();
+      setInterim(transcript);
+      if (results[results.length - 1]?.isFinal && transcript) void sendMessage(transcript);
     };
     recognition.onerror = (event) => {
-      setListening(false);
       console.error("Browser speech recognition failed:", event);
-      setChatError(
-        language === "hi"
-          ? "Mic input nahi mil saka. Microphone permission check karke dobara try karein."
-          : "Could not capture microphone input. Check microphone permission and try again.",
-      );
+      setListening(false);
+      setChatError(t.micFail);
     };
-    recognition.onend = () => setListening(false);
+    recognition.onend = () => { setListening(false); setInterim(""); };
     recognitionRef.current = recognition;
     setChatError("");
     setListening(true);
     try {
       recognition.start();
     } catch (error) {
-      setListening(false);
       console.error("Could not start browser speech recognition:", error);
-      setChatError(
-        language === "hi"
-          ? "Microphone shuru nahi ho saka. Dobara koshish karein."
-          : "Could not start the microphone. Please try again.",
-      );
+      setListening(false);
+      setChatError(t.micFail);
     }
+  };
+
+  const stopOrReset = () => {
+    recognitionRef.current?.abort();
+    setListening(false);
+    stopPlayback();
+    setChatError("");
+    if (phase === "playing" || phase === "thinking") {
+      setPhase(stage.answer ? "done" : "idle");
+    } else {
+      setPhase("idle");
+      setStage({ question: "", answer: "" });
+    }
+  };
+
+  const changeMode = (next: Mode) => {
+    setMode(next);
+    localStorage.setItem("ai_friend_reply_mode", next);
+    if (next === "text") { stopPlayback(); if (phase === "playing") setPhase("done"); }
+  };
+
+  const submitTyped = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void sendMessage(input);
+  };
+
+  // ---- settings handlers ------------------------------------------------------
+  const selectProfile = (profileId: string) => {
+    recognitionRef.current?.abort();
+    stopPlayback();
+    setListening(false);
+    const next = profiles.find((p) => getKundaliProfileId(p) === profileId) ?? null;
+    const chat = loadProfileChat(next);
+    setSelectedProfileId(profileId);
+    localStorage.setItem("ai_friend_selected_profile", profileId);
+    setMessages(chat);
+    const exchange = lastExchange(chat);
+    setStage(exchange);
+    setPhase(exchange.answer ? "done" : "idle");
+    setInput("");
+    setChatError("");
+    setLoadingSample(true);
+    setVoiceSample(null);
+    setSampleFile(null);
+    setConsent(false);
+    setVoiceError("");
   };
 
   const clearChat = () => {
     if (!profile) return;
     try {
       saveAIFriendChat(profile, []);
+      stopPlayback();
       setMessages([]);
+      setStage({ question: "", answer: "" });
+      setPhase("idle");
       setChatError("");
-      setAudioUrl("");
     } catch (error) {
       console.error("Could not clear this profile's AI Friend chat:", error);
-      setChatError("Could not clear this chat from local browser storage.");
+      setChatError(t.saveFail);
     }
   };
 
-  const submitChat = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    void sendMessage();
-  };
-
-  const toggleListening = () => {
-    if (listening) {
-      recognitionRef.current?.stop();
+  const pickSample = (file: File | null) => {
+    setVoiceError("");
+    setConsent(false);
+    if (file && file.size > MAX_SAMPLE_SIZE) { setSampleFile(null); setVoiceError(t.sampleBig); return; }
+    if (file && !file.type.startsWith("audio/") && !/\.(wav|mp3|flac|ogg|oga)$/i.test(file.name)) {
+      setSampleFile(null);
+      setVoiceError(t.sampleType);
       return;
     }
-    startListening();
+    setSampleFile(file);
   };
 
+  const saveSample = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!profile || !sampleFile || !consent || savingSample) return;
+    try {
+      setSavingSample(true);
+      setVoiceError("");
+      setVoiceSample(await saveVoiceSample(getKundaliProfileId(profile), sampleFile, sampleLanguage));
+      setSampleFile(null);
+      setConsent(false);
+    } catch (error) {
+      console.error("Could not save the local voice sample:", error);
+      setVoiceError(error instanceof Error ? error.message : t.saveFail);
+    } finally {
+      setSavingSample(false);
+    }
+  };
+
+  const removeSample = async () => {
+    if (!profile) return;
+    try {
+      await deleteVoiceSample(getKundaliProfileId(profile));
+      setVoiceSample(null);
+    } catch (error) {
+      console.error("Could not remove the local voice sample:", error);
+      setVoiceError(t.saveFail);
+    }
+  };
+
+  const fieldClass = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white";
+
+  // ---- render ---------------------------------------------------------------
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col overflow-hidden rounded-3xl border border-[#d8b36a]/20 bg-[#09182a]/85 shadow-2xl shadow-black/30 ">
-      <section className="flex w-full flex-col items-center justify-center border-b border-[#d8b36a]/15 bg-[radial-gradient(ellipse_at_50%_38%,rgba(69,119,146,0.22),transparent_60%)] p-6 sm:p-10 lg:w-[42%] lg:border-b-0 lg:border-r">
-        <p className="text-[10px] uppercase tracking-[0.28em] text-[#d8b36a]">
-          {language === "hi"
-            ? "आपका personal companion"
-            : "Your personal companion"}
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold text-[#f5efe6]">
-          AI Friend
-        </h1>
-        <div className="mt-5 w-full max-w-[260px] rounded-full bg-[#36728c]/10">
-          <FriendAvatar />
-        </div>
-        <p className="mt-3 font-display text-xl font-semibold text-[#f5efe6]">
-          {profile?.name ??
-            (language === "hi" ? "User चुनें" : "Select a user")}
-        </p>
-        <p className="mt-1 text-center text-sm text-[#afbdd7]">
-          {language === "hi"
-            ? "अपनी पसंद की भाषा और कुंडली profile चुनें।"
-            : "Choose a language and a saved Kundli profile."}
-        </p>
-      </section>
+    <main className="af relative mx-auto flex h-[min(44rem,calc(100dvh-4rem))] w-full max-w-[26rem] flex-col overflow-hidden rounded-[2rem] bg-black ring-1 ring-white/10">
+      <style>{STYLES}</style>
 
-      <section className="flex min-w-0 flex-1 flex-col justify-center p-5 sm:p-8 lg:p-10">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[#d8b36a]">
-              {language === "hi" ? "Profile सेटिंग्स" : "Profile settings"}
-            </p>
-            <h2 className="mt-1 font-display text-2xl font-semibold text-[#f5efe6]">
-              {language === "hi" ? "AI Friend सेटअप" : "AI Friend setup"}
-            </h2>
-          </div>
-          <div
-            className="flex shrink-0 rounded-lg border border-[#d8b36a]/20 bg-[#111d31] p-1"
-            aria-label="Language"
-          >
-            <button
-              type="button"
-              onClick={() => setLanguage("en")}
-              aria-pressed={language === "en"}
-              className={`rounded-md px-3 py-2 text-xs transition ${
-                language === "en"
-                  ? "bg-[#d8b36a] font-semibold text-[#0b1324]"
-                  : "text-[#afbdd7] hover:text-[#f5efe6]"
-              }`}
-            >
-              English
+      <header className="grid shrink-0 grid-cols-[2.5rem_1fr_auto] items-start gap-2 px-4 pt-4">
+        <button type="button" onClick={() => setSheet(true)} aria-label={t.settings} title={t.settings}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white/80">
+          <Icon name="sliders" className="h-5 w-5" />
+        </button>
+        <div className="flex min-w-0 flex-col items-center gap-1.5">
+          <span className="rounded-full bg-[var(--af-accent)] px-4 py-1 text-sm font-medium text-[var(--af-ink)]">AI Friend</span>
+          <span className="flex items-center gap-1.5 text-xs text-[var(--af-dim)]" aria-live="polite">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--af-accent)]" />
+            {statusText}
+          </span>
+        </div>
+        <div role="group" aria-label={t.replyMode} className="flex rounded-full bg-white/10 p-0.5 text-xs">
+          {(["text", "voice"] as const).map((m) => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => changeMode(m)}
+              className={`rounded-full px-3 py-1.5 ${mode === m ? "bg-[var(--af-accent)] font-medium text-[var(--af-ink)]" : "text-white/70"}`}>
+              {t[m]}
             </button>
-            <button
-              type="button"
-              onClick={() => setLanguage("hi")}
-              aria-pressed={language === "hi"}
-              className={`rounded-md px-3 py-2 text-xs transition ${
-                language === "hi"
-                  ? "bg-[#d8b36a] font-semibold text-[#0b1324]"
-                  : "text-[#afbdd7] hover:text-[#f5efe6]"
-              }`}
-            >
-              हिंदी
+          ))}
+        </div>
+      </header>
+
+      {!profile ? (
+        <section className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+          <p className="text-sm text-[var(--af-dim)]">{t.noProfile}</p>
+          <button type="button" onClick={() => router.push("/kundali?newProfile=1")}
+            className="rounded-full bg-[var(--af-accent)] px-5 py-2.5 text-sm font-medium text-[var(--af-ink)]">
+            {t.addUser}
+          </button>
+        </section>
+      ) : (
+        <section className="flex min-h-0 flex-1 flex-col px-5">
+          <div className={voiceMode ? "flex flex-1 items-center justify-center" : "flex shrink-0 justify-center pb-3 pt-2"}>
+            <button type="button" onClick={onOrb} disabled={!voiceMode} className="rounded-full"
+              aria-label={phase === "playing" ? t.orbStop : t.orbPlay}>
+              <div className="af-orb" data-s={orbState}
+                style={{ width: voiceMode ? "clamp(8rem, 32dvh, 14.5rem)" : "5rem" }}>
+                <div className="af-blob" />
+                <div className="af-sheen" />
+              </div>
             </button>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-5 sm:p-6">
-          <label
-            htmlFor="ai-friend-profile"
-            className="mb-2 block text-sm font-medium text-[#f4d7a7]"
-          >
-            {language === "hi" ? "User चुनें" : "Select user"}
-          </label>
-          {profiles.length > 0 ? (
-            <select
-              id="ai-friend-profile"
-              value={profile ? getKundaliProfileId(profile) : ""}
-              onChange={(event) => selectProfile(event.target.value)}
-              disabled={sendingMessage || generatingSpeech}
-              className="w-full rounded-lg border border-[#d8b36a]/25 bg-[#0a1529] px-4 py-3 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70"
-            >
-              {profiles.map((item) => (
-                <option
-                  key={getKundaliProfileId(item)}
-                  value={getKundaliProfileId(item)}
-                >
-                  {item.name} · {item.dob}
-                </option>
+          {voiceMode ? (
+            <>
+              <p className="mb-2 line-clamp-2 min-h-10 text-center text-sm text-[var(--af-dim)]">
+                {listening ? interim || t.listening : stage.question}
+              </p>
+              <div ref={viewRef} className={`af-fade h-40 w-full shrink-0 ${phase === "done" ? "overflow-y-auto" : "overflow-hidden"}`}>
+                <div ref={textRef} className="whitespace-pre-wrap px-1 pb-8 pt-5 text-center text-[1.15rem] leading-8 text-white will-change-transform">
+                  {phase === "thinking" ? (
+                    <span className="text-[var(--af-dim)]">{t.thinking}</span>
+                  ) : (
+                    stage.answer || <span className="text-[var(--af-dim)]">{t.hint}</span>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-3" role="log" aria-live="polite">
+              {messages.length === 0 && <p className="mt-6 text-center text-sm text-[var(--af-dim)]">{t.empty}</p>}
+              {messages.map((m, i) => (
+                <p key={i} className={`whitespace-pre-wrap px-3.5 py-2 text-sm leading-6 ${
+                  m.role === "user"
+                    ? "ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-sm bg-[var(--af-accent)] text-[var(--af-ink)]"
+                    : "mr-auto max-w-[92%] rounded-2xl rounded-bl-sm bg-white/10"}`}>
+                  {m.content}
+                </p>
+              ))}
+              {(phase === "thinking" || listening) && (
+                <p className="mr-auto w-fit rounded-2xl bg-white/10 px-3.5 py-2 text-sm text-[var(--af-dim)]">
+                  {listening ? interim || t.listening : t.thinking}
+                </p>
+              )}
+              <div ref={endRef} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {chatError && (
+        <p role="alert" className="shrink-0 px-6 pb-2 text-center text-xs text-[#ff9d9d]">{chatError}</p>
+      )}
+
+      {profile && (typing ? (
+        <form onSubmit={submitTyped} className="flex shrink-0 items-center gap-2 px-4 pb-5 pt-2">
+          <RoundButton label={t.speak} tone="violet" onClick={() => setTyping(false)}><Icon name="mic" /></RoundButton>
+          <input value={input} onChange={(e) => setInput(e.currentTarget.value)} autoFocus
+            placeholder={t.placeholder} aria-label={t.placeholder}
+            className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white placeholder:text-white/40" />
+          <RoundButton label={t.send} tone="accent" type="submit" disabled={!input.trim() || phase === "thinking"}>
+            <Icon name="send" />
+          </RoundButton>
+        </form>
+      ) : (
+        <div className="flex shrink-0 items-center justify-between px-6 pb-6 pt-2">
+          <RoundButton label={t.typeInstead} tone="violet" onClick={() => { recognitionRef.current?.abort(); setTyping(true); }}>
+            <Icon name="keyboard" />
+          </RoundButton>
+          <div className="relative grid h-20 w-20 place-items-center">
+            <span className="absolute -inset-3 rounded-full border border-white/10" aria-hidden="true" />
+            <span className="absolute -inset-7 rounded-full border border-white/[0.06]" aria-hidden="true" />
+            {listening && (<><span className="af-ring" aria-hidden="true" /><span className="af-ring" style={{ animationDelay: "1.1s" }} aria-hidden="true" /></>)}
+            <button type="button" onClick={toggleMic} aria-pressed={listening}
+              aria-label={listening ? t.stop : t.speak}
+              className={`relative grid h-20 w-20 place-items-center rounded-full bg-[var(--af-accent)] text-[var(--af-ink)] transition-transform active:scale-95 ${listening ? "scale-95" : ""}`}>
+              <Icon name={listening ? "x" : "mic"} className="h-8 w-8" />
+            </button>
+          </div>
+          <RoundButton label={t.stop} tone="dark" onClick={stopOrReset}><Icon name="x" /></RoundButton>
+        </div>
+      ))}
+
+      {sheet && (
+        <div role="dialog" aria-modal="true" aria-label={t.settings}
+          className="absolute inset-0 z-20 flex flex-col gap-5 overflow-y-auto bg-black/95 p-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-medium">{t.settings}</h2>
+            <RoundButton label={t.close} tone="dark" onClick={() => setSheet(false)}><Icon name="x" /></RoundButton>
+          </div>
+
+          <label className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
+            {t.user}
+            <select value={selectedProfileId} onChange={(e) => selectProfile(e.target.value)} className={fieldClass}>
+              {profiles.map((p) => (
+                <option key={getKundaliProfileId(p)} value={getKundaliProfileId(p)} className="bg-black">{p.name}</option>
               ))}
             </select>
-          ) : (
-            <p className="rounded-lg border border-[#d8b36a]/10 bg-[#0a1529] px-4 py-3 text-sm text-[#afbdd7]">
-              {language === "hi"
-                ? "अभी कोई saved user नहीं है। पहले user की कुंडली details जोड़ें।"
-                : "No saved users yet. Add a user's Kundli details to get started."}
-            </p>
-          )}
+          </label>
+          <button type="button" onClick={() => router.push("/kundali?newProfile=1")}
+            className="w-fit rounded-full border border-white/20 px-4 py-2 text-sm">{t.addUser}</button>
 
-          {profile && (
-            <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                {
-                  label: language === "hi" ? "नाम" : "Name",
-                  value: profile.name,
-                },
-                {
-                  label: language === "hi" ? "जन्म तिथि" : "Date of birth",
-                  value: profile.dob,
-                },
-                {
-                  label: language === "hi" ? "जन्म समय" : "Time of birth",
-                  value: profile.bot,
-                },
-                {
-                  label: language === "hi" ? "जन्म स्थान" : "Place of birth",
-                  value: profile.bop,
-                },
-              ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="rounded-lg border border-[#d8b36a]/10 bg-[#0a1529]/70 p-3"
-                >
-                  <dt className="text-[10px] uppercase tracking-wide text-[#8ea1c2]">
-                    {label}
-                  </dt>
-                  <dd className="mt-1 break-words text-sm text-[#f5e6d3]">
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          )}
-
-          <button
-            type="button"
-            onClick={addUser}
-            className="mt-5 w-full rounded-lg bg-[#d8b36a] px-4 py-3 text-sm font-semibold text-[#0b1324] transition hover:bg-[#c99a58]"
-          >
-            {language === "hi" ? "+ नया user जोड़ें" : "+ Add new user"}
-          </button>
-          <p className="mt-3 text-xs leading-relaxed text-[#8ea1c2]">
-            {language === "hi"
-              ? "नया user जोड़ने पर Kundali page खुलेगा। Details भरकर Continue दबाएँ; profile इस browser में save हो जाएगी।"
-              : "Add new user opens the Kundali page. Fill in their details and continue to save the profile in this browser."}
-          </p>
-        </div>
-
-        {profile && (
-          <section className="mt-5 rounded-2xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#d8b36a]">
-                  AI Friend
-                </p>
-                <h3 className="mt-1 font-display text-xl font-semibold text-[#f5efe6]">
-                  {language === "hi"
-                    ? "Baat shuru karein"
-                    : "Start a conversation"}
-                </h3>
-              </div>
-              {messages.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearChat}
-                  className="rounded-lg border border-[#d8b36a]/20 px-3 py-2 text-xs text-[#afbdd7] transition hover:text-[#f5efe6]"
-                >
-                  {language === "hi" ? "Chat saaf karein" : "Clear chat"}
+          <div className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
+            {t.language}
+            <div role="group" aria-label={t.language} className="flex w-fit rounded-full bg-white/10 p-0.5 text-sm">
+              {([["en", "English"], ["hi", "हिंदी"]] as const).map(([code, label]) => (
+                <button key={code} type="button" aria-pressed={language === code} onClick={() => setLanguage(code)}
+                  className={`rounded-full px-4 py-1.5 ${language === code ? "bg-[var(--af-accent)] font-medium text-[var(--af-ink)]" : "text-white/70"}`}>
+                  {label}
                 </button>
-              )}
-            </div>
-
-            <div
-              className="mt-4 max-h-[28rem] min-h-48 space-y-3 overflow-y-auto rounded-xl border border-[#d8b36a]/10 bg-[#0a1529]/75 p-3 sm:p-4"
-              aria-live="polite"
-              aria-label={language === "hi" ? "Chat messages" : "Chat messages"}
-            >
-              {messages.length === 0 && (
-                <p className="py-12 text-center text-sm text-[#8ea1c2]">
-                  {language === "hi"
-                    ? `${profile.name} ki kundali aur apne sawalon ke baare mein Hindi ya English mein poochhein.`
-                    : `Ask ${profile.name}'s AI Friend a question in English or Hindi.`}
-                </p>
-              )}
-              {messages.map((message, index) => (
-                <div
-                  key={`${message.role}-${index}`}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <p
-                    className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                      message.role === "user"
-                        ? "rounded-br-md bg-[#d8b36a] text-[#0b1324]"
-                        : "rounded-bl-md border border-[#d8b36a]/10 bg-[#111d31] text-[#f5e6d3]"
-                    }`}
-                  >
-                    {message.content}
-                  </p>
-                </div>
               ))}
-              {(sendingMessage || generatingSpeech) && (
-                <p className="text-xs text-[#afbdd7]">
-                  {sendingMessage
-                    ? language === "hi"
-                      ? "AI Friend soch raha hai…"
-                      : "AI Friend is thinking…"
-                    : language === "hi"
-                      ? "Saved voice mein jawab bana raha hai…"
-                      : "Generating reply in the saved voice…"}
-                </p>
-              )}
-              <div ref={messagesEndRef} />
             </div>
+          </div>
 
-            {audioUrl && (
-              <audio
-                key={audioUrl}
-                controls
-                autoPlay
-                src={audioUrl}
-                className="mt-3 w-full"
-              >
-                {language === "hi"
-                  ? "Aapka browser audio play nahi kar sakta."
-                  : "Your browser cannot play this audio."}
-              </audio>
-            )}
-
-            {chatError && (
-              <p
-                role="alert"
-                className="mt-3 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#f0958a]"
-              >
-                {chatError}
-              </p>
-            )}
-
-            <form onSubmit={submitChat} className="mt-3 flex items-end gap-2">
-              <textarea
-                value={messageInput}
-                onChange={(event) => setMessageInput(event.currentTarget.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    if (!sendingMessage && messageInput.trim()) {
-                      void sendMessage();
-                    }
-                  }
-                }}
-                placeholder={
-                  language === "hi"
-                    ? "Apna sawal likhein ya mic dabakar bolein…"
-                    : "Type a message or tap the mic to speak…"
-                }
-                rows={2}
-                disabled={!profile || sendingMessage}
-                className="min-h-12 min-w-0 flex-1 resize-y rounded-xl border border-[#d8b36a]/20 bg-[#0a1529] px-3 py-3 text-sm text-[#f5e6d3] outline-none placeholder:text-[#7183a3] focus:border-[#d8b36a]/60 disabled:opacity-50"
-              />
-              <button
-                type="button"
-                onClick={toggleListening}
-                disabled={!profile || sendingMessage}
-                aria-label={
-                  listening
-                    ? language === "hi"
-                      ? "Microphone band karein"
-                      : "Stop microphone"
-                    : language === "hi"
-                      ? "Bolne ke liye microphone shuru karein"
-                      : "Start microphone input"
-                }
-                aria-pressed={listening}
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-50 ${
-                  listening
-                    ? "animate-pulse border-rose-300/60 bg-rose-400/20 text-rose-200"
-                    : "border-[#d8b36a]/25 bg-[#0a1529] text-[#f4d7a7] hover:bg-[#d8b36a]/10"
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <rect x="9" y="3" width="6" height="12" rx="3" />
-                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8" />
-                </svg>
-              </button>
-              <button
-                type="submit"
-                disabled={!profile || !messageInput.trim() || sendingMessage}
-                className="h-12 shrink-0 rounded-xl bg-[#d8b36a] px-4 text-sm font-semibold text-[#0b1324] transition hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {language === "hi" ? "Bhejein" : "Send"}
-              </button>
-            </form>
-
-            <label className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-[#afbdd7]">
-              <input
-                type="checkbox"
-                checked={speakReplies}
-                onChange={(event) =>
-                  setSpeakReplies(event.currentTarget.checked)
-                }
-                disabled={!voiceSample}
-                className="mt-0.5 accent-[#d8b36a]"
-              />
-              <span>
-                {voiceSample
-                  ? language === "hi"
-                    ? "AI Friend ka jawab saved voice mein bolein"
-                    : "Speak AI Friend replies in the saved voice"
-                  : language === "hi"
-                    ? "Voice reply ke liye pehle neeche sample save karein"
-                    : "Save a voice sample below to enable spoken replies"}
-              </span>
-            </label>
-            <p className="mt-2 text-[10px] leading-relaxed text-[#8ea1c2]">
-              {language === "hi"
-                ? "Mic button dabane par browser speech recognition chalu hoga. Voice reply local Chatterbox server se banega."
-                : "Tap the mic to use browser speech recognition. Voice replies are generated by the local Chatterbox service."}
-            </p>
-          </section>
-        )}
-
-        {profile && (
-          <section className="mt-5 rounded-2xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-5 sm:p-6">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#d8b36a]">
-                Chatterbox Multilingual V3
-              </p>
-              <h3 className="mt-1 font-display text-xl font-semibold text-[#f5efe6]">
-                {language === "hi"
-                  ? "इस user ka voice sample"
-                  : "This user's voice sample"}
-              </h3>
-            </div>
-
-            {loadingSample ? (
-              <p className="mt-4 text-sm text-[#afbdd7]">
-                {language === "hi"
-                  ? "Saved sample load ho raha hai…"
-                  : "Loading saved sample…"}
-              </p>
-            ) : voiceSample ? (
-              <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/5 p-4">
-                <p className="text-sm font-medium text-emerald-100">
-                  {language === "hi"
-                    ? "Voice sample saved locally"
-                    : "Voice sample saved locally"}
-                </p>
-                <p className="mt-1 break-all text-xs text-[#afbdd7]">
-                  {voiceSample.fileName} · {voiceSample.language.toUpperCase()}
-                </p>
-                <button
-                  type="button"
-                  onClick={removeVoiceFromProfile}
-                  className="mt-3 rounded-lg border border-[#f0958a]/30 px-3 py-2 text-xs text-[#f5b5aa] transition hover:bg-[#f0958a]/10"
-                >
-                  {language === "hi"
-                    ? "Is profile se voice hatayein"
-                    : "Remove voice from this profile"}
-                </button>
-                <p className="mt-2 text-[10px] leading-relaxed text-[#8ea1c2]">
-                  {language === "hi"
-                    ? "Yeh audio isi browser ke IndexedDB mein save hai aur local Chatterbox service ise voice reference ke roop mein use karegi."
-                    : "This audio is saved in this browser's IndexedDB and the local Chatterbox service uses it as the voice reference."}
-                </p>
-              </div>
+          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
+            <h3 className="text-sm font-medium">{t.myVoice}</h3>
+            {loadingSample ? null : voiceSample ? (
+              <>
+                <p className="text-sm text-[var(--af-dim)]">{t.voiceOn} ({voiceSample.fileName})</p>
+                <button type="button" onClick={removeSample} className="w-fit rounded-full border border-white/20 px-4 py-2 text-sm">{t.remove}</button>
+              </>
             ) : (
-              <form onSubmit={saveSampleForProfile} className="mt-4 space-y-4">
-                <div>
-                  <label
-                    htmlFor="chatterbox-voice-sample"
-                    className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
-                  >
-                    {language === "hi"
-                      ? "Voice sample upload karein (max 16 MB)"
-                      : "Upload voice sample (max 16 MB)"}
-                  </label>
-                  <input
-                    id="chatterbox-voice-sample"
-                    type="file"
-                    accept=".wav,.mp3,.flac,.ogg,.oga,audio/wav,audio/mpeg,audio/flac,audio/ogg"
-                    onChange={(event) =>
-                      handleSampleChange(event.currentTarget.files?.[0] ?? null)
-                    }
-                    className="block w-full rounded-lg border border-[#d8b36a]/20 bg-[#0a1529] px-3 py-2 text-xs text-[#f5e6d3] file:mr-3 file:rounded-md file:border-0 file:bg-[#d8b36a] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-[#0b1324]"
-                  />
-                  <p className="mt-1 text-[10px] text-[#8ea1c2]">
-                    {language === "hi"
-                      ? "Ek speaker ki saaf recording, bina music/noise ke; 10–60 seconds recommended."
-                      : "A clean recording of one speaker, without music/noise; 10–60 seconds recommended."}
-                  </p>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="chatterbox-sample-language"
-                    className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
-                  >
-                    {language === "hi"
-                      ? "Sample kis bhasha mein hai?"
-                      : "Language spoken in the sample"}
-                  </label>
-                  <select
-                    id="chatterbox-sample-language"
-                    value={sampleLanguage}
-                    onChange={(event) =>
-                      setSampleLanguage(
-                        event.target.value as VoiceSampleLanguage,
-                      )
-                    }
-                    className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#0a1529] px-3 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/60"
-                  >
-                    <option value="hi">हिंदी</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
-
-                <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[#d6dfeb]">
-                  <input
-                    type="checkbox"
-                    checked={consentConfirmed}
-                    onChange={(event) =>
-                      setConsentConfirmed(event.currentTarget.checked)
-                    }
-                    className="mt-0.5 accent-[#d8b36a]"
-                  />
-                  <span>
-                    {language === "hi"
-                      ? "Mere paas is speaker ki voice ko use karne ki spasht permission hai. Sample is browser mein local save hoga."
-                      : "I have the speaker's explicit permission to use their voice. The sample will be saved locally in this browser."}
-                  </span>
+              <form onSubmit={saveSample} className="flex flex-col gap-3">
+                <p className="text-sm text-[var(--af-dim)]">{t.voiceOff}</p>
+                <input type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.oga" aria-label={t.myVoice}
+                  onChange={(e) => pickSample(e.currentTarget.files?.[0] ?? null)} className={fieldClass} />
+                <select value={sampleLanguage} onChange={(e) => setSampleLanguage(e.target.value as VoiceSampleLanguage)}
+                  aria-label={t.language} className={fieldClass}>
+                  <option value="hi" className="bg-black">हिंदी</option>
+                  <option value="en" className="bg-black">English</option>
+                </select>
+                <label className="flex items-start gap-2 text-sm text-[var(--af-dim)]">
+                  <input type="checkbox" checked={consent} disabled={!sampleFile} onChange={(e) => setConsent(e.currentTarget.checked)} className="mt-1" />
+                  {t.consent}
                 </label>
-
-                {voiceError && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#f0958a]"
-                  >
-                    {voiceError}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={!sampleFile || !consentConfirmed || savingSample}
-                  className="w-full rounded-lg bg-[#d8b36a] px-4 py-3 text-sm font-semibold text-[#0b1324] transition hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {savingSample
-                    ? language === "hi"
-                      ? "Sample save ho raha hai…"
-                      : "Saving sample…"
-                    : language === "hi"
-                      ? "Voice sample save karein"
-                      : "Save voice sample"}
-                </button>
+                <button type="submit" disabled={!sampleFile || !consent || savingSample}
+                  className="w-fit rounded-full bg-[var(--af-accent)] px-5 py-2 text-sm font-medium text-[var(--af-ink)] disabled:opacity-40">{t.save}</button>
               </form>
             )}
-            <p className="mt-3 text-[10px] leading-relaxed text-[#8ea1c2]">
-              {language === "hi"
-                ? "Sample browser ke IndexedDB mein profile-wise save hota hai. Voice replies ke liye local Chatterbox service chalni chahiye. Aapki voice clip us local service ko bheji jaati hai; kisi hosted voice provider ko nahi."
-                : "The sample is saved per profile in this browser's IndexedDB. Voice replies require the local Chatterbox service. Your voice clip is sent to that local service, not a hosted voice provider."}
-            </p>
-          </section>
-        )}
-      </section>
+            {voiceError && <p role="alert" className="text-sm text-[#ff9d9d]">{voiceError}</p>}
+          </div>
+
+          <button type="button" onClick={clearChat} className="mt-auto w-fit rounded-full border border-[#ff9d9d]/40 px-4 py-2 text-sm text-[#ff9d9d]">{t.clear}</button>
+        </div>
+      )}
     </main>
   );
 }
