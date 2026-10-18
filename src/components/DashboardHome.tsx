@@ -24,11 +24,7 @@ import {
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
-import {
-  getKundaliProfileId,
-  getSavedKundalis,
-  getUserKundaliProfile,
-} from "../lib/storage";
+import { getKundaliProfileId, getUserKundaliProfile } from "../lib/storage";
 import type { KundaliProfile } from "../types";
 import { NavIcon, type NavIconName } from "./NavIcon";
 
@@ -116,29 +112,101 @@ function signFromDob(dob: string): Sign {
   return found ?? SIGNS[9]; // 1 Jan - 19 Jan => Capricorn
 }
 
-function signFromLagna(lagna?: string): Sign | null {
-  if (!lagna) return null;
-  const text = lagna.toLowerCase();
-  return (
-    SIGNS.find(
-      (s) =>
-        text.includes(s.en.toLowerCase()) ||
-        text.includes(s.hi.toLowerCase()) ||
-        text.includes(s.dev),
-    ) ?? null
-  );
+/* ---------- Chandra rashi + nakshatra (Vedic, Lahiri ayanamsa) ---------- */
+
+const NAKSHATRAS = [
+  "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu",
+  "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta",
+  "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha",
+  "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada",
+  "Uttara Bhadrapada", "Revati",
+];
+
+type MoonInfo = {
+  sign: Sign;
+  nakshatra: string;
+  pada: number;
+  approx: boolean; // janm samay pata nahi => rashi galat ho sakti hai
+};
+
+const rad = (d: number) => (d * Math.PI) / 180;
+const norm360 = (d: number) => ((d % 360) + 360) % 360;
+
+// IANA timezone ka UTC offset (ms) us moment par
+function tzOffsetMs(utcMs: number, tz: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(utcMs));
+  const p: Record<string, number> = {};
+  for (const part of parts) if (part.type !== "literal") p[part.type] = Number(part.value);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - utcMs;
 }
 
-function resolveSign(profile: KundaliProfile): Sign {
-  let lagna: string | undefined;
-  try {
-    lagna = getSavedKundalis()
-      .filter((r) => r.name === profile.name && r.chart?.lagna)
-      .at(-1)?.chart?.lagna;
-  } catch {
-    lagna = undefined;
+// Janm ka local samay (us jagah ka) -> UTC. Timezone na mile to India (+5:30).
+function birthToUtcMs(dob: string, bot: string, tz?: string) {
+  const d = /^(\d{4})-(\d{2})-(\d{2})/.exec(dob);
+  const t = /^(\d{1,2}):(\d{2})/.exec(bot);
+  if (!d || !t) return null;
+  const guess = Date.UTC(+d[1], +d[2] - 1, +d[3], +t[1], +t[2]);
+  if (tz) {
+    try {
+      const first = guess - tzOffsetMs(guess, tz);
+      return guess - tzOffsetMs(first, tz); // DST edge ke liye dobara
+    } catch {
+      /* invalid timezone => India fallback */
+    }
   }
-  return signFromLagna(lagna) ?? signFromDob(profile.dob);
+  return guess - 330 * 60_000;
+}
+
+// Moon ki tropical longitude (Astronomical Almanac low-precision, ~0.3 degree)
+function moonSiderealLongitude(utcMs: number) {
+  const jd = utcMs / 86_400_000 + 2_440_587.5;
+  const T = (jd - 2_451_545.0) / 36_525;
+  const s = (a: number, b: number) => Math.sin(rad(a + b * T));
+  const tropical =
+    218.32 +
+    481_267.881 * T +
+    6.29 * s(135.0, 477_198.87) -
+    1.27 * s(259.3, -413_335.36) +
+    0.66 * s(235.7, 890_534.22) +
+    0.21 * s(269.9, 954_397.74) -
+    0.19 * s(357.5, 35_999.05) -
+    0.11 * s(186.5, 966_404.03);
+  const lahiri = 23.853 + (0.013969 * (jd - 2_451_545.0)) / 365.25; // ayanamsa
+  return norm360(tropical - lahiri);
+}
+
+function computeMoon(profile: KundaliProfile): MoonInfo | null {
+  const ob = readOnboarding();
+  const utc = birthToUtcMs(profile.dob, profile.bot, ob.timezone);
+  if (utc === null) return null;
+  const lon = moonSiderealLongitude(utc);
+  const span = 360 / 27;
+  return {
+    sign: SIGNS[Math.floor(lon / 30)],
+    nakshatra: NAKSHATRAS[Math.floor(lon / span)],
+    pada: Math.floor((lon % span) / (span / 4)) + 1,
+    approx: ob.timeUnknown === true,
+  };
+}
+
+function resolveMoon(profile: KundaliProfile): MoonInfo {
+  return (
+    computeMoon(profile) ?? {
+      sign: signFromDob(profile.dob), // fallback: sun sign
+      nakshatra: "",
+      pada: 0,
+      approx: true,
+    }
+  );
 }
 
 function reduceDigit(n: number) {
@@ -146,7 +214,7 @@ function reduceDigit(n: number) {
   return n || 9;
 }
 
-function readOnboarding(): { status?: string } {
+function readOnboarding(): { status?: string; timezone?: string; timeUnknown?: boolean } {
   try {
     return JSON.parse(localStorage.getItem(ONBOARDING_KEY) || "{}") ?? {};
   } catch {
@@ -229,7 +297,7 @@ function writeStored(profile: KundaliProfile, today: string, guide: DailyGuide) 
 /* Gemini request                                                      */
 /* ------------------------------------------------------------------ */
 
-function buildPrompt(profile: KundaliProfile, sign: Sign, now: Date) {
+function buildPrompt(profile: KundaliProfile, moon: MoonInfo, now: Date) {
   const dateLabel = now.toLocaleDateString("en-IN", {
     weekday: "long",
     day: "numeric",
@@ -243,7 +311,9 @@ Today is ${dateLabel}.
 Person: name ${profile.name}, gender ${profile.gender || "not given"}, born ${profile.dob} at ${profile.bot} in ${profile.bop}.${
     status ? ` Relationship status: ${status}.` : ""
   }
-Rashi / lagna: ${sign.hi} (${sign.en}).
+Chandra rashi (Moon sign): ${moon.sign.hi} (${moon.sign.en})${
+    moon.nakshatra ? `, nakshatra ${moon.nakshatra} pada ${moon.pada}` : ""
+  }.
 
 Write in simple Hinglish (Hindi in Roman script), friendly and short.
 Return ONLY valid JSON, no markdown, exactly this shape:
@@ -274,8 +344,8 @@ function requestGuide(profile: KundaliProfile, today: string): Promise<DailyGuid
   if (existing) return existing;
 
   const promise = (async () => {
-    const sign = resolveSign(profile);
-    const res = await callGemini({ model: MODEL, input: buildPrompt(profile, sign, new Date()) });
+    const moon = resolveMoon(profile);
+    const res = await callGemini({ model: MODEL, input: buildPrompt(profile, moon, new Date()) });
     const guide = normalize(extractJson(res.output_text), profile);
     if (!guide) throw new Error("INVALID_GUIDE");
     return guide;
@@ -364,7 +434,7 @@ export default function DashboardHome() {
   const [hello, setHello] = useState("Hello");
   const [dateLabel, setDateLabel] = useState("");
   const [name, setName] = useState("");
-  const [sign, setSign] = useState<Sign | null>(null);
+  const [moon, setMoon] = useState<MoonInfo | null>(null);
   const [guide, setGuide] = useState<DailyGuide | null>(null);
   const [lineIdx, setLineIdx] = useState(0);
   const shownDate = useRef<string | null>(null);
@@ -393,7 +463,7 @@ export default function DashboardHome() {
     }
 
     setName(profile.name.trim().split(/\s+/)[0]);
-    setSign(resolveSign(profile));
+    setMoon(resolveMoon(profile));
 
     const cached = readStored(profile, today);
     if (cached) {
@@ -460,11 +530,20 @@ export default function DashboardHome() {
             <br />
             {name || "Guest"}
           </h2>
-          {sign && (
-            <p className="mt-3 flex items-center gap-1 text-[12px] tracking-[0.08em] text-[#f2c36b]">
-              <PinIcon />
-              {sign.hi.toUpperCase()}
-            </p>
+          {moon && (
+            <>
+              <p className="mt-3 flex items-center gap-1 text-[12px] tracking-[0.08em] text-[#f2c36b]">
+                <PinIcon />
+                {moon.sign.hi.toUpperCase()}
+                {moon.nakshatra ? " RASHI" : ""}
+                {moon.approx ? " (APPROX.)" : ""}
+              </p>
+              {moon.nakshatra && (
+                <p className="mt-1 text-[12px] text-[#c9d8ed]">
+                  {moon.nakshatra} &middot; pada {moon.pada}
+                </p>
+              )}
+            </>
           )}
           {dateLabel && status !== "empty" && (
             <p className="mt-1 text-[12px] text-[#a6bddb]">{dateLabel}</p>
@@ -476,7 +555,7 @@ export default function DashboardHome() {
           className="absolute right-0 top-0 flex h-24 w-24 items-center justify-center rounded-full border border-[#f2c36b]/40 bg-[#10273d] text-[54px] leading-none text-[#f2c36b] sm:h-28 sm:w-28"
         >
           {/* \uFE0E => emoji nahi, text glyph dikhe */}
-          {sign ? `${sign.glyph}\uFE0E` : "\u2726\uFE0E"}
+          {moon ? `${moon.sign.glyph}\uFE0E` : "\u2726\uFE0E"}
         </div>
       </section>
 
