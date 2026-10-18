@@ -1,8 +1,9 @@
+import type { Metadata } from "next";
 import InteractiveApp from "../../components/InteractiveApp";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Open your Gen-K astrology dashboard and explore all services.",
+  robots: { index: false, follow: true },
 };
 
 export default function DashboardPage() {

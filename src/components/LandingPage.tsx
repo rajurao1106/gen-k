@@ -49,9 +49,15 @@ const services = [
   },
 ];
 
+const steps = [
+  { title: "Enter birth details", body: "Add your name, date, time and place of birth. Accurate birth time gives a better reading." },
+  { title: "Choose your tool", body: "Pick kundali, kundali milan, numerology, mahadasha or chat with AI Friend, in Hindi or English." },
+  { title: "Read, save and download", body: "Get an AI-based reading, save profiles for next time and download a PDF report." },
+];
+
 export default function LandingPage({ children }: { children?: ReactNode }) {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#080d18] text-[#f6f0e6]">
+    <main className="min-h-screen overflow-x-clip bg-[#080d18] text-[#f6f0e6]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
         .font-display { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.01em; }
@@ -82,7 +88,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
             href="/dashboard"
             className="inline-flex items-center gap-2 rounded-full border border-[#f2c36b]/55 bg-[#f2c36b] px-4 py-2.5 text-sm font-semibold text-[#17130c] shadow-[0_8px_30px_rgba(242,195,107,0.12)] transition hover:-translate-y-0.5 hover:bg-[#ffda91] sm:px-5"
           >
-            Open dashboard <span aria-hidden="true">↗</span>
+            Open app <span aria-hidden="true">↗</span>
           </Link>
         </nav>
       </header>
@@ -96,40 +102,40 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
             <span aria-hidden="true" className="text-[#f2c36b]">✦</span>
             Ancient wisdom, made personal
           </div>
-          <h1 className="font-display text-5xl font-bold leading-[0.98] tracking-tight sm:text-6xl lg:text-[76px]">
-            Find your
+          <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-[60px]">
+            Free Kundali, Milan &amp;
             <span className="mt-1 block bg-gradient-to-r from-[#f7dfa5] via-[#e8b961] to-[#bd8540] bg-clip-text text-transparent">
-              cosmic clarity.
+              Numerology Online
             </span>
           </h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-[#b8bfcd] sm:text-lg sm:leading-8">
-            Your birth chart is a starting point, not the whole story. Explore
-            Vedic astrology tools that help you understand your patterns,
-            relationships and personal journey.
+            Enter your birth details and get an AI-based Vedic astrology
+            reading in Hindi or English. Match kundalis, explore your
+            mahadasha and download a PDF report.
           </p>
-          <p className="mt-3 font-display text-lg text-[#e8d5ae] sm:text-xl">
+          <p lang="hi" className="mt-3 font-display text-lg text-[#e8d5ae] sm:text-xl">
             आपकी यात्रा, आपकी कुंडली, आपकी समझ।
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/kundali"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f2c36b] px-6 py-3 text-sm font-bold text-[#17130c] transition hover:-translate-y-0.5 hover:bg-[#ffda91]"
             >
-              Open your dashboard <span aria-hidden="true">→</span>
+              Create your free kundali <span aria-hidden="true">→</span>
             </Link>
             <Link
-              href="/kundali"
+              href="#services"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.035] px-6 py-3 text-sm font-semibold text-[#f5eee2] transition hover:border-[#f2c36b]/50 hover:bg-white/[0.07]"
             >
-              Create your kundali <span aria-hidden="true">↗</span>
+              Explore all tools <span aria-hidden="true">↗</span>
             </Link>
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-[#9ca5b5]">
             <span className="flex items-center gap-2">
               <span className="text-[#f2c36b]" aria-hidden="true">✦</span>
-              Five tools, one thoughtful space
+              AI-based readings &middot; PDF report
             </span>
             <span className="flex items-center gap-2">
               <span className="text-[#f2c36b]" aria-hidden="true">◈</span>
@@ -158,7 +164,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
 
       <section
         id="services"
-        className="relative overflow-hidden border-t border-white/[0.07] px-5 py-20 sm:px-8 sm:py-24 lg:px-12"
+        className="relative overflow-x-clip border-t border-white/[0.07] px-5 py-20 sm:px-8 sm:py-24 lg:px-12"
       >
         <div className="pointer-events-none absolute -right-40 top-20 h-[420px] w-[420px] rounded-full bg-[#b78443]/[0.06] blur-[110px]" />
         <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
@@ -180,7 +186,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
               href="/dashboard"
               className="mt-8 inline-flex items-center gap-3 border-b border-[#d9ad62]/50 pb-2 text-sm font-semibold text-[#f2c36b] transition hover:border-[#ffda91] hover:text-[#ffda91]"
             >
-              Explore your dashboard <span aria-hidden="true">↗</span>
+              Open the app <span aria-hidden="true">↗</span>
             </Link>
             <div
               aria-hidden="true"
@@ -236,12 +242,37 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
         </div>
       </section>
 
+      <section aria-labelledby="how-it-works" className="border-t border-white/[0.07] px-5 py-16 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <h2 id="how-it-works" className="font-display text-3xl font-bold sm:text-4xl">
+            How it works
+          </h2>
+          <ol className="mt-8 grid gap-6 md:grid-cols-3">
+            {steps.map((step, i) => (
+              <li key={step.title} className="border-t border-[#f2c36b]/30 pt-5">
+                <span className="font-display text-sm tracking-[0.2em] text-[#d9ad62]">0{i + 1}</span>
+                <h3 className="mt-2 font-display text-xl font-semibold text-[#f6f0e6]">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#9fa8b8]">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       {children}
 
-      <footer className="border-t border-white/[0.07] px-5 py-7 text-center text-xs text-[#858e9d] sm:px-8">
-        <p>
-          Gen-K offers astrology insights for reflection and informational
-          purposes.
+      <footer className="border-t border-white/[0.07] px-5 py-8 text-center text-xs text-[#858e9d] sm:px-8">
+        <nav aria-label="Footer" className="mb-4 flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {services.map((service) => (
+            <Link key={service.href} href={service.href} className="hover:text-[#ffda91]">
+              {service.title}
+            </Link>
+          ))}
+        </nav>
+        <p className="mx-auto max-w-2xl">
+          Gen-K readings are AI-generated for reflection and information only.
+          They are not a substitute for professional medical, legal, financial
+          or mental-health advice.
         </p>
       </footer>
     </main>

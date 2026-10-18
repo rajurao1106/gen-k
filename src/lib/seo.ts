@@ -26,7 +26,7 @@ const pages: Record<SeoPageKey, SeoPage> = {
   home: {
     title: "Free Kundali in Hindi & English, Milan & Numerology",
     description:
-      "Make your free janam kundali online in Hindi or English. Check kundali milan (36 gun), numerology, Vimshottari mahadasha and download a PDF report.",
+      "Create a free janam kundali online in Hindi or English. AI-based kundali milan (36 gun), numerology and mahadasha readings with PDF download.",
     keywords: [
       "free kundali online",
       "janam kundali in hindi",
@@ -41,15 +41,15 @@ const pages: Record<SeoPageKey, SeoPage> = {
     heading: "Free Online Kundali, Kundali Milan & Numerology",
     hindiHeading: "मुफ़्त ऑनलाइन जन्म कुंडली, कुंडली मिलान, न्यूमरोलॉजी और महादशा",
     intro:
-      "Gen-K is a Vedic astrology (Jyotish) platform where you can create your janam kundali online, match two kundalis for marriage, read your numerology numbers and explore your Vimshottari mahadasha timeline, all in one place. Enter your date, time and place of birth, choose English or Hindi, and get a clear, easy-to-read report that you can save or download as a PDF.",
+      "Gen-K is a Vedic astrology (Jyotish) platform where you can create your janam kundali online, match two kundalis for marriage, read your numerology numbers and explore your Vimshottari mahadasha timeline, all in one place. Enter your date, time and place of birth, choose English or Hindi, and get a clear, AI-based reading that you can save or download as a PDF.",
     sections: [
       {
         heading: "Janam Kundali (जन्म कुंडली) in Hindi and English",
-        body: "A janam kundali is a map of the sky at the exact moment and place you were born. Gen-K turns your birth details into a Vedic birth chart and explains the ascendant, planetary positions and houses in simple language. You can switch the reading between English and Hindi (हिंदी) so that the explanation feels natural and easy to share with family.",
+        body: "A janam kundali is a map of the sky at the exact moment and place you were born. Gen-K uses AI to turn your birth details into a Vedic birth chart reading and explains the ascendant, planetary positions and houses in simple language. You can switch the reading between English and Hindi (हिंदी) so that the explanation feels natural and easy to share with family.",
       },
       {
         heading: "Kundali Milan (कुंडली मिलान) with 36 Gun Matching",
-        body: "Before marriage, many families compare the kundalis of the boy and girl. Gen-K's kundali milan tool uses the traditional Ashtakoot method, which scores eight factors such as Varna, Bhakoot and Nadi out of a total of 36 gunas. You get a breakdown of every koota, so you can see where the match is strong and where it needs a calm, thoughtful discussion.",
+        body: "Before marriage, many families compare the kundalis of the boy and girl. Create and save both kundalis in Gen-K, then run kundali milan. It follows the traditional Ashtakoot method, which scores eight factors such as Varna, Bhakoot and Nadi out of a total of 36 gunas. You get a breakdown of every koota, so you can see where the match is strong and where it needs a calm, thoughtful discussion.",
       },
       {
         heading: "Numerology by Name and Date of Birth",
@@ -57,7 +57,7 @@ const pages: Record<SeoPageKey, SeoPage> = {
       },
       {
         heading: "Mahadasha and Antardasha Timeline (महादशा)",
-        body: "In Vedic astrology, life is read in planetary periods called dashas. Gen-K shows your Vimshottari mahadasha sequence with antardasha sub-periods, so you can see which planet's period is running now and what is traditionally associated with it. The timeline is calculated from the Moon's position at birth.",
+        body: "In Vedic astrology, life is read in planetary periods called dashas. Gen-K shows your Vimshottari mahadasha sequence with antardasha sub-periods, so you can see which planet's period is running now and what is traditionally associated with it. The timeline is estimated from the Moon's position at birth.",
       },
       {
         heading: "Ask Questions with Your AI Astrology Friend",
@@ -93,6 +93,11 @@ const pages: Record<SeoPageKey, SeoPage> = {
         question: "What is a mahadasha?",
         answer:
           "A mahadasha is a major planetary period in the Vimshottari dasha system, which divides a 120-year cycle among nine planets. Each mahadasha has smaller sub-periods called antardashas. Your starting dasha depends on the Moon's position at your birth.",
+      },
+      {
+        question: "Are Gen-K readings calculated by AI?",
+        answer:
+          "Yes. Gen-K readings are AI-generated from the birth details you enter, so they are best treated as an informational estimate. For important decisions, please confirm your chart with a qualified astrologer.",
       },
       {
         question: "Is astrology a guaranteed prediction?",
@@ -409,6 +414,7 @@ export function getPageMetadata(page: SeoPageKey): Metadata {
     title: content.title,
     description: content.description,
     keywords: content.keywords,
+    robots: page === "home" ? undefined : { index: false, follow: true },
     alternates: { canonical: path },
     openGraph: {
       title: content.title,

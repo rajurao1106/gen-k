@@ -86,7 +86,9 @@ function HomeIntroPage() {
             <p className="font-display text-xl font-semibold text-[#f8d27a] transition-colors group-hover:text-[#ffdf9a] sm:text-2xl">
               {card.label}
             </p>
-            <p className="mt-2 text-sm leading-5 text-[#d9e5f7] sm:leading-6">{card.desc}</p>
+            <p className="mt-2 text-sm leading-5 text-[#d9e5f7] sm:leading-6">
+              {card.desc}
+            </p>
             <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[#f8d27a]">
               Open page →
             </span>
@@ -126,7 +128,7 @@ function KundaliExperience() {
   return (
     <div
       id="appShell"
-      className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-hidden"
+      className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-clip"
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
@@ -179,7 +181,7 @@ function KundaliExperience() {
           word-break: break-word;
         }
         input[type="date"], input[type="time"] { color-scheme: dark; }
-        html, body { max-width: 100%; overflow-x: hidden; }
+html, body { max-width: 100%; overflow-x: clip; }
         * { min-width: 0; }
 
         @page {
