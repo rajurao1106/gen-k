@@ -85,7 +85,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
             Explore services
           </a>
           <Link
-            href="/dashboard"
+            href="/start"
             className="inline-flex items-center gap-2 rounded-full border border-[#f2c36b]/55 bg-[#f2c36b] px-4 py-2.5 text-sm font-semibold text-[#17130c] shadow-[0_8px_30px_rgba(242,195,107,0.12)] transition hover:-translate-y-0.5 hover:bg-[#ffda91] sm:px-5"
           >
             Open app <span aria-hidden="true">↗</span>
@@ -119,7 +119,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/kundali"
+              href="/start?new=1"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f2c36b] px-6 py-3 text-sm font-bold text-[#17130c] transition hover:-translate-y-0.5 hover:bg-[#ffda91]"
             >
               Create your free kundali <span aria-hidden="true">→</span>
@@ -183,7 +183,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
               offers a different lens on your chart and your journey.
             </p>
             <Link
-              href="/dashboard"
+              href="/start"
               className="mt-8 inline-flex items-center gap-3 border-b border-[#d9ad62]/50 pb-2 text-sm font-semibold text-[#f2c36b] transition hover:border-[#ffda91] hover:text-[#ffda91]"
             >
               Open the app <span aria-hidden="true">↗</span>
