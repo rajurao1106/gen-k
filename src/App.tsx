@@ -2,8 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {  Sidebar } from "./components/Sidebar";
+import { Sidebar } from "./components/Sidebar";
 import { CurvedBottomNav as BottomNav } from "./components/CurvedBottomNav";
+import DashboardHome from "./components/DashboardHome";
 import type { PageKey } from "./types";
 import KundaliPage from "./features/KundaliPage";
 import KundaliMilanPage from "./features/KundaliMilanPage";
@@ -302,7 +303,7 @@ html, body { max-width: 100%; overflow-x: clip; }
           </header>
 
           <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-8 font-body sm:px-6 lg:px-8 lg:pb-8">
-            {page === "home" && <HomeIntroPage />}
+            {page === "home" && <DashboardHome />}{" "}
             {page === "kundali" && <KundaliPage />}
             {page === "ai-friend" && <AIFriendPage />}
             {page === "milan" && <KundaliMilanPage />}

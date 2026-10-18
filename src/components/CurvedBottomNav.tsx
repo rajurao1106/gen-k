@@ -19,9 +19,10 @@ import { NavIcon, type NavIconName } from "./NavIcon";
 type Slot = { key: PageKey | "menu"; label: string; icon: NavIconName };
 
 const SLOTS: Slot[] = [
-  { key: "home", label: "Home", icon: "home" },
+
   { key: "milan", label: "Milan", icon: "rings" },
   { key: "kundali", label: "Kundli", icon: "kundli" },
+    { key: "home", label: "Home", icon: "home" },
   { key: "ai-friend", label: "AI Friend", icon: "friend" },
   { key: "menu", label: "Menu", icon: "menu" },
 ];
