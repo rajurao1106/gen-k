@@ -479,7 +479,7 @@ export default function AIFriendPage() {
         .map((e) => `${e.role === "user" ? "User" : "AI Friend"}: ${e.content.slice(0, 600)}`)
         .join("\n");
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `You are ${profile.name}'s warm, thoughtful AI Friend. Use the user's saved birth details as personal context, but do not claim astrology is scientifically certain. Be kind, conversational, and answer the actual question. Do not invent horoscope/chart placements. Keep safety-sensitive advice cautious and encourage professional help where appropriate.${spoken ? " This reply will be read aloud: use 3 to 6 short plain sentences, with no markdown, lists or emojis." : ""}
 
 User details:
