@@ -13,7 +13,6 @@ import express from "express";
 //   VOICE_PROVIDER=fish|elevenlabs    (optional; auto-detected from the keys)
 //   FISH_API_KEY=...  FISH_MODEL=s2.1-pro-free
 //   ELEVENLABS_API_KEY=...  ELEVENLABS_MODEL=eleven_multilingual_v2
-//   VOICE_RATE_LIMIT_PER_MIN=12       (optional, per IP)
 
 const router = express.Router();
 
@@ -31,30 +30,6 @@ const apiKey = () =>
   provider() === "fish" ? process.env.FISH_API_KEY || "" : process.env.ELEVENLABS_API_KEY || "";
 const modelId = () => process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
 const fishModel = () => process.env.FISH_MODEL || "s2.1-pro-free";
-const rateLimitPerMin = () => Number(process.env.VOICE_RATE_LIMIT_PER_MIN || 12);
-
-// ---- tiny per-IP rate limiter (no extra dependency) -------------------------
-const hits = new Map();
-function rateLimit(req, res, next) {
-  const now = Date.now();
-  const ip = req.ip || "unknown";
-  const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
-  if (recent.length >= rateLimitPerMin()) {
-    res.set("Retry-After", "30");
-    return res
-      .status(429)
-      .json({ success: false, message: "Too many voice requests. Try again shortly." });
-  }
-  recent.push(now);
-  hits.set(ip, recent);
-  next();
-}
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, list] of hits) {
-    if (!list.some((t) => now - t < 60_000)) hits.delete(ip);
-  }
-}, 5 * 60_000).unref();
 
 function requireKey(req, res, next) {
   if (!apiKey()) {
@@ -84,7 +59,6 @@ const extFor = (type) =>
 // ---- clone ------------------------------------------------------------------
 router.post(
   "/clone",
-  rateLimit,
   requireKey,
   express.raw({ type: () => true, limit: MAX_SAMPLE_BYTES }),
   async (req, res) => {
@@ -151,7 +125,7 @@ router.post(
 );
 
 // ---- speak ------------------------------------------------------------------
-router.post("/speak", rateLimit, requireKey, async (req, res) => {
+router.post("/speak", requireKey, async (req, res) => {
   const { voiceId, text } = req.body || {};
   const clean = typeof text === "string" ? text.trim() : "";
 
@@ -212,7 +186,7 @@ router.post("/speak", rateLimit, requireKey, async (req, res) => {
 });
 
 // ---- delete -----------------------------------------------------------------
-router.delete("/:voiceId", rateLimit, requireKey, async (req, res) => {
+router.delete("/:voiceId", requireKey, async (req, res) => {
   const { voiceId } = req.params;
   if (!VOICE_ID_RE.test(voiceId)) {
     return res.status(400).json({ success: false, message: "Invalid voice." });
