@@ -247,7 +247,9 @@ export async function generateWithPool({ model, input }) {
         );
         if (type === "daily" || type === "minute") {
           lastQuotaError = type;
-          setGlobalCooldownUntil(Date.now() + cooldownMs);
+          // NOTE: do not set the global cooldown here. One resting key must
+          // not block the others; the global cooldown is set below, only
+          // when every key has failed.
         }
         // loop continues with the next healthy key
       }
@@ -258,7 +260,7 @@ export async function generateWithPool({ model, input }) {
     const globalCooldownMs = Math.max(1000, retryAfter * 1000);
     setGlobalCooldownUntil(Date.now() + globalCooldownMs);
 
-    if (lastQuotaError === "daily" || getPool().every((k) => k.reason === "daily")) {
+    if (getPool().every((k) => k.reason === "daily")) {
       throw new GeminiPoolError(
         "QUOTA_EXHAUSTED",
         "Saari API keys ki daily limit khatam ho gayi hai.",
