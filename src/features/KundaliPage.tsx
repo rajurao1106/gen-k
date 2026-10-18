@@ -107,7 +107,7 @@ export default function KundaliPage() {
     try {
       setChartLoading(true);
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `Based on this person's exact birth details, compute their Vedic (sidereal) birth chart.
 
 Name: ${input.name}
@@ -176,7 +176,7 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
 
     try {
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `You are an expert Vedic astrology (Jyotish) assistant. Give personalized, balanced guidance based on the user's birth details and the current conversation.
 
 Birth details:

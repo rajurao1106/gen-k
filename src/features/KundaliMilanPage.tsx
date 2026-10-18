@@ -290,7 +290,7 @@ export default function KundaliMilanPage() {
       setResult(null);
 
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `You are a Vedic astrology expert performing an Ashtakoot Guna Milan (traditional 8-factor marriage compatibility match) between two people, using their birth details.
 
 वर (Groom): Name: ${varRecord.name}, DOB: ${varRecord.dob}, Time: ${varRecord.bot}, Place: ${varRecord.bop}

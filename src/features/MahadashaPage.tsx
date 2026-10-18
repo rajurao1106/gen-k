@@ -258,7 +258,7 @@ export default function MahadashaPage() {
       const currentYear = new Date().getFullYear();
 
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `You are a Vedic astrology expert computing a Vimshottari Mahadasha timeline.
 
 Name: ${input.name}

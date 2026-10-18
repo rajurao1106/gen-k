@@ -11,7 +11,7 @@ const router = express.Router();
 // Read lazily: dotenv.config() runs after ES imports are evaluated.
 const allowedModels = () =>
   new Set(
-    (process.env.GEMINI_ALLOWED_MODELS || "gemini-3.6-flash")
+    (process.env.GEMINI_ALLOWED_MODELS || "gemini-3.5-flash-lite")
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean),

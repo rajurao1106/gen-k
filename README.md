@@ -66,7 +66,9 @@ The admin pages `/login` and `/user-data` are marked `noindex`.
 
 Configure server-only API keys and database credentials in the Vercel project
 environment; do not add them to source control. Gemini accepts
-`GEMINI_API_KEYS` or the numbered `GEMINI_API_KEY` variables.
+`GEMINI_API_KEYS` or the numbered `GEMINI_API_KEY` variables. AI features use
+`gemini-3.5-flash-lite` by default. If `GEMINI_ALLOWED_MODELS` is set, include
+`gemini-3.5-flash-lite` in its comma-separated values.
 
 Frontend settings use the `NEXT_PUBLIC_` prefix:
 

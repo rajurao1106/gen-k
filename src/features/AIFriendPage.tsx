@@ -335,7 +335,7 @@ export default function AIFriendPage() {
         )
         .join("\n");
       const response = await callGemini({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.5-flash-lite",
         input: `You are ${profile.name}'s warm, thoughtful AI Friend. Use the user's saved birth details as personal context, but do not claim astrology is scientifically certain. Be kind, conversational, and answer the actual question. Do not invent horoscope/chart placements. Keep safety-sensitive advice cautious and encourage professional help where appropriate.
 
 User details:

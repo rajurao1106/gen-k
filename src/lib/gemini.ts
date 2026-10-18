@@ -1,13 +1,8 @@
 // ---------------------------------------------------------------------------
 // Gemini client (browser side)
 //
-// All Gemini calls now go through the backend (POST /api/gemini). The API keys
-// live only in the server's .env (GEMINI_API_KEYS=key1,key2,...), where key
-// rotation, cooldowns and rate limiting are handled. Nothing secret is bundled
-// into the frontend any more.
-//
-// The exports below keep the same names/signatures the pages already use:
-// callGemini, extractJson, isQuotaOrRateLimitError, QUOTA_ERROR_MESSAGE_HI.
+// All Gemini calls go through the backend (POST /api/gemini). API keys stay
+// server-side, where key rotation, cooldowns and rate limiting are handled.
 // ---------------------------------------------------------------------------
 
 const API_BASE_URL =
@@ -48,10 +43,8 @@ export function isQuotaOrRateLimitError(err: unknown) {
 }
 
 export const QUOTA_ERROR_MESSAGE_HI =
-  "AI service ki limit abhi poori ho gayi hai. Kripya thodi der baad dobara koshish karein.";
+  "AI service ki limit abhi poori hai. Kripya thodi der baad dobara koshish karein.";
 
-// Drop-in replacement for the old callGemini(): returns an object with
-// `output_text`, which is all the pages read from the response.
 export async function callGemini(params: { model: string; input: string }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -95,19 +88,21 @@ export async function callGemini(params: { model: string; input: string }) {
   }
 
   if (!response.ok || !data?.success) {
+    const retryAfterHeader = Number(response.headers.get("Retry-After"));
     throw new GeminiRequestError(
       data?.message || "AI se jawab nahi mila. Dobara koshish karein.",
       response.status,
       data?.code || "UNKNOWN",
-      data?.retryAfterSeconds,
+      data?.retryAfterSeconds ??
+        (Number.isFinite(retryAfterHeader) && retryAfterHeader > 0
+          ? retryAfterHeader
+          : undefined),
     );
   }
 
   return { output_text: data.output_text ?? "" };
 }
 
-// Extracts the first well-formed JSON object found in a model response,
-// tolerating markdown code fences and stray commentary around it.
 export function extractJson(text: string) {
   const cleaned = text.replace(/```json|```/g, "").trim();
   const start = cleaned.indexOf("{");
