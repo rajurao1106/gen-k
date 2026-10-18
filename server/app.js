@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import geminiRoutes from "./routes/geminiRoutes.js";
+import voiceRoutes from "./routes/voiceRoutes.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/gemini", geminiRoutes);
+app.use("/api/voice", voiceRoutes);
 
 export const initializeServer = async () => {
   await connectDB();

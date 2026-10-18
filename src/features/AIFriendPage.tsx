@@ -45,7 +45,7 @@ import {
 // gold used in the rest of the app).
 // ---------------------------------------------------------------------------
 
-const MAX_SAMPLE_SIZE = 16 * 1024 * 1024;
+const MAX_SAMPLE_SIZE = 10 * 1024 * 1024;
 
 type SRAlt = { readonly transcript: string };
 type SRResult = ArrayLike<SRAlt> & { readonly isFinal: boolean };
@@ -94,7 +94,7 @@ const T = {
     clear: "Clear chat",
     myVoice: "My voice",
     voiceOn: "Replies use this voice.",
-    voiceOff: "No voice sample saved. A browser voice is used.",
+    voiceOff: "No voice added. Upload a clear 30–60 sec recording of your friend (no music/noise). Until then a browser voice is used.",
     remove: "Remove",
     save: "Save voice",
     consent: "This is my own voice, or I have permission to use it.",
@@ -110,7 +110,7 @@ const T = {
     noMic: "Speech recognition is not supported here. Try Chrome or Edge.",
     micFail: "Could not use the microphone. Check permission and try again.",
     saveFail: "This chat could not be saved in this browser.",
-    sampleBig: "The audio sample must be 16 MB or smaller.",
+    sampleBig: "The audio sample must be 10 MB or smaller.",
     sampleType: "Choose a WAV, MP3, FLAC, or OGG file.",
     emptyReply: "AI Friend returned an empty reply.",
     failed: "AI Friend could not reply. Please try again.",
@@ -133,7 +133,7 @@ const T = {
     clear: "चैट साफ़ करें",
     myVoice: "मेरी आवाज़",
     voiceOn: "जवाब इसी आवाज़ में आएँगे।",
-    voiceOff: "कोई voice sample नहीं है। Browser की आवाज़ इस्तेमाल होगी।",
+    voiceOff: "कोई आवाज़ नहीं जोड़ी गई। दोस्त की साफ़ 30–60 सेकंड की रिकॉर्डिंग (बिना music/शोर) अपलोड करें। तब तक Browser की आवाज़ इस्तेमाल होगी।",
     remove: "हटाएँ",
     save: "Voice सेव करें",
     consent: "यह मेरी अपनी आवाज़ है, या मेरे पास इसकी अनुमति है।",
@@ -149,7 +149,7 @@ const T = {
     noMic: "इस browser में speech recognition नहीं है। Chrome या Edge आज़माएँ।",
     micFail: "Microphone नहीं चला। Permission देखकर दोबारा कोशिश करें।",
     saveFail: "यह चैट इस browser में सेव नहीं हो सकी।",
-    sampleBig: "Audio sample 16 MB या उससे छोटा होना चाहिए।",
+    sampleBig: "Audio sample 10 MB या उससे छोटा होना चाहिए।",
     sampleType: "WAV, MP3, FLAC या OGG file चुनें।",
     emptyReply: "AI Friend ने खाली जवाब दिया।",
     failed: "AI Friend जवाब नहीं दे सका। दोबारा कोशिश करें।",

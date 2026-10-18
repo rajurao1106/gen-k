@@ -1,49 +1,37 @@
+// Voice cloning via the app's own backend (/api/voice/*), which talks to a
+// hosted voice-cloning service. Works on a live site for every visitor — no
+// local Python/Chatterbox service needed. Only the returned voice id is stored
+// in this browser (per profile); the audio sample itself is not kept.
+
 export type VoiceSampleLanguage = "en" | "hi";
 
 export type SavedVoiceSample = {
   profileId: string;
-  file: Blob;
+  voiceId: string;
   fileName: string;
   language: VoiceSampleLanguage;
   savedAt: string;
 };
 
-const CHATTERBOX_URL =
-  process.env.NEXT_PUBLIC_CHATTERBOX_URL || "http://127.0.0.1:8001";
-const DATABASE_NAME = "gen-k-ai-friend";
-const DATABASE_VERSION = 1;
-const STORE_NAME = "voice-samples";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "");
+const STORAGE_PREFIX = "gen-k-ai-friend-voice:";
 
-function openVoiceDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME, { keyPath: "profileId" });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () =>
-      reject(request.error ?? new Error("Could not open local voice storage."));
-  });
+async function errorMessage(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as { message?: string } | null;
+  return body?.message ?? fallback;
 }
 
-export async function getVoiceSample(
-  profileId: string,
-): Promise<SavedVoiceSample | null> {
-  const database = await openVoiceDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, "readonly");
-    const request = transaction.objectStore(STORE_NAME).get(profileId);
-    request.onsuccess = () =>
-      resolve((request.result as SavedVoiceSample | undefined) ?? null);
-    request.onerror = () =>
-      reject(request.error ?? new Error("Could not read the saved voice sample."));
-    transaction.oncomplete = () => database.close();
-    transaction.onerror = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Could not read the saved voice sample."));
-    };
-  });
+export async function getVoiceSample(profileId: string): Promise<SavedVoiceSample | null> {
+  try {
+    const raw = localStorage.getItem(STORAGE_PREFIX + profileId);
+    if (!raw) return null;
+    const sample = JSON.parse(raw) as SavedVoiceSample;
+    return sample?.voiceId ? sample : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveVoiceSample(
@@ -51,84 +39,69 @@ export async function saveVoiceSample(
   file: File,
   language: VoiceSampleLanguage,
 ): Promise<SavedVoiceSample> {
-  const database = await openVoiceDatabase();
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/voice/clone?label=${encodeURIComponent(profileId.slice(0, 20))}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": file.type || "audio/mpeg" },
+        body: file,
+      },
+    );
+  } catch (error) {
+    console.error("Could not reach the voice service:", error);
+    throw new Error("Cannot reach the server. Check your connection and try again.");
+  }
+  if (!response.ok) {
+    throw new Error(await errorMessage(response, "Could not create a voice from this sample."));
+  }
+
+  const { voiceId } = (await response.json()) as { voiceId: string };
   const sample: SavedVoiceSample = {
     profileId,
-    file,
+    voiceId,
     fileName: file.name,
     language,
     savedAt: new Date().toISOString(),
   };
-
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put(sample);
-    transaction.oncomplete = () => {
-      database.close();
-      resolve(sample);
-    };
-    transaction.onerror = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Could not save the voice sample."));
-    };
-    transaction.onabort = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Could not save the voice sample."));
-    };
-  });
+  localStorage.setItem(STORAGE_PREFIX + profileId, JSON.stringify(sample));
+  return sample;
 }
 
 export async function deleteVoiceSample(profileId: string): Promise<void> {
-  const database = await openVoiceDatabase();
-
-  return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).delete(profileId);
-    transaction.oncomplete = () => {
-      database.close();
-      resolve();
-    };
-    transaction.onerror = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Could not remove the voice sample."));
-    };
-    transaction.onabort = () => {
-      database.close();
-      reject(transaction.error ?? new Error("Could not remove the voice sample."));
-    };
-  });
+  const sample = await getVoiceSample(profileId);
+  localStorage.removeItem(STORAGE_PREFIX + profileId);
+  if (!sample) return;
+  // Best effort: free the cloned voice on the server too.
+  try {
+    await fetch(`${API_BASE_URL}/api/voice/${encodeURIComponent(sample.voiceId)}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    console.error("Could not remove the voice on the server:", error);
+  }
 }
 
 export async function synthesizeWithSavedVoice(
   sample: SavedVoiceSample,
   text: string,
-  language: VoiceSampleLanguage,
+  // Language is auto-detected by the multilingual model; kept for call-site compatibility.
+  _language: VoiceSampleLanguage,
 ): Promise<Blob> {
-  const form = new FormData();
-  form.append("text", text);
-  form.append("language", language);
-  form.append("reference_audio", sample.file, sample.fileName);
-
   let response: Response;
   try {
-    response = await fetch(`${CHATTERBOX_URL}/api/tts`, {
+    response = await fetch(`${API_BASE_URL}/api/voice/speak`, {
       method: "POST",
-      body: form,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voiceId: sample.voiceId, text }),
     });
   } catch (error) {
-    console.error("Could not reach the local Chatterbox service:", error);
-    throw new Error(
-      "Cannot reach local Chatterbox. Start the voice service on this computer, then try again.",
-    );
+    console.error("Could not reach the voice service:", error);
+    throw new Error("Cannot reach the server. Check your connection and try again.");
   }
   if (!response.ok) {
-    const result = (await response.json().catch(() => null)) as {
-      detail?: string;
-    } | null;
-    throw new Error(
-      result?.detail ??
-        "Local Chatterbox voice service is unavailable. Start the voice service and try again.",
-    );
+    throw new Error(await errorMessage(response, "Voice is unavailable right now."));
   }
   return response.blob();
 }
