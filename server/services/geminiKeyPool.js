@@ -271,7 +271,7 @@ export async function generateWithPool({ model, input }) {
     throw new GeminiPoolError(
       "RATE_LIMITED",
       "Abhi bahut zyada requests hain. Thodi der baad try karein.",
-      429,
+      429, 
       retryAfter,
     );
   } finally {
