@@ -20,6 +20,68 @@ const MENU_ITEMS: MenuItem[] = [
   { key: "mahadasha", label: "Mahadasha", icon: "orbit" },
 ];
 
+// Mobile-only bottom bar: Home, Kundli Milan, Kundli, AI Friend, Menu (opens the drawer).
+const BOTTOM_ITEMS: { key: PageKey; label: string; icon: NavIconName }[] = [
+  { key: "home", label: "Home", icon: "home" },
+  { key: "milan", label: "Milan", icon: "rings" },
+  { key: "kundali", label: "Kundli", icon: "kundli" },
+  { key: "ai-friend", label: "AI Friend", icon: "friend" },
+];
+
+export function BottomNav({
+  activePage,
+  onNavigate,
+  onOpenMenu,
+}: {
+  activePage: PageKey;
+  onNavigate: (page: PageKey) => void;
+  onOpenMenu: () => void;
+}) {
+  const base =
+    "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-[11px] font-medium transition-colors";
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-[#f2c36b]/25 brass-header px-2 pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.4)] no-print lg:hidden"
+      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+    >
+      <ul className="mx-auto flex max-w-md items-stretch gap-1">
+        {BOTTOM_ITEMS.map((item) => {
+          const active = item.key === activePage;
+          return (
+            <li key={item.key} className="flex flex-1">
+              <button
+                type="button"
+                onClick={() => onNavigate(item.key)}
+                aria-current={active ? "page" : undefined}
+                className={`${base} ${
+                  active
+                    ? "bg-[#f2c36b]/12 text-[#f9e6b2] shadow-[inset_0_0_0_1px_rgba(242,195,107,0.3)]"
+                    : "text-[#cbd9ee] active:bg-[#f2c36b]/10"
+                }`}
+              >
+                <NavIcon name={item.icon} />
+                <span className="leading-none">{item.label}</span>
+              </button>
+            </li>
+          );
+        })}
+        <li className="flex flex-1">
+          <button
+            type="button"
+            onClick={onOpenMenu}
+            aria-haspopup="dialog"
+            className={`${base} text-[#cbd9ee] active:bg-[#f2c36b]/10`}
+          >
+            <NavIcon name="menu" />
+            <span className="leading-none">Menu</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 const COLLAPSE_KEY = "gen_k_sidebar_collapsed";
 
 export function HamburgerButton({
@@ -123,7 +185,7 @@ export function Sidebar({
       <aside
         className={`fixed lg:sticky top-0 left-0 z-50 h-full lg:h-screen lg:self-start w-80 max-w-[88vw] ${
           collapsed ? "lg:w-[92px]" : "lg:w-[290px]"
-        } lg:shrink-0 p-0 transition-[transform,width] duration-300 ease-out no-print lg:translate-x-0 ${
+        } lg:shrink-0 transition-[transform,width] duration-300 ease-out no-print lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -131,7 +193,7 @@ export function Sidebar({
         aria-label="Main menu"
       >
         <div
-          className={`flex h-full flex-col overflow-hidden  border border-[#f2c36b]/25 brass-header shadow-[0_18px_40px_rgba(0,0,0,0.45)] ${INK}`}
+          className={`flex h-full flex-col overflow-hidden border border-[#f2c36b]/25 brass-header shadow-[0_18px_40px_rgba(0,0,0,0.45)] ${INK}`}
         >
           {/* ---- header ---- */}
           <div className={`flex items-center gap-3 border-b ${LINE} px-4 py-4 ${centerWhenCollapsed}`}>
@@ -164,35 +226,7 @@ export function Sidebar({
             </button>
           </div>
 
-          {/* ---- search ---- */}
-          {/* <div className={`border-b ${LINE} px-3 py-3`}>
-            {collapsed && (
-              <button
-                type="button"
-                aria-label="Search menu"
-                onClick={() => {
-                  toggle(false);
-                  setTimeout(() => searchRef.current?.focus(), 320);
-                }}
-                className={`hidden h-10 w-full items-center justify-center rounded-xl ${DIM} hover:bg-[#f2c36b]/10 lg:flex`}
-              >
-                <NavIcon name="search" />
-              </button>
-            )}
-            <label
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${DIM} focus-within:bg-[#f2c36b]/10 focus-within:shadow-[0_0_0_1px_rgba(242,195,107,0.3)] ${hideWhenCollapsed}`}
-            >
-              <NavIcon name="search" />
-              <input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Quick search"
-                aria-label="Search menu"
-                className="w-full bg-transparent text-[15px] text-[#edf2fb] outline-none placeholder:text-[#cbd9ee]/80"
-              />
-            </label>
-          </div> */}
+      
 
           {/* ---- menu ---- */}
           <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Pages">
@@ -225,52 +259,7 @@ export function Sidebar({
             </ul>
           </nav>
 
-          {/* ---- AI Friend call-to-action ---- */}
-          {/* {activePage !== "ai-friend" && (
-            <div className="px-3 pb-3">
-              {collapsed && (
-                <button
-                  type="button"
-                  onClick={() => go("ai-friend")}
-                  aria-label="Open AI Friend"
-                  title="AI Friend"
-                  className="mx-auto hidden h-12 w-12 items-center justify-center rounded-full border bg-[#f2c36b]/10 lg:flex"
-                  style={{ color: ACCENT, borderColor: "rgba(242,195,107,0.4)" }}
-                >
-                  <NavIcon name="friend" />
-                </button>
-              )}
-              <div
-                className={`rounded-xl border border-[#f2c36b]/25 bg-gradient-to-b from-[#f2c36b]/15 to-transparent p-3 ${hideWhenCollapsed}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#f2c36b]/30 bg-[#f2c36b]/10"
-                    style={{ color: ACCENT }}
-                  >
-                    <NavIcon name="friend" />
-                  </span>
-                  <div className="leading-tight">
-                    <p className={`text-[13px] ${DIM}`}>Voice companion</p>
-                    <p className="text-[15px] font-semibold">AI Friend</p>
-                  </div>
-                </div>
-                <p className={`mt-2 text-[13px] leading-snug ${DIM}`}>
-                  Add your friend&apos;s voice and talk with AI in it.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => go("ai-friend")}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[#f2c36b]/40 bg-[#f2c36b]/10 py-2 text-[15px] font-medium text-[#f9e6b2] hover:bg-[#f2c36b]/20"
-                >
-                  <span style={{ color: ACCENT }}>
-                    <NavIcon name="bolt" />
-                  </span>
-                  Try AI Friend
-                </button>
-              </div>
-            </div>
-          )} */}
+       
 
           {/* ---- profile ---- */}
           <button

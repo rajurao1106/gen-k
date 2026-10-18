@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { HamburgerButton, Sidebar } from "./components/Sidebar";
+import {  Sidebar } from "./components/Sidebar";
+import { CurvedBottomNav as BottomNav } from "./components/CurvedBottomNav";
 import type { PageKey } from "./types";
 import KundaliPage from "./features/KundaliPage";
 import KundaliMilanPage from "./features/KundaliMilanPage";
@@ -271,13 +272,15 @@ html, body { max-width: 100%; overflow-x: clip; }
           onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
         />
 
+        <BottomNav
+          activePage={page}
+          onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
+          onOpenMenu={() => setMenuOpen(true)}
+        />
+
         <div className="min-w-0 flex-1 ">
           <header className="relative lg:hidden brass-header border-b border-[#f2c36b]/25 no-print">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
-              <HamburgerButton
-                onClick={() => setMenuOpen(true)}
-                className="lg:hidden"
-              />
               {/* <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0">
                 <img src="/logo.png" alt="" />
               </div> */}
@@ -298,7 +301,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             </div>
           </header>
 
-          <div className="relative mx-auto max-w-6xl px-4 py-8 font-body sm:px-6 lg:px-8">
+          <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-8 font-body sm:px-6 lg:px-8 lg:pb-8">
             {page === "home" && <HomeIntroPage />}
             {page === "kundali" && <KundaliPage />}
             {page === "ai-friend" && <AIFriendPage />}

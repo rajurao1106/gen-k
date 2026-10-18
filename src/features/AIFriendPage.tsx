@@ -655,7 +655,7 @@ AI Friend:`,
 
   // ---- render ---------------------------------------------------------------
   return (
-    <main className="af relative mx-auto flex h-[min(44rem,calc(100dvh-4rem))] w-full max-w-[26rem] flex-col overflow-hidden rounded-[2rem] bg-black ring-1 ring-white/10">
+    <main className="af relative mx-auto flex h-[min(44rem,calc(100dvh-13rem))] lg:h-[min(44rem,calc(100dvh-4rem))] w-full max-w-[26rem] flex-col overflow-hidden rounded-[2rem] bg-black ring-1 ring-white/10">
       <style>{STYLES}</style>
 
       <header className="grid shrink-0 grid-cols-[2.5rem_1fr_auto] items-start gap-2 px-4 pt-4">
