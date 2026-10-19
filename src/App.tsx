@@ -280,7 +280,7 @@ html, body { max-width: 100%; overflow-x: clip; }
         />
 
         <div className="min-w-0 flex-1 ">
-          <header className="relative lg:hidden brass-header border-b border-[#f2c36b]/25 no-print">
+          <header className="hidden">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3">
               {/* <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#f2c36b] flex items-center justify-center text-[#0b1324] font-display font-bold text-lg shrink-0">
                 <img src="/logo.png" alt="" />
@@ -302,7 +302,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             </div>
           </header>
 
-          <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-8 font-body sm:px-6 lg:px-8 lg:pb-8">
+          <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-4 font-body sm:px-6 lg:px-8 lg:pb-8 lg:pt-8">
             {page === "home" && <DashboardHome />}{" "}
             {page === "kundali" && <KundaliPage />}
             {page === "ai-friend" && <AIFriendPage />}
