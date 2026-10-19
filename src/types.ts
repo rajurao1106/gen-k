@@ -25,7 +25,8 @@ export type PageKey =
   | "ai-friend"
   | "milan"
   | "numerology"
-  | "mahadasha";
+  | "mahadasha"
+  | "profile";
 
 export type FieldKey = "name" | "dob" | "bot" | "bop" | "gender";
 

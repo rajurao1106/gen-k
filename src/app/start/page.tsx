@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Onboarding from "../../components/Onboarding";
+import InteractiveApp from "../../components/InteractiveApp";
 
 export const metadata: Metadata = {
   title: "Get started",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function StartPage() {
-  return <Onboarding />;
+  return <InteractiveApp />;
 }

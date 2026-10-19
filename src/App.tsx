@@ -13,6 +13,11 @@ import MahadashaPage from "./features/MahadashaPage";
 import LoginPage from "./features/LoginPage";
 import UserDataPage from "./features/UserDataPage";
 import AIFriendPage from "./features/AIFriendPage";
+import AccountLoginPage from "./features/AccountLoginPage";
+import ProfilePage from "./features/ProfilePage";
+import Onboarding from "./components/Onboarding";
+import { getActivePhoneNumber } from "./lib/localAccount";
+import { getUserKundaliProfile } from "./lib/storage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   home: { hi: "Home", sub: "Introduction & quick access" },
@@ -21,6 +26,7 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   milan: { hi: "कुंडली मिलान", sub: "Ashtakoot compatibility match" },
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
+  profile: { hi: "Profile", sub: "Your details and settings" },
 };
 
 const PAGE_ROUTES: Record<PageKey, string> = {
@@ -30,6 +36,7 @@ const PAGE_ROUTES: Record<PageKey, string> = {
   milan: "/milan",
   numerology: "/numerology",
   mahadasha: "/mahadasha",
+  profile: "/profile",
 };
 
 function HomeIntroPage() {
@@ -109,6 +116,23 @@ const isAdminAuthenticated = () => {
 function KundaliExperience() {
   const router = useRouter();
   const pathname = usePathname();
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!getActivePhoneNumber()) {
+        router.replace("/account?next=" + encodeURIComponent(pathname));
+        return;
+      }
+      if (pathname !== "/start" && !getUserKundaliProfile()) {
+        router.replace("/start");
+        return;
+      }
+      setAuthReady(true);
+    } catch {
+      router.replace("/account");
+    }
+  }, [pathname, router]);
   const page = useMemo<PageKey>(() => {
     switch (pathname) {
       case "/milan":
@@ -121,11 +145,15 @@ function KundaliExperience() {
         return "kundali";
       case "/ai-friend":
         return "ai-friend";
+      case "/profile":
+        return "profile";
       default:
         return "home";
     }
   }, [pathname]);
-  const [menuOpen, setMenuOpen] = useState(false);
+
+  if (!authReady) return null;
+  if (pathname === "/start") return <Onboarding />;
 
   return (
     <div
@@ -267,8 +295,8 @@ html, body { max-width: 100%; overflow-x: clip; }
 
       <div className="relative lg:flex lg:items-start lg:min-h-screen">
         <Sidebar
-          open={menuOpen}
-          onClose={() => setMenuOpen(false)}
+          open={false}
+          onClose={() => {}}
           activePage={page}
           onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
         />
@@ -276,7 +304,7 @@ html, body { max-width: 100%; overflow-x: clip; }
         <BottomNav
           activePage={page}
           onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
-          onOpenMenu={() => setMenuOpen(true)}
+          onOpenProfile={() => router.push(PAGE_ROUTES.profile)}
         />
 
         <div className="min-w-0 flex-1 ">
@@ -309,6 +337,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}
             {page === "mahadasha" && <MahadashaPage />}
+            {page === "profile" && <ProfilePage />}
           </div>
         </div>
       </div>
@@ -326,6 +355,7 @@ export default function App() {
     }
   }, [pathname, router]);
 
+  if (pathname === "/account") return <AccountLoginPage />;
   if (pathname === "/login") return <LoginPage />;
   if (pathname === "/user-data") {
     return isAdminAuthenticated() ? <UserDataPage /> : null;

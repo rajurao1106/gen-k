@@ -18,6 +18,7 @@ const MENU_ITEMS: MenuItem[] = [
   { key: "milan", label: "Kundli Milan", icon: "rings" },
   { key: "numerology", label: "Numerology", icon: "numbers" },
   { key: "mahadasha", label: "Mahadasha", icon: "orbit" },
+  { key: "profile", label: "Profile", icon: "user" },
 ];
 
 // Mobile-only bottom bar: Home, Kundli Milan, Kundli, AI Friend, Menu (opens the drawer).
@@ -264,7 +265,7 @@ export function Sidebar({
           {/* ---- profile ---- */}
           <button
             type="button"
-            onClick={() => go("kundali")}
+            onClick={() => go("profile")}
             title={userName || "Create profile"}
             className={`flex items-center gap-3 border-t ${LINE} px-4 py-3.5 text-left hover:bg-[#f2c36b]/8 ${centerWhenCollapsed}`}
           >

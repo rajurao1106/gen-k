@@ -16,7 +16,7 @@
 import type { PageKey } from "../types";
 import { NavIcon, type NavIconName } from "./NavIcon";
 
-type Slot = { key: PageKey | "menu"; label: string; icon: NavIconName };
+type Slot = { key: PageKey; label: string; icon: NavIconName };
 
 const SLOTS: Slot[] = [
 
@@ -24,7 +24,7 @@ const SLOTS: Slot[] = [
   { key: "kundali", label: "Kundli", icon: "kundli" },
     { key: "home", label: "Home", icon: "home" },
   { key: "ai-friend", label: "AI Friend", icon: "friend" },
-  { key: "menu", label: "Menu", icon: "menu" },
+  { key: "profile", label: "Profile", icon: "user" },
 ];
 
 // ---- design tokens (App.tsx ke navy + gold palette se match) ----
@@ -73,14 +73,14 @@ const CSS = `
 export function CurvedBottomNav({
   activePage,
   onNavigate,
-  onOpenMenu,
+  onOpenProfile,
 }: {
   activePage: PageKey;
   onNavigate: (page: PageKey) => void;
-  onOpenMenu: () => void;
+  onOpenProfile: () => void;
 }) {
   const found = SLOTS.findIndex((s) => s.key === activePage);
-  const activeIndex = found === -1 ? COUNT - 1 : found; // bottom bar mein nahi => Menu
+  const activeIndex = found === -1 ? COUNT - 1 : found; // bottom bar mein nahi => Profile
   const centerPct = activeIndex * SLOT_PCT + SLOT_PCT / 2;
   const half = NOTCH_W / 2;
 
@@ -146,14 +146,13 @@ export function CurvedBottomNav({
         <ul className="relative z-20 flex h-full">
           {SLOTS.map((slot, i) => {
             const active = i === activeIndex;
-            const isMenu = slot.key === "menu";
+            const isProfile = slot.key === "profile";
             return (
               <li key={slot.key} className="flex-1">
                 <button
                   type="button"
-                  onClick={() => (isMenu ? onOpenMenu() : onNavigate(slot.key as PageKey))}
-                  aria-current={!isMenu && active ? "page" : undefined}
-                  aria-haspopup={isMenu ? "dialog" : undefined}
+                  onClick={() => (isProfile ? onOpenProfile() : onNavigate(slot.key as PageKey))}
+                  aria-current={!isProfile && active ? "page" : undefined}
                   className="flex h-full w-full flex-col items-center justify-end gap-1 pb-2 outline-none transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
