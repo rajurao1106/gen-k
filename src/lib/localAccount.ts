@@ -66,7 +66,12 @@ function readAccountData(phone: string): LocalData | null {
   const raw = localStorage.getItem(dataKey(phone));
   if (!raw) return null;
   const parsed: unknown = JSON.parse(raw);
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed) ||
+    !Object.entries(parsed).every(([key, value]) => typeof key === "string" && typeof value === "string" && !isAccountKey(key))
+  ) {
     throw new Error("Saved account data has an invalid format.");
   }
   return parsed as LocalData;

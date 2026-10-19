@@ -44,9 +44,9 @@ export default function AccountLoginPage() {
           <label htmlFor="account-phone" className="block text-sm font-medium text-[#f9e6b2]">Mobile number</label>
           <input id="account-phone" type="tel" inputMode="tel" autoComplete="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="10-digit mobile number" className="w-full rounded-xl border border-[#f2c36b]/30 bg-[#0a1a2e] px-4 py-3 text-base text-white outline-none focus:border-[#f2c36b]" />
           {error && <p role="alert" className="rounded-lg border border-[#ef9f90]/40 bg-[#ef9f90]/10 px-3 py-2 text-sm text-[#ffd1c9]">{error}</p>}
-          <button type="submit" disabled={saving} className="w-full rounded-xl bg-[#f2c36b] px-4 py-3 font-semibold text-[#0b1324] disabled:opacity-60">{saving ? "Opening your account?" : "Continue"}</button>
+          <button type="submit" disabled={saving} className="w-full rounded-xl bg-[#f2c36b] px-4 py-3 font-semibold text-[#0b1324] disabled:opacity-60">{saving ? "Opening account..." : "Continue"}</button>
         </form>
-        <p className="mt-5 rounded-xl border border-white/10 bg-black/10 p-3 text-xs leading-5 text-[#a6bddb]">Yeh phone-only local login hai?OTP se number verify nahi hota. Data isi browser ke localStorage mein rahega; browser data clear karne ya device badalne par wapas nahi milega.</p>
+        <p className="mt-5 rounded-xl border border-white/10 bg-black/10 p-3 text-xs leading-5 text-[#a6bddb]">Yeh phone-only local login hai. OTP se number verify nahi hota. Data isi browser ke localStorage mein rahega; browser data clear karne ya device badalne par wapas nahi milega.</p>
       </section>
     </main>
   );
