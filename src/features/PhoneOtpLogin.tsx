@@ -22,13 +22,9 @@ export default function PhoneOtpLogin({ adminOnly = false }: { adminOnly?: boole
     setNotice("");
     setSaving(true);
     try {
-      await requestOtp(phone);
+      const response = await requestOtp(phone);
       setStep("otp");
-      setNotice(
-        process.env.NODE_ENV === "development"
-          ? "Demo verification code: 000000."
-          : "Verification code sent. Check your phone.",
-      );
+      setNotice(response.message || "Verification code sent. Check your phone.");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not send the code.");
     } finally {

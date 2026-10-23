@@ -96,8 +96,16 @@ alias when `OTP_SECRET` is unset.
 receive the admin role after OTP verification. For local/demo development, set
 `SMS_PROVIDER=dev`; the OTP is fixed at `000000` outside production.
 `DEV_SHOW_OTP=true` additionally prints that code in the Express server
-terminal; set it to `false` to suppress the log. The fixed code is never used
-in production, where the `dev` SMS provider is rejected.
+terminal; set it to `false` to suppress the log.
+
+**Temporary production demo only:** If SMS delivery is not configured yet, set
+`SMS_PROVIDER=demo` in the deployment environment and set `DEMO_OTP_PHONES` to a
+comma-separated allowlist of test phone numbers in E.164 format. Only those
+numbers can request or verify the fixed code `000000`; demo numbers listed in
+`ADMIN_PHONES` are rejected. The API explicitly tells the user that no SMS was
+sent. This mode is not real phone verification—remove it and configure a live
+SMS provider before inviting real users. Never use `SMS_PROVIDER=demo` without
+an explicit, minimal allowlist.
 `msg91` and `twilio` are reserved provider names but are not wired to a live
 SMS service yet, so production OTP delivery requires implementing the chosen
 provider before deployment.

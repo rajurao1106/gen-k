@@ -6,7 +6,11 @@ import User from "../models/User.js";
 import OtpCode from "../models/OtpCode.js";
 import { getOtpSecret } from "../config/authSecrets.js";
 import { AUTH_COOKIE_NAME, requireAuth, signAuthToken } from "../middleware/auth.js";
-import { generateOtpCode, getSmsProvider } from "../services/smsProvider.js";
+import {
+  generateOtpCode,
+  getSmsProvider,
+  isDemoPhoneAllowed,
+} from "../services/smsProvider.js";
 import { ensureReferralCode } from "../services/referrals.js";
 
 const router = express.Router();
@@ -96,7 +100,15 @@ router.post("/request-otp", requestIpLimiter, requestPhoneLimiter, async (req, r
   if (!phone) return res.status(400).json({ success: false, message: "Enter a valid phone number." });
 
   try {
-    const code = generateOtpCode();
+    const smsProvider = getSmsProvider();
+    if (smsProvider.demoMode && !isDemoPhoneAllowed(phone)) {
+      return res.status(403).json({
+        success: false,
+        code: "DEMO_PHONE_NOT_ALLOWED",
+        message: "This number is not enabled for the temporary demo.",
+      });
+    }
+    const code = generateOtpCode(phone);
     const codeHash = hashOtp(phone, code);
     await OtpCode.findOneAndUpdate(
       { phone },
@@ -104,7 +116,7 @@ router.post("/request-otp", requestIpLimiter, requestPhoneLimiter, async (req, r
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
     try {
-      await getSmsProvider().sendOtp(phone, code);
+      await smsProvider.sendOtp(phone, code);
     } catch {
       await OtpCode.deleteOne({ phone, codeHash });
       return res.status(503).json({
@@ -113,7 +125,12 @@ router.post("/request-otp", requestIpLimiter, requestPhoneLimiter, async (req, r
         message: "Could not send the verification code. Please try again later.",
       });
     }
-    return res.json({ success: true, message: "Verification code sent." });
+    return res.json({
+      success: true,
+      message: smsProvider.demoMode
+        ? "Temporary demo mode: use verification code 000000. No SMS was sent."
+        : "Verification code sent.",
+    });
   } catch (error) {
     next(error);
   }
@@ -125,6 +142,14 @@ router.post("/verify-otp", async (req, res, next) => {
 
   const phone = normalizePhone(parsed.data.phone);
   if (!phone) return res.status(400).json({ success: false, message: "Enter a valid phone number." });
+  const smsProvider = getSmsProvider();
+  if (smsProvider.demoMode && !isDemoPhoneAllowed(phone)) {
+    return res.status(403).json({
+      success: false,
+      code: "DEMO_PHONE_NOT_ALLOWED",
+      message: "This number is not enabled for the temporary demo.",
+    });
+  }
 
   try {
     const otp = await OtpCode.findOne({
