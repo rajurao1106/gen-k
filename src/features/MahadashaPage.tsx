@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   callGemini,
   extractJson,
@@ -6,6 +7,7 @@ import {
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
 import { getSavedKundalis, saveKundaliRecord } from "../lib/storage";
+import { saveUserDetail } from "../lib/api";
 import { BIRTH_FIELDS } from "../types";
 import type { KundaliRecord } from "../types";
 
@@ -74,6 +76,7 @@ export default function MahadashaPage() {
   const [input, setInput] = useState({ name: "", dob: "", bot: "", bop: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
   const [result, setResult] = useState<MahadashaResult | null>(null);
   const [reportHtml, setReportHtml] = useState("");
   const [speechState, setSpeechState] = useState<
@@ -84,15 +87,20 @@ export default function MahadashaPage() {
     typeof window !== "undefined" && "speechSynthesis" in window;
 
   useEffect(() => {
+    // Saved profiles live in sessionStorage, which is unavailable during SSR.
+    // oxlint-disable-next-line react/set-state-in-effect
     setSaved(getSavedKundalis());
   }, []);
 
+  // Report markup and speech state follow the newly generated result.
   useEffect(() => {
     if (!result) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setReportHtml("");
       setSpeechState("idle");
       return;
     }
+    // oxlint-disable-next-line react/set-state-in-effect
     setReportHtml(buildMahadashaReportHtml(result));
     setSpeechState("idle");
   }, [result]);
@@ -158,7 +166,7 @@ export default function MahadashaPage() {
     setSpeechState("idle");
   };
 
-  const handleSaveToLocalStorage = () => {
+  const handleSaveToLocalStorage = async () => {
     if (!input.name || !input.dob || !reportHtml) {
       setError("सभी जानकारी भरें।");
       return;
@@ -172,7 +180,15 @@ export default function MahadashaPage() {
         gender: "",
         content: reportHtml,
       };
-      saveKundaliRecord(record);
+      const savedRecord = await saveUserDetail({
+        fullName: record.name,
+        dateOfBirth: record.dob,
+        timeOfBirth: record.bot,
+        placeOfBirth: record.bop,
+        gender: record.gender,
+        content: record.content,
+      });
+      saveKundaliRecord({ ...record, _id: savedRecord._id });
       setSaved(getSavedKundalis());
       setError(null);
       setError("महादशा रिपोर्ट सेव हो गई।");
@@ -200,7 +216,7 @@ export default function MahadashaPage() {
     e.stopPropagation();
     const updated = saved.filter((_, i) => i !== index);
     setSaved(updated);
-    localStorage.setItem("kundali", JSON.stringify(updated));
+    sessionStorage.setItem("kundali", JSON.stringify(updated));
   };
 
   const handleDownloadPdf = () => {
@@ -253,12 +269,14 @@ export default function MahadashaPage() {
     try {
       setLoading(true);
       setError(null);
+      setUpgradeRequired(false);
       setResult(null);
 
       const currentYear = new Date().getFullYear();
 
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: "mahadasha",
         input: `You are a Vedic astrology expert computing a Vimshottari Mahadasha timeline.
 
 Name: ${input.name}
@@ -301,6 +319,10 @@ Rules:
       }
     } catch (err) {
       console.error(err);
+      setUpgradeRequired(Boolean(
+        err && typeof err === "object" && "code" in err &&
+        err.code === "UPGRADE_REQUIRED",
+      ));
       setError(
         isQuotaOrRateLimitError(err)
           ? QUOTA_ERROR_MESSAGE_HI
@@ -363,9 +385,14 @@ Rules:
         </div>
 
         {error && (
-          <p className="mt-4 text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2">
-            {error}
-          </p>
+          <div className="mt-4 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2">
+            <p className="text-xs text-[#f0958a]">{error}</p>
+            {upgradeRequired && (
+              <Link href="/plans?feature=mahadasha" className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+                See Premium plans
+              </Link>
+            )}
+          </div>
         )}
 
         <button

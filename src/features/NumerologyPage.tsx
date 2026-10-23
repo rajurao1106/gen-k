@@ -6,6 +6,7 @@ import {
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
 import { getSavedKundalis, saveKundaliRecord } from "../lib/storage";
+import { saveUserDetail } from "../lib/api";
 import type { KundaliRecord } from "../types";
 
 type NumberCard = { label: string; number: string; description: string };
@@ -65,15 +66,20 @@ export default function NumerologyPage() {
     typeof window !== "undefined" && "speechSynthesis" in window;
 
   useEffect(() => {
+    // Saved profiles live in sessionStorage, which is unavailable during SSR.
+    // oxlint-disable-next-line react/set-state-in-effect
     setSaved(getSavedKundalis());
   }, []);
 
+  // Report markup and speech state follow the newly generated result.
   useEffect(() => {
     if (!result) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setReportHtml("");
       setSpeechState("idle");
       return;
     }
+    // oxlint-disable-next-line react/set-state-in-effect
     setReportHtml(buildNumerologyReportHtml(result));
     setSpeechState("idle");
   }, [result]);
@@ -136,7 +142,7 @@ export default function NumerologyPage() {
     setSpeechState("idle");
   };
 
-  const handleSaveToLocalStorage = () => {
+  const handleSaveToLocalStorage = async () => {
     if (!name || !dob || !reportHtml) {
       setError("सभी जानकारी भरें।");
       return;
@@ -150,7 +156,15 @@ export default function NumerologyPage() {
         gender: "",
         content: reportHtml,
       };
-      saveKundaliRecord(record);
+      const savedRecord = await saveUserDetail({
+        fullName: record.name,
+        dateOfBirth: record.dob,
+        timeOfBirth: record.bot,
+        placeOfBirth: record.bop,
+        gender: record.gender,
+        content: record.content,
+      });
+      saveKundaliRecord({ ...record, _id: savedRecord._id });
       setSaved(getSavedKundalis());
       setError(null);
       setError("न्यूमरोलॉजी रिपोर्ट सेव हो गई।");
@@ -172,7 +186,7 @@ export default function NumerologyPage() {
     e.stopPropagation();
     const updated = saved.filter((_, i) => i !== index);
     setSaved(updated);
-    localStorage.setItem("kundali", JSON.stringify(updated));
+    sessionStorage.setItem("kundali", JSON.stringify(updated));
   };
 
   const handleDownloadPdf = () => {
@@ -227,6 +241,7 @@ export default function NumerologyPage() {
 
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: "chat",
         input: `You are a numerology expert. Compute a Pythagorean-style numerology reading for this person.
 
 Name: ${name}

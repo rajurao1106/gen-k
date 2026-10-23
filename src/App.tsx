@@ -15,9 +15,11 @@ import UserDataPage from "./features/UserDataPage";
 import AIFriendPage from "./features/AIFriendPage";
 import AccountLoginPage from "./features/AccountLoginPage";
 import ProfilePage from "./features/ProfilePage";
+import PlansPage from "./features/PlansPage";
 import Onboarding from "./components/Onboarding";
-import { getActivePhoneNumber } from "./lib/localAccount";
-import { getUserKundaliProfile } from "./lib/storage";
+import { useAuth } from "./lib/useAuth";
+import { fetchMyProfiles, type UserDetailRecord } from "./lib/api";
+import { getKundaliProfileId } from "./lib/storage";
 
 const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   home: { hi: "Home", sub: "Introduction & quick access" },
@@ -27,6 +29,7 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
   profile: { hi: "Profile", sub: "Your details and settings" },
+  plans: { hi: "Plans", sub: "Plans, access and billing" },
 };
 
 const PAGE_ROUTES: Record<PageKey, string> = {
@@ -37,102 +40,106 @@ const PAGE_ROUTES: Record<PageKey, string> = {
   numerology: "/numerology",
   mahadasha: "/mahadasha",
   profile: "/profile",
+  plans: "/plans",
 };
 
-function HomeIntroPage() {
-  const router = useRouter();
-  const cards = [
-    {
-      label: "कुंडली",
-      desc: "Birth details, chart reading & guidance",
-      path: "/kundali",
-    },
-    {
-      label: "कुंडली मिलान",
-      desc: "Compatibility matching & guna analysis",
-      path: "/milan",
-    },
-    {
-      label: "न्यूमरोलॉजी",
-      desc: "Name and number-based insights",
-      path: "/numerology",
-    },
-    {
-      label: "महादशा",
-      desc: "Timeline and major life phases",
-      path: "/mahadasha",
-    },
-    {
-      label: "AI Friend",
-      desc: "Ask questions and explore your chart",
-      path: "/ai-friend",
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-[#f2c36b]/20 bg-[#10273d]/80 p-5 shadow-[0_20px_40px_rgba(0,0,0,0.18)] sm:p-6">
-        <p className="text-xs uppercase tracking-[0.22em] text-[#f2c36b]">
-          Welcome
-        </p>
-        <h2 className="mt-3 font-display text-2xl font-bold text-[#f9f3eb] sm:text-3xl">
-          Gen-K Astrology
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d9e5f7] sm:text-base">
-          Your spiritual companion for kundali insights, love compatibility,
-          numerology and mahadasha guidance.
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
-          <button
-            key={card.label}
-            type="button"
-            onClick={() => router.push(card.path)}
-            className="group min-h-36 rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#f2c36b]/60 hover:shadow-[0_0_20px_rgba(248,210,122,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b] sm:min-h-40 sm:p-5"
-          >
-            <p className="font-display text-xl font-semibold text-[#f8d27a] transition-colors group-hover:text-[#ffdf9a] sm:text-2xl">
-              {card.label}
-            </p>
-            <p className="mt-2 text-sm leading-5 text-[#d9e5f7] sm:leading-6">
-              {card.desc}
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[#f8d27a]">
-              Open page →
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function toKundaliProfile(record: UserDetailRecord) {
+  if (!record.fullName || !record.dateOfBirth || !record.timeOfBirth || !record.placeOfBirth) {
+    return null;
+  }
+  return {
+    name: record.fullName,
+    dob: record.dateOfBirth,
+    bot: record.timeOfBirth,
+    bop: record.placeOfBirth,
+    gender: record.gender || "",
+    recordId: record._id,
+  };
 }
-
-const isAdminAuthenticated = () => {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem("genk_admin_session") === "true";
-};
 
 function KundaliExperience() {
   const router = useRouter();
   const pathname = usePathname();
   const [authReady, setAuthReady] = useState(false);
+  const [profileLoadError, setProfileLoadError] = useState("");
+  const { user, status, error: authError } = useAuth();
 
   useEffect(() => {
-    try {
-      if (!getActivePhoneNumber()) {
-        router.replace("/account?next=" + encodeURIComponent(pathname));
-        return;
-      }
-      if (pathname !== "/start" && !getUserKundaliProfile()) {
-        router.replace("/start");
-        return;
-      }
-      setAuthReady(true);
-    } catch {
-      router.replace("/account");
+    if (status === "loading") return;
+    if (status === "error") {
+      // Preserve the explicit auth failure for this route.
+      // oxlint-disable-next-line react/set-state-in-effect
+      setProfileLoadError(authError || "Could not verify your account.");
+      return;
     }
-  }, [pathname, router]);
+    if (!user) {
+      router.replace("/account?next=" + encodeURIComponent(pathname));
+      return;
+    }
+
+    let active = true;
+    // Reset account-scoped profile state before loading the newly signed-in user.
+    // oxlint-disable-next-line react/set-state-in-effect
+    setAuthReady(false);
+    setProfileLoadError("");
+    fetchMyProfiles()
+      .then((records) => {
+        if (!active) return;
+        const profilesById = new Map<string, NonNullable<ReturnType<typeof toKundaliProfile>>>();
+        records.forEach((record) => {
+          const profile = toKundaliProfile(record);
+          if (profile && !profilesById.has(getKundaliProfileId(profile))) {
+            profilesById.set(getKundaliProfileId(profile), profile);
+          }
+        });
+        const profiles = [...profilesById.values()];
+        const savedReadings = records
+          .filter((record) => record.content || record.chart)
+          .map((record) => ({
+            _id: record._id,
+            name: record.fullName || "",
+            dob: record.dateOfBirth || "",
+            bot: record.timeOfBirth || "",
+            bop: record.placeOfBirth || "",
+            gender: record.gender || "",
+            content: record.content || "",
+            chart: record.chart ?? null,
+            createdAt: record.createdAt,
+          }));
+        sessionStorage.setItem("kundali", JSON.stringify(savedReadings));
+        if (profiles.length) {
+          sessionStorage.setItem("kundali_user_profiles", JSON.stringify(profiles));
+          sessionStorage.setItem("kundali_user_profile", JSON.stringify(profiles[0]));
+          const currentRecord = records.find((record) => toKundaliProfile(record) !== null);
+          if (currentRecord) {
+            sessionStorage.setItem("genk_onboarding", JSON.stringify({
+              status: currentRecord.relationshipStatus || "",
+              timeUnknown: currentRecord.birthTimeUnknown === true,
+              lat: currentRecord.birthLatitude,
+              lng: currentRecord.birthLongitude,
+              timezone: currentRecord.birthTimezone || "",
+            }));
+          }
+        }
+        const hasProfile = profiles.length > 0;
+        const isFreshOnboarding = pathname === "/start" && new URLSearchParams(window.location.search).get("new") === "1";
+        if (!hasProfile && pathname !== "/start") {
+          router.replace("/start");
+          return;
+        }
+        if (hasProfile && pathname === "/start" && !isFreshOnboarding) {
+          router.replace("/dashboard");
+          return;
+        }
+        setAuthReady(true);
+      })
+      .catch((profileError) => {
+        if (!active) return;
+        setProfileLoadError(profileError instanceof Error ? profileError.message : "Could not load your profiles.");
+      });
+
+    return () => { active = false; };
+  }, [authError, pathname, router, status, user]);
   const page = useMemo<PageKey>(() => {
     switch (pathname) {
       case "/milan":
@@ -147,11 +154,16 @@ function KundaliExperience() {
         return "ai-friend";
       case "/profile":
         return "profile";
+      case "/plans":
+        return "plans";
       default:
         return "home";
     }
   }, [pathname]);
 
+  if (profileLoadError) {
+    return <main role="alert" className="min-h-screen bg-[#071a2a] px-5 py-12 text-center text-[#ffd1c9]">{profileLoadError}</main>;
+  }
   if (!authReady) return null;
   if (pathname === "/start") return <Onboarding />;
 
@@ -338,6 +350,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             {page === "numerology" && <NumerologyPage />}
             {page === "mahadasha" && <MahadashaPage />}
             {page === "profile" && <ProfilePage />}
+            {page === "plans" && <PlansPage />}
           </div>
         </div>
       </div>
@@ -348,17 +361,18 @@ html, body { max-width: 100%; overflow-x: clip; }
 export default function App() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, status } = useAuth();
 
   useEffect(() => {
-    if (pathname === "/user-data" && !isAdminAuthenticated()) {
+    if (pathname === "/user-data" && status !== "loading" && user?.role !== "admin") {
       router.replace("/login");
     }
-  }, [pathname, router]);
+  }, [pathname, router, status, user]);
 
   if (pathname === "/account") return <AccountLoginPage />;
   if (pathname === "/login") return <LoginPage />;
   if (pathname === "/user-data") {
-    return isAdminAuthenticated() ? <UserDataPage /> : null;
+    return status === "loading" || user?.role !== "admin" ? null : <UserDataPage />;
   }
   return <KundaliExperience />;
 }

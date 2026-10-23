@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSeoPage, type SeoPageKey } from "../lib/seo";
+import { getFaqJsonLd, getSeoPage, type SeoPageKey } from "../lib/seo";
 
 const servicePages: { href: string; label: string }[] = [
   { href: "/kundali", label: "Kundali" },
@@ -11,6 +11,7 @@ const servicePages: { href: string; label: string }[] = [
 
 export default function SeoContent({ page }: { page: SeoPageKey }) {
   const content = getSeoPage(page);
+  const jsonLd = JSON.stringify(getFaqJsonLd(content.faqs)).replace(/</g, "\\u003c");
 
   return (
     <article className="border-t border-white/10 bg-[#071a2a] text-[#d5d9e2]">
@@ -63,7 +64,21 @@ export default function SeoContent({ page }: { page: SeoPageKey }) {
               ))}
           </ul>
         </nav>
+        <section className="mt-12 border-t border-white/10 pt-8" aria-labelledby="seo-faq-heading">
+          <h2 id="seo-faq-heading" className="font-display text-2xl font-bold text-[#f6f0e6]">
+            Frequently asked questions
+          </h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {content.faqs.map((faq) => (
+              <div key={faq.question}>
+                <h3 className="font-display text-lg font-semibold text-[#eee5d5]">{faq.question}</h3>
+                <p className="mt-2 text-sm leading-7 text-[#aeb6c5]">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </article>
   );
 }

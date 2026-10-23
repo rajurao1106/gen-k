@@ -5,6 +5,7 @@ export type ChartData = {
 };
 
 export type KundaliRecord = {
+  _id?: string;
   name: string;
   dob: string;
   bot: string;
@@ -17,7 +18,7 @@ export type KundaliRecord = {
 export type KundaliProfile = Pick<
   KundaliRecord,
   "name" | "dob" | "bot" | "bop" | "gender"
->;
+> & { recordId?: string };
 
 export type PageKey =
   | "home"
@@ -26,7 +27,8 @@ export type PageKey =
   | "milan"
   | "numerology"
   | "mahadasha"
-  | "profile";
+  | "profile"
+  | "plans";
 
 export type FieldKey = "name" | "dob" | "bot" | "bop" | "gender";
 

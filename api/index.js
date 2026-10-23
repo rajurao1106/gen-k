@@ -2,7 +2,9 @@ import app, { initializeServer } from "../server/app.js";
 
 export default async function handler(req, res) {
   try {
-    await initializeServer();
+    if (!(req.method === "GET" && req.url?.split("?")[0] === "/api/health")) {
+      await initializeServer();
+    }
     return app(req, res);
   } catch {
     return res.status(500).json({

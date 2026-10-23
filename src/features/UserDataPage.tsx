@@ -5,9 +5,11 @@ import {
   fetchAllUserDetails,
   type UserDetailRecord,
 } from "../lib/api";
+import { useAuth } from "../lib/useAuth";
 
 export default function UserDataPage() {
   const router = useRouter();
+  const { logout: logoutAccount } = useAuth();
   const [records, setRecords] = useState<UserDetailRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,8 +20,11 @@ export default function UserDataPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const logout = () => {
-    localStorage.removeItem("genk_admin_session");
-    router.replace("/login");
+    void logoutAccount().then(() => {
+      router.replace("/login");
+    }).catch((logoutError) => {
+      setError(logoutError instanceof Error ? logoutError.message : "Could not sign out.");
+    });
   };
 
   const loadRecords = async () => {
@@ -36,11 +41,8 @@ export default function UserDataPage() {
   };
 
   useEffect(() => {
-    if (localStorage.getItem("genk_admin_session") !== "true") {
-      router.replace("/login");
-      return;
-    }
-
+    // Initial data loading is an external synchronization with the authenticated API.
+    // oxlint-disable-next-line react/set-state-in-effect
     void loadRecords();
   }, [router]);
 

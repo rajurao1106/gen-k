@@ -21,7 +21,7 @@ function profileId(profile: KundaliProfile) {
 
 export function getUserKundaliProfiles(): KundaliProfile[] {
   const profiles = new Map<string, KundaliProfile>();
-  const storedProfiles = localStorage.getItem(KUNDALI_PROFILES_KEY);
+  const storedProfiles = sessionStorage.getItem(KUNDALI_PROFILES_KEY);
 
   if (storedProfiles) {
     const parsed: unknown = JSON.parse(storedProfiles);
@@ -44,6 +44,7 @@ export function getUserKundaliProfiles(): KundaliProfile[] {
             bot: profile.bot,
             bop: profile.bop,
             gender: typeof profile.gender === "string" ? profile.gender : "",
+            recordId: typeof profile.recordId === "string" ? profile.recordId : undefined,
           };
           profiles.set(profileId(validProfile), validProfile);
         }
@@ -51,7 +52,7 @@ export function getUserKundaliProfiles(): KundaliProfile[] {
     }
   }
 
-  const legacyProfile = localStorage.getItem(KUNDALI_PROFILE_KEY);
+  const legacyProfile = sessionStorage.getItem(KUNDALI_PROFILE_KEY);
   if (legacyProfile) {
     const parsed: unknown = JSON.parse(legacyProfile);
     if (
@@ -86,7 +87,7 @@ export function getUserKundaliProfiles(): KundaliProfile[] {
 }
 
 export function saveUserKundaliProfiles(profiles: KundaliProfile[]) {
-  localStorage.setItem(KUNDALI_PROFILES_KEY, JSON.stringify(profiles));
+  sessionStorage.setItem(KUNDALI_PROFILES_KEY, JSON.stringify(profiles));
 }
 
 export function getKundaliProfileId(profile: KundaliProfile) {
@@ -101,7 +102,7 @@ function getChatStorageKey(profile: KundaliProfile) {
 export function getSavedAIFriendChat(
   profile: KundaliProfile,
 ): StoredChatMessage[] {
-  const raw = localStorage.getItem(getChatStorageKey(profile));
+  const raw = sessionStorage.getItem(getChatStorageKey(profile));
   if (!raw) return [];
 
   const parsed: unknown = JSON.parse(raw);
@@ -123,11 +124,11 @@ export function saveAIFriendChat(
   profile: KundaliProfile,
   messages: StoredChatMessage[],
 ) {
-  localStorage.setItem(getChatStorageKey(profile), JSON.stringify(messages));
+  sessionStorage.setItem(getChatStorageKey(profile), JSON.stringify(messages));
 }
 
 export function getUserKundaliProfile(): KundaliProfile | null {
-  const storedProfile = localStorage.getItem(KUNDALI_PROFILE_KEY);
+  const storedProfile = sessionStorage.getItem(KUNDALI_PROFILE_KEY);
   if (storedProfile) {
     const profile = JSON.parse(storedProfile) as KundaliProfile;
     if (profile.name && profile.dob && profile.bot && profile.bop) {
@@ -138,13 +139,13 @@ export function getUserKundaliProfile(): KundaliProfile | null {
   const legacyRecord = getSavedKundalis().at(-1);
   if (legacyRecord?.name && legacyRecord.dob && legacyRecord.bot && legacyRecord.bop) {
     const { name, dob, bot, bop, gender } = legacyRecord;
-    return { name, dob, bot, bop, gender };
+    return { name, dob, bot, bop, gender, recordId: legacyRecord._id };
   }
   return null;
 }
 
 export function saveUserKundaliProfile(profile: KundaliProfile) {
-  localStorage.setItem(KUNDALI_PROFILE_KEY, JSON.stringify(profile));
+  sessionStorage.setItem(KUNDALI_PROFILE_KEY, JSON.stringify(profile));
   const profiles = getUserKundaliProfiles();
   const nextProfiles = profiles.filter(
     (existing) => profileId(existing) !== profileId(profile),
@@ -154,18 +155,18 @@ export function saveUserKundaliProfile(profile: KundaliProfile) {
 }
 
 export function getSavedKundalis(): KundaliRecord[] {
-  const raw = localStorage.getItem(KUNDALI_STORAGE_KEY);
+  const raw = sessionStorage.getItem(KUNDALI_STORAGE_KEY);
   return raw ? JSON.parse(raw) : [];
 }
 
 export function saveKundaliRecord(record: KundaliRecord): KundaliRecord[] {
   const updated = [...getSavedKundalis(), record];
-  localStorage.setItem(KUNDALI_STORAGE_KEY, JSON.stringify(updated));
+  sessionStorage.setItem(KUNDALI_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
 
 export function deleteKundaliRecord(index: number): KundaliRecord[] {
   const updated = getSavedKundalis().filter((_, i) => i !== index);
-  localStorage.setItem(KUNDALI_STORAGE_KEY, JSON.stringify(updated));
+  sessionStorage.setItem(KUNDALI_STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }

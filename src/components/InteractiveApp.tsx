@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { AuthProvider } from "../lib/AuthContext";
 
 const ClientApp = dynamic(() => import("../App"), {
   ssr: false,
@@ -14,5 +15,9 @@ const ClientApp = dynamic(() => import("../App"), {
 });
 
 export default function InteractiveApp() {
-  return <ClientApp />;
+  return (
+    <AuthProvider>
+      <ClientApp />
+    </AuthProvider>
+  );
 }

@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 
 const userDetailSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+      default: null,
+    },
+    legacyUnowned: {
+      type: Boolean,
+      default: false,
+    },
     fullName: {
       type: String,
       required: true,
@@ -13,11 +23,11 @@ const userDetailSchema = new mongoose.Schema(
     },
     timeOfBirth: {
       type: String,
-      required: true,
+      default: "",
     },
     placeOfBirth: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
     },
     gender: {
@@ -29,6 +39,11 @@ const userDetailSchema = new mongoose.Schema(
       enum: ["en", "hi"],
       default: "en",
     },
+    relationshipStatus: { type: String, default: "" },
+    birthTimeUnknown: { type: Boolean, default: false },
+    birthLatitude: { type: Number, default: null },
+    birthLongitude: { type: Number, default: null },
+    birthTimezone: { type: String, default: "" },
     content: {
       type: String,
       default: "",

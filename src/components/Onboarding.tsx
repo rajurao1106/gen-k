@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getUserKundaliProfile, saveUserKundaliProfile } from "../lib/storage";
+import { saveUserKundaliProfile } from "../lib/storage";
+import { saveUserDetail } from "../lib/api";
+import { trackAnalytics } from "../lib/analytics";
 import { ART, IMAGES, STEP_KEYS, TEXT } from "../lib/onboardingSteps"
 
 type Place = { label: string; lat: number; lng: number; tz: string };
@@ -15,7 +17,6 @@ type Data = {
 type Geo = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 
 const INIT: Data = { name: "", gender: "", status: "", m: 0, d: 0, yi: 80, h: 5, mi: 0, ap: 0, unknown: false, place: null };
-const DRAFT = "genk_onboarding_draft";
 const ROW = 40;
 const pad = (n: number) => String(n).padStart(2, "0");
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -88,24 +89,20 @@ export default function Onboarding() {
   const [searching, setSearching] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Place[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const set = (patch: Partial<Data>) => setData((d) => ({ ...d, ...patch }));
 
   useEffect(() => {
-    const fresh = window.location.search.includes("new=1");
-    try {
-      if (!fresh && getUserKundaliProfile()) { router.replace("/dashboard"); return; }
-      const draft = JSON.parse(localStorage.getItem(DRAFT) || "null");
-      if (draft?.data) { setData({ ...INIT, ...draft.data }); setStep(Math.min(6, Number(draft.step) || 0)); }
-    } catch { /* ignore bad draft */ }
+    // Keep the interactive onboarding wizard out of the server-rendered markup.
+    // oxlint-disable-next-line react/set-state-in-effect
     setReady(true);
-  }, [router]);
+  }, []);
+
 
   useEffect(() => {
-    if (ready) localStorage.setItem(DRAFT, JSON.stringify({ step, data }));
-  }, [ready, step, data]);
-
-  useEffect(() => {
-    if (!searching || q.trim().length < 2) { setResults([]); return; }
+    if (!searching || q.trim().length < 2) return;
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
@@ -126,33 +123,50 @@ export default function Onboarding() {
   const day = Math.min(data.d, dim - 1);
   const valid = [true, data.name.trim().length > 1, !!data.gender, !!data.status, true, true, !!data.place][step];
 
-  const finish = () => {
-    if (!data.place) return;
+  const finish = async () => {
+    if (!data.place || saving) return;
     const h24 = ((data.h + 1) % 12) + (data.ap === 1 ? 12 : 0);
+    const profile = {
+      name: data.name.trim(),
+      dob: `${YEARS[data.yi]}-${pad(data.m + 1)}-${pad(day + 1)}`,
+      bot: data.unknown ? "12:00" : `${pad(h24)}:${pad(data.mi)}`,
+      bop: data.place.label,
+      gender: data.gender,
+    };
+    setSaving(true);
+    setError("");
     try {
-      saveUserKundaliProfile({
-        name: data.name.trim(),
-        dob: `${YEARS[data.yi]}-${pad(data.m + 1)}-${pad(day + 1)}`,
-        bot: data.unknown ? "12:00" : `${pad(h24)}:${pad(data.mi)}`,
-        bop: data.place.label,
-        gender: data.gender,
+      await saveUserDetail({
+        fullName: profile.name,
+        dateOfBirth: profile.dob,
+        timeOfBirth: profile.bot,
+        placeOfBirth: profile.bop,
+        gender: profile.gender,
+        relationshipStatus: data.status,
+        birthTimeUnknown: data.unknown,
+        birthLatitude: data.place.lat,
+        birthLongitude: data.place.lng,
+        birthTimezone: data.place.tz,
+        ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
       });
-      // Extra onboarding info (kept separate so the existing profile type is unchanged)
-      localStorage.setItem("genk_onboarding", JSON.stringify({
-        status: data.status, timeUnknown: data.unknown,
-        lat: data.place.lat, lng: data.place.lng, timezone: data.place.tz,
-      }));
-      localStorage.removeItem(DRAFT);
-    } catch (e) { console.error("Could not save onboarding profile", e); }
-    router.replace("/dashboard");
+      saveUserKundaliProfile(profile);
+      trackAnalytics("kundali_created");
+      router.replace("/dashboard");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save your profile.");
+      setSaving(false);
+    }
   };
-  const next = () => (step === 6 ? finish() : setStep(step + 1));
+  const next = () => (step === 6 ? void finish() : setStep(step + 1));
 
   const cta = (label: string, onClick: () => void, enabled = true) => (
-    <button type="button" onClick={onClick} disabled={!enabled}
-      className="w-full rounded-2xl bg-[#f2c36b] py-4 font-display text-base font-bold tracking-wide text-[#17130c] transition hover:bg-[#ffda91] disabled:bg-[#f2c36b]/20 disabled:text-[#f2c36b]/45">
-      {label} →
-    </button>
+    <>
+      {error && <p role="alert" className="mb-3 rounded-xl border border-[#ef9f90]/30 bg-[#ef9f90]/10 px-3 py-2 text-sm text-[#ffd1c9]">{error}</p>}
+      <button type="button" onClick={onClick} disabled={!enabled || saving}
+        className="w-full rounded-2xl bg-[#f2c36b] py-4 font-display text-base font-bold tracking-wide text-[#17130c] transition hover:bg-[#ffda91] disabled:bg-[#f2c36b]/20 disabled:text-[#f2c36b]/45">
+        {saving ? "Saving…" : `${label} →`}
+      </button>
+    </>
   );
   const option = (label: string, selected: boolean, onClick: () => void) => (
     <button key={label} type="button" onClick={onClick}
@@ -247,6 +261,17 @@ export default function Onboarding() {
             className={`mt-4 w-full border-b border-[#f2c36b]/30 pb-2 text-left font-display text-3xl ${data.place ? "text-[#f6f0e6]" : "text-[#f6f0e6]/20"}`}>
             {data.place ? data.place.label : TEXT.place.placeholder}
           </button>
+          <label className="mt-5 block text-sm text-[#aeb6c5]">
+            Referral code (optional)
+            <input
+              value={referralCode}
+              onChange={(event) => setReferralCode(event.currentTarget.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16))}
+              autoCapitalize="characters"
+              maxLength={16}
+              className="mt-2 w-full rounded-xl border border-[#f2c36b]/30 bg-[#071a2a] px-3 py-3 text-base text-[#f6f0e6] outline-none focus:border-[#f2c36b]"
+            />
+            <span className="mt-1 block text-xs">You and your friend receive one report credit after onboarding.</span>
+          </label>
         </>)}
 
         <div className="mt-auto pt-6">{cta(TEXT.cta, next, valid)}</div>
@@ -254,17 +279,17 @@ export default function Onboarding() {
 
       {searching && (
         <div className="absolute inset-0 z-10 flex flex-col bg-[#071a2a] px-6 pt-5">
-          <button type="button" aria-label="Close" onClick={() => setSearching(false)} className="h-9 w-9 text-left text-xl">✕</button>
+          <button type="button" aria-label="Close" onClick={() => { setSearching(false); setResults([]); }} className="h-9 w-9 text-left text-xl">✕</button>
           <p className="mt-4 text-base font-semibold">{TEXT.place.title}</p>
           <div className="mt-3 flex items-center border-b border-[#f2c36b]/40">
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} aria-label="City"
+            <input autoFocus value={q} onChange={(e) => { setQ(e.target.value); if (e.target.value.trim().length < 2) setResults([]); }} aria-label="City"
               className="w-full bg-transparent pb-2 font-display text-3xl outline-none" />
-            {q && <button type="button" aria-label="Clear" onClick={() => setQ("")} className="pb-2 text-[#858e9d]">✕</button>}
+            {q && <button type="button" aria-label="Clear" onClick={() => { setQ(""); setResults([]); }} className="pb-2 text-[#858e9d]">✕</button>}
           </div>
           <ul className="mt-2 flex-1 overflow-y-auto pb-6">
             {results.map((p) => (
               <li key={`${p.label}${p.lat}`}>
-                <button type="button" onClick={() => { set({ place: p }); setSearching(false); }}
+                <button type="button" onClick={() => { set({ place: p }); setSearching(false); setResults([]); }}
                   className="w-full py-3 text-left text-[15px] text-[#d5d9e2] hover:text-[#ffda91]">{p.label}</button>
               </li>
             ))}

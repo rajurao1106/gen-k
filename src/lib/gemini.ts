@@ -31,21 +31,52 @@ export class GeminiRequestError extends Error {
 
 const QUOTA_CODES = new Set([
   "QUOTA_EXHAUSTED",
+  "QUOTA_EXCEEDED",
   "RATE_LIMITED",
   "CLIENT_RATE_LIMITED",
+  "USER_RATE_LIMITED",
+  "UPGRADE_REQUIRED",
 ]);
 
 export function isQuotaOrRateLimitError(err: unknown) {
   if (err instanceof GeminiRequestError) {
     return err.status === 429 || QUOTA_CODES.has(err.code);
   }
+  if (err && typeof err === "object") {
+    const status = "status" in err ? err.status : undefined;
+    const code = "code" in err ? err.code : undefined;
+    return status === 429 || (typeof code === "string" && QUOTA_CODES.has(code));
+  }
   return false;
+}
+
+export function isUpgradeOrQuotaError(err: unknown) {
+  return (
+    err instanceof GeminiRequestError &&
+    (err.code === "UPGRADE_REQUIRED" || err.code === "QUOTA_EXCEEDED")
+  );
 }
 
 export const QUOTA_ERROR_MESSAGE_HI =
   "AI service ki limit abhi poori hai. Kripya thodi der baad dobara koshish karein.";
 
-export async function callGemini(params: { model: string; input: string }) {
+export type GeminiPurpose = "chat" | "kundali" | "milan" | "mahadasha" | "guide";
+
+export type GeminiReportIdentity = {
+  type: "kundali" | "milan";
+  fullName: string;
+  dateOfBirth: string;
+  timeOfBirth?: string;
+  placeOfBirth?: string;
+  gender?: string;
+};
+
+export async function callGemini(params: {
+  model: string;
+  input: string;
+  purpose: GeminiPurpose;
+  report?: GeminiReportIdentity;
+}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -53,6 +84,7 @@ export async function callGemini(params: { model: string; input: string }) {
   try {
     response = await fetch(`${API_BASE_URL}/api/gemini`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
       signal: controller.signal,

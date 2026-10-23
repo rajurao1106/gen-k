@@ -414,7 +414,10 @@ export function getPageMetadata(page: SeoPageKey): Metadata {
     title: content.title,
     description: content.description,
     keywords: content.keywords,
-    robots: page === "home" ? undefined : { index: false, follow: true },
+    robots:
+      page === "home" || ["kundali", "milan", "numerology", "mahadasha"].includes(page)
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
     alternates: { canonical: path },
     openGraph: {
       title: content.title,

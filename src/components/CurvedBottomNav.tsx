@@ -29,7 +29,6 @@ const SLOTS: Slot[] = [
 
 // ---- design tokens (App.tsx ke navy + gold palette se match) ----
 const BAR_BG = "#0d2138";
-const GOLD = "#f2c36b";
 const GOLD_SOFT = "#f9e6b2";
 const IDLE = "#cbd9ee";
 

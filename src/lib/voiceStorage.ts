@@ -1,51 +1,74 @@
-// Voice cloning via the app's own backend (/api/voice/*), which talks to a
-// hosted voice-cloning service. Works on a live site for every visitor — no
-// local Python/Chatterbox service needed. Only the returned voice id is stored
-// in this browser (per profile); the audio sample itself is not kept.
+// Voice identifiers and provider IDs stay on the server; this module only
+// loads account-owned profile metadata and sends internal profile IDs.
 
 export type VoiceSampleLanguage = "en" | "hi";
+export type VoiceConsentConfirmation = "self" | "has_permission";
 
 export type SavedVoiceSample = {
-  profileId: string;
-  voiceId: string;
-  fileName: string;
+  id: string;
+  label: string;
   language: VoiceSampleLanguage;
-  savedAt: string;
+  createdAt: string;
 };
+export type VoiceAudioBlob = Blob & { fallbackMessage?: string };
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "");
-const STORAGE_PREFIX = "gen-k-ai-friend-voice:";
 
-async function errorMessage(response: Response, fallback: string) {
-  const body = (await response.json().catch(() => null)) as { message?: string } | null;
-  return body?.message ?? fallback;
+async function apiError(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as {
+    message?: string;
+    code?: string;
+  } | null;
+  return Object.assign(new Error(body?.message ?? fallback), {
+    code: body?.code,
+    status: response.status,
+  });
 }
 
-export async function getVoiceSample(profileId: string): Promise<SavedVoiceSample | null> {
+export async function getVoiceSamples(): Promise<SavedVoiceSample[]> {
+  let response: Response;
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + profileId);
-    if (!raw) return null;
-    const sample = JSON.parse(raw) as SavedVoiceSample;
-    return sample?.voiceId ? sample : null;
-  } catch {
-    return null;
+    response = await fetch(`${API_BASE_URL}/api/voice`, { credentials: "include" });
+  } catch (error) {
+    console.error("Could not reach the voice service:", error);
+    throw new Error("Cannot reach the server. Check your connection and try again.");
   }
+  if (!response.ok) throw await apiError(response, "Could not load your saved voices.");
+  const body = (await response.json()) as {
+    voices?: SavedVoiceSample[];
+  };
+  return Array.isArray(body.voices) ? body.voices : [];
 }
 
 export async function saveVoiceSample(
-  profileId: string,
+  label: string,
   file: File,
   language: VoiceSampleLanguage,
+  consentConfirmedBy: VoiceConsentConfirmation,
 ): Promise<SavedVoiceSample> {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const contentTypeByExtension: Record<string, string> = {
+    wav: "audio/wav",
+    mp3: "audio/mpeg",
+    flac: "audio/flac",
+    opus: "audio/opus",
+  };
+  const contentType = contentTypeByExtension[extension || ""] || file.type || "audio/mpeg";
   let response: Response;
   try {
     response = await fetch(
-      `${API_BASE_URL}/api/voice/clone?label=${encodeURIComponent(profileId.slice(0, 20))}`,
+      `${API_BASE_URL}/api/voice/clone?label=${encodeURIComponent(label)}`,
       {
         method: "POST",
-        headers: { "Content-Type": file.type || "audio/mpeg" },
+        credentials: "include",
+        headers: {
+          "Content-Type": contentType,
+          "X-Voice-Consent": "true",
+          "X-Voice-Consent-Confirmed-By": consentConfirmedBy,
+          "X-Voice-Language": language,
+        },
         body: file,
       },
     );
@@ -53,55 +76,47 @@ export async function saveVoiceSample(
     console.error("Could not reach the voice service:", error);
     throw new Error("Cannot reach the server. Check your connection and try again.");
   }
-  if (!response.ok) {
-    throw new Error(await errorMessage(response, "Could not create a voice from this sample."));
-  }
+  if (!response.ok) throw await apiError(response, "Could not create a voice from this sample.");
 
-  const { voiceId } = (await response.json()) as { voiceId: string };
-  const sample: SavedVoiceSample = {
-    profileId,
-    voiceId,
-    fileName: file.name,
-    language,
-    savedAt: new Date().toISOString(),
-  };
-  localStorage.setItem(STORAGE_PREFIX + profileId, JSON.stringify(sample));
-  return sample;
+  const body = (await response.json()) as { voice?: SavedVoiceSample };
+  if (!body.voice?.id) throw new Error("The server returned an invalid voice profile.");
+  return body.voice;
 }
 
-export async function deleteVoiceSample(profileId: string): Promise<void> {
-  const sample = await getVoiceSample(profileId);
-  localStorage.removeItem(STORAGE_PREFIX + profileId);
-  if (!sample) return;
-  // Best effort: free the cloned voice on the server too.
+export async function deleteVoiceSample(voiceProfileId: string): Promise<void> {
+  let response: Response;
   try {
-    await fetch(`${API_BASE_URL}/api/voice/${encodeURIComponent(sample.voiceId)}`, {
-      method: "DELETE",
-    });
+    response = await fetch(
+      `${API_BASE_URL}/api/voice/${encodeURIComponent(voiceProfileId)}`,
+      { method: "DELETE", credentials: "include" },
+    );
   } catch (error) {
-    console.error("Could not remove the voice on the server:", error);
+    console.error("Could not reach the voice service:", error);
+    throw new Error("Cannot reach the server. Check your connection and try again.");
   }
+  if (!response.ok) throw await apiError(response, "Could not remove this voice.");
 }
 
 export async function synthesizeWithSavedVoice(
   sample: SavedVoiceSample,
   text: string,
-  // Language is auto-detected by the multilingual model; kept for call-site compatibility.
   _language: VoiceSampleLanguage,
-): Promise<Blob> {
+): Promise<VoiceAudioBlob> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}/api/voice/speak`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ voiceId: sample.voiceId, text }),
+      body: JSON.stringify({ voiceProfileId: sample.id, text }),
     });
   } catch (error) {
     console.error("Could not reach the voice service:", error);
     throw new Error("Cannot reach the server. Check your connection and try again.");
   }
-  if (!response.ok) {
-    throw new Error(await errorMessage(response, "Voice is unavailable right now."));
-  }
-  return response.blob();
+  if (!response.ok) throw await apiError(response, "Voice is unavailable right now.");
+  const audio = await response.blob();
+  return Object.assign(audio, {
+    fallbackMessage: response.headers.get("X-Voice-Message") || undefined,
+  });
 }

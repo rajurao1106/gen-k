@@ -6,12 +6,9 @@
  * Place at: src/components/DashboardHome.tsx
  *
  * Flow:
- *  1. Onboarding mein user ki details localStorage mein save hoti hain (pehle se).
- *  2. Dashboard khulte hi: aaj ki date ka guide localStorage mein hai?
- *       - haan  -> turant dikha do
- *       - nahi  -> loader chalta hai, Gemini se aaj ka guide + upay (remedy) banta hai,
- *                  localStorage mein save hota hai, phir card dikhta hai
- *  3. Agle din date badal jaati hai -> naya guide banta hai (purana overwrite hota hai).
+ *  1. The server loads or generates one guide per owned profile and India day.
+ *  2. A same-day session cache can render immediately while the server confirms it.
+ *  3. The server retains prior days; the browser cache is only a display shortcut.
  *
  * Storage key: genk_daily_guide:<profileId>  ->  { date: "YYYY-MM-DD", guide: {...} }
  */
@@ -19,20 +16,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  callGemini,
-  extractJson,
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
+import { fetchMyProfiles, fetchTodaysGuide } from "../lib/api";
 import { getKundaliProfileId, getUserKundaliProfile } from "../lib/storage";
 import type { KundaliProfile } from "../types";
 import { NavIcon, type NavIconName } from "./NavIcon";
+import ShareRashiButton from "./ShareRashiButton";
 
 /* ------------------------------------------------------------------ */
 /* Types + constants                                                   */
 /* ------------------------------------------------------------------ */
 
-const MODEL = "gemini-3.5-flash-lite"; // server ke GEMINI_ALLOWED_MODELS mein hona chahiye
 const STORAGE_PREFIX = "genk_daily_guide:";
 const ONBOARDING_KEY = "genk_onboarding";
 
@@ -42,12 +38,13 @@ type DailyGuide = {
   belief: string;
   power: string;
   caution: string;
-  note: string;
-  remedy: Remedy;
+  note?: string;
+  remedy?: Remedy;
   luckyNo: number;
   color: string;
-  direction: string;
-  energy: number;
+  direction?: string;
+  energy?: number;
+  full: boolean;
 };
 
 type StoredGuide = { date: string; guide: DailyGuide };
@@ -91,9 +88,16 @@ const SHORTCUTS: { label: string; desc: string; path: string; icon: NavIconName 
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-// Local date (user ke timezone ka) — "aaj" isi se tay hota hai.
+// The server stores one guide per Asia/Kolkata day.
 function localDateKey(d: Date) {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${pad(Number(values.month))}-${pad(Number(values.day))}`;
 }
 
 function greeting(hour: number) {
@@ -216,7 +220,7 @@ function reduceDigit(n: number) {
 
 function readOnboarding(): { status?: string; timezone?: string; timeUnknown?: boolean } {
   try {
-    return JSON.parse(localStorage.getItem(ONBOARDING_KEY) || "{}") ?? {};
+    return JSON.parse(sessionStorage.getItem(ONBOARDING_KEY) || "{}") ?? {};
   } catch {
     return {};
   }
@@ -247,35 +251,46 @@ function normalize(raw: unknown, profile: KundaliProfile): DailyGuide | null {
   const steps = Array.isArray(r.steps)
     ? r.steps.map((s) => str(s, 140)).filter(Boolean).slice(0, 4)
     : [];
-  if (!belief || !power || !caution || !note || !title || steps.length === 0) return null;
+  const full = o.full !== false;
+  if (!belief || !power || !caution) return null;
+  if (full && (!note || !title || steps.length === 0)) return null;
 
-  const num = Math.round(Number(o.luckyNumber));
+  const num = Math.round(Number(o.luckyNumber ?? o.luckyNo));
   const energy = Math.round(Number(o.energy));
   return {
     belief,
     power,
     caution,
-    note,
-    remedy: { title, steps, mantra: str(r.mantra, 90) },
+    ...(full
+      ? {
+          note,
+          remedy: { title, steps, mantra: str(r.mantra, 90) },
+          direction: str(o.luckyDirection, 20) || "East",
+          energy: Number.isFinite(energy) ? Math.min(100, Math.max(0, energy)) : 70,
+        }
+      : {}),
     luckyNo: num >= 1 && num <= 9 ? num : reduceDigit(Number(profile.dob.slice(8, 10)) || 1),
-    color: str(o.luckyColor, 20) || "White",
-    direction: str(o.luckyDirection, 20) || "East",
-    energy: Number.isFinite(energy) ? Math.min(100, Math.max(0, energy)) : 70,
+    color: str(o.luckyColor ?? o.color, 20) || "White",
+    full,
   };
 }
 
 function readStored(profile: KundaliProfile, today: string): DailyGuide | null {
   try {
-    const raw = localStorage.getItem(storageKey(profile));
+    const raw = sessionStorage.getItem(storageKey(profile));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredGuide;
     if (parsed?.date !== today) return null; // kal ka hai => naya banega
     return normalize(
       {
-        ...parsed.guide,
+        belief: parsed.guide?.belief,
+        power: parsed.guide?.power,
+        caution: parsed.guide?.caution,
+        luckyNo: parsed.guide?.luckyNo,
+        color: parsed.guide?.color,
+        full: false,
         luckyNumber: parsed.guide?.luckyNo,
         luckyColor: parsed.guide?.color,
-        luckyDirection: parsed.guide?.direction,
       },
       profile,
     );
@@ -287,72 +302,34 @@ function readStored(profile: KundaliProfile, today: string): DailyGuide | null {
 function writeStored(profile: KundaliProfile, today: string, guide: DailyGuide) {
   try {
     const value: StoredGuide = { date: today, guide };
-    localStorage.setItem(storageKey(profile), JSON.stringify(value)); // purana din overwrite
+    sessionStorage.setItem(storageKey(profile), JSON.stringify(value)); // purana din overwrite
   } catch {
     /* storage full / blocked — guide phir bhi screen par dikhega */
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* Gemini request                                                      */
+/* Server daily-guide request                                          */
 /* ------------------------------------------------------------------ */
 
-function buildPrompt(profile: KundaliProfile, moon: MoonInfo, now: Date) {
-  const dateLabel = now.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const status = readOnboarding().status;
-
-  return `You are a warm Vedic astrologer writing a short DAILY guide for one person.
-Today is ${dateLabel}.
-Person: name ${profile.name}, gender ${profile.gender || "not given"}, born ${profile.dob} at ${profile.bot} in ${profile.bop}.${
-    status ? ` Relationship status: ${status}.` : ""
+async function requestGuide(profile: KundaliProfile) {
+  let profileId = profile.recordId;
+  if (!profileId) {
+    const records = await fetchMyProfiles();
+    const match = records.find((record) =>
+      record.fullName?.trim().toLowerCase() === profile.name.trim().toLowerCase() &&
+      record.dateOfBirth === profile.dob &&
+      record.timeOfBirth === profile.bot &&
+      record.placeOfBirth?.trim().toLowerCase() === profile.bop.trim().toLowerCase(),
+    );
+    profileId = match?._id;
   }
-Chandra rashi (Moon sign): ${moon.sign.hi} (${moon.sign.en})${
-    moon.nakshatra ? `, nakshatra ${moon.nakshatra} pada ${moon.pada}` : ""
-  }.
+  if (!profileId) throw new Error("Could not find the saved birth profile.");
 
-Write in simple Hinglish (Hindi in Roman script), friendly and short.
-Return ONLY valid JSON, no markdown, exactly this shape:
-{
-  "belief": "<max 7 words, positive mindset line>",
-  "power": "<max 8 words, about work, learning or spirituality today>",
-  "caution": "<max 8 words, one gentle thing to watch today>",
-  "note": "<max 2 sentences, 40 words, about today's mood>",
-  "remedy": {
-    "title": "<max 6 words>",
-    "steps": ["<short step>", "<short step>"],
-    "mantra": "<short mantra, or empty string>"
-  },
-  "luckyNumber": <integer 1-9>,
-  "luckyColor": "<one color>",
-  "luckyDirection": "<one compass direction>",
-  "energy": <integer 40-95>
-}
-Rules: the remedy must be a simple, safe, everyday upay doable at home (for example a mantra, donating food, feeding birds, a colour to wear, a short prayer). No medical, legal, financial or fear-based claims. Make it specific to today's weekday so it differs from day to day.`;
-}
-
-// Same din / same profile ke double request (React strict mode) ek hi call banate hain.
-const inflight = new Map<string, Promise<DailyGuide>>();
-
-function requestGuide(profile: KundaliProfile, today: string): Promise<DailyGuide> {
-  const key = `${storageKey(profile)}|${today}`;
-  const existing = inflight.get(key);
-  if (existing) return existing;
-
-  const promise = (async () => {
-    const moon = resolveMoon(profile);
-    const res = await callGemini({ model: MODEL, input: buildPrompt(profile, moon, new Date()) });
-    const guide = normalize(extractJson(res.output_text), profile);
-    if (!guide) throw new Error("INVALID_GUIDE");
-    return guide;
-  })().finally(() => inflight.delete(key));
-
-  inflight.set(key, promise);
-  return promise;
+  const result = await fetchTodaysGuide(profileId);
+  const guide = normalize(result.guide, profile);
+  if (!guide) throw new Error("INVALID_GUIDE");
+  return { guide, dayKey: result.dayKey };
 }
 
 /* ------------------------------------------------------------------ */
@@ -470,19 +447,21 @@ export default function DashboardHome() {
       setGuide(cached);
       shownDate.current = today;
       setStatus("ready");
-      return;
+    } else {
+      setGuide(null);
+      setStatus("loading");
     }
 
-    setStatus("loading");
     try {
-      const fresh = await requestGuide(profile, today);
+      const result = await requestGuide(profile);
       if (id !== runId.current) return; // naya load shuru ho chuka hai
-      writeStored(profile, today, fresh);
-      setGuide(fresh);
-      shownDate.current = today;
+      writeStored(profile, result.dayKey, result.guide);
+      setGuide(result.guide);
+      shownDate.current = result.dayKey;
       setStatus("ready");
     } catch (err) {
       if (id !== runId.current) return;
+      if (cached) return;
       setError(
         isQuotaOrRateLimitError(err)
           ? QUOTA_ERROR_MESSAGE_HI
@@ -495,6 +474,8 @@ export default function DashboardHome() {
   }, []);
 
   useEffect(() => {
+    // Load the profile's daily guide when the dashboard mounts.
+    // oxlint-disable-next-line react/set-state-in-effect
     void load();
     // App raat ko khula reh gaya ho aur din badal jaye => wapas aate hi naya guide
     const onVisible = () => {
@@ -543,6 +524,7 @@ export default function DashboardHome() {
                   {moon.nakshatra} &middot; pada {moon.pada}
                 </p>
               )}
+              <ShareRashiButton rashi={moon.sign.en} />
             </>
           )}
           {dateLabel && status !== "empty" && (
@@ -604,43 +586,60 @@ export default function DashboardHome() {
               <Bullet icon="clock" tone="bg-[#ef9f90]/20 text-[#ef9f90]" text={guide.caution} />
             </ul>
 
-            <p className="mb-4 mt-3 text-[13px] leading-6 text-[#c9d8ed]">{guide.note}</p>
-
-            <div className="grid grid-cols-4 rounded-2xl border border-[#f2c36b]/30 bg-[#0a1a2e] py-3">
-              <Stat label="Lucky no." value={guide.luckyNo} />
-              <Stat label="Color" value={guide.color} />
-              <Stat label="Energy" value={`${guide.energy}%`} />
-              <Stat label="Direction" value={guide.direction} last />
-            </div>
-          </section>
-
-          <section className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-4 sm:p-5">
-            <p className="text-[12px] uppercase tracking-[0.18em] text-[#f2c36b]">Aaj ka upay</p>
-            <p
-              className="mt-2 text-[20px] font-medium leading-snug text-[#f9f3eb]"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-            >
-              {guide.remedy.title}
-            </p>
-            <ol className="mt-3 space-y-2">
-              {guide.remedy.steps.map((step, i) => (
-                <li key={i} className="flex gap-3 text-[13px] leading-6 text-[#c9d8ed]">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f2c36b]/20 text-[11px] font-medium text-[#f9e6b2]">
-                    {i + 1}
-                  </span>
-                  {step}
-                </li>
-              ))}
-            </ol>
-            {guide.remedy.mantra && (
-              <p className="mt-4 rounded-xl border border-[#f2c36b]/25 bg-[#0a1a2e] px-4 py-3 text-center text-[14px] text-[#f9e6b2]">
-                {guide.remedy.mantra}
-              </p>
+            {guide.note && (
+              <p className="mb-4 mt-3 text-[13px] leading-6 text-[#c9d8ed]">{guide.note}</p>
             )}
-            <p className="mt-3 text-center text-[11px] text-[#a6bddb]/80">
-              Indicative daily guide &middot; kal naya banega
-            </p>
+
+            <div className={`grid ${guide.full ? "grid-cols-4" : "grid-cols-2"} rounded-2xl border border-[#f2c36b]/30 bg-[#0a1a2e] py-3`}>
+              <Stat label="Lucky no." value={guide.luckyNo} />
+              <Stat label="Color" value={guide.color} last={!guide.full} />
+              {guide.full && (
+                <>
+                  <Stat label="Energy" value={`${guide.energy}%`} />
+                  <Stat label="Direction" value={guide.direction ?? "East"} last />
+                </>
+              )}
+            </div>
+            {!guide.full && (
+              <button
+                type="button"
+                onClick={() => router.push("/plans?feature=daily_guide_full")}
+                className="mt-4 w-full rounded-xl border border-[#f2c36b]/35 px-4 py-2.5 text-sm font-medium text-[#f8d27a] transition-colors hover:bg-[#f2c36b]/10"
+              >
+                Unlock the full daily guide and remedy
+              </button>
+            )}
           </section>
+
+          {guide.full && guide.remedy && (
+            <section className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-4 sm:p-5">
+              <p className="text-[12px] uppercase tracking-[0.18em] text-[#f2c36b]">Aaj ka upay</p>
+              <p
+                className="mt-2 text-[20px] font-medium leading-snug text-[#f9f3eb]"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
+                {guide.remedy.title}
+              </p>
+              <ol className="mt-3 space-y-2">
+                {guide.remedy.steps.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-[13px] leading-6 text-[#c9d8ed]">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f2c36b]/20 text-[11px] font-medium text-[#f9e6b2]">
+                      {i + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+              {guide.remedy.mantra && (
+                <p className="mt-4 rounded-xl border border-[#f2c36b]/25 bg-[#0a1a2e] px-4 py-3 text-center text-[14px] text-[#f9e6b2]">
+                  {guide.remedy.mantra}
+                </p>
+              )}
+              <p className="mt-3 text-center text-[11px] text-[#a6bddb]/80">
+                Indicative daily guide &middot; kal naya banega
+              </p>
+            </section>
+          )}
         </>
       )}
 

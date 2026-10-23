@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   callGemini,
   extractJson,
@@ -6,6 +7,7 @@ import {
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
 import { getSavedKundalis, saveKundaliRecord } from "../lib/storage";
+import { saveUserDetail } from "../lib/api";
 import type { KundaliRecord } from "../types";
 
 type GunaRow = {
@@ -124,6 +126,7 @@ export default function KundaliMilanPage() {
   const [vadhuIndex, setVadhuIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
   const [result, setResult] = useState<MilanResult | null>(null);
   const [reportHtml, setReportHtml] = useState("");
   const [speechState, setSpeechState] = useState<
@@ -134,15 +137,20 @@ export default function KundaliMilanPage() {
     typeof window !== "undefined" && "speechSynthesis" in window;
 
   useEffect(() => {
+    // Saved profiles live in sessionStorage, which is unavailable during SSR.
+    // oxlint-disable-next-line react/set-state-in-effect
     setRecords(getSavedKundalis());
   }, []);
 
+  // Report markup and speech state follow the newly generated result.
   useEffect(() => {
     if (!result) {
+      // oxlint-disable-next-line react/set-state-in-effect
       setReportHtml("");
       setSpeechState("idle");
       return;
     }
+    // oxlint-disable-next-line react/set-state-in-effect
     setReportHtml(buildMilanReportHtml(result));
     setSpeechState("idle");
   }, [result]);
@@ -205,7 +213,7 @@ export default function KundaliMilanPage() {
     setSpeechState("idle");
   };
 
-  const handleSaveToLocalStorage = () => {
+  const handleSaveToLocalStorage = async () => {
     if (!varRecord || !vadhuRecord || !reportHtml) {
       setError("सभी जानकारी भरें।");
       return;
@@ -219,7 +227,15 @@ export default function KundaliMilanPage() {
         gender: "",
         content: reportHtml,
       };
-      saveKundaliRecord(record);
+      const savedRecord = await saveUserDetail({
+        fullName: record.name,
+        dateOfBirth: record.dob,
+        timeOfBirth: record.bot,
+        placeOfBirth: record.bop,
+        gender: record.gender,
+        content: record.content,
+      });
+      saveKundaliRecord({ ...record, _id: savedRecord._id });
       setRecords(getSavedKundalis());
       setError(null);
       setError("कुंडली मिलान रिपोर्ट सेव हो गई।");
@@ -239,7 +255,7 @@ export default function KundaliMilanPage() {
     e.stopPropagation();
     const updated = records.filter((_, i) => i !== index);
     setRecords(updated);
-    localStorage.setItem("kundali", JSON.stringify(updated));
+    sessionStorage.setItem("kundali", JSON.stringify(updated));
   };
 
   const handleDownloadPdf = () => {
@@ -287,10 +303,19 @@ export default function KundaliMilanPage() {
     try {
       setLoading(true);
       setError(null);
+      setUpgradeRequired(false);
       setResult(null);
 
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: "milan",
+        report: {
+          type: "milan",
+          fullName: `${varRecord.name} & ${vadhuRecord.name}`,
+          dateOfBirth: `${varRecord.dob} / ${vadhuRecord.dob}`,
+          timeOfBirth: `${varRecord.bot} / ${vadhuRecord.bot}`,
+          placeOfBirth: `${varRecord.bop} / ${vadhuRecord.bop}`,
+        },
         input: `You are a Vedic astrology expert performing an Ashtakoot Guna Milan (traditional 8-factor marriage compatibility match) between two people, using their birth details.
 
 वर (Groom): Name: ${varRecord.name}, DOB: ${varRecord.dob}, Time: ${varRecord.bot}, Place: ${varRecord.bop}
@@ -335,6 +360,10 @@ Rules:
       }
     } catch (err) {
       console.error(err);
+      setUpgradeRequired(Boolean(
+        err && typeof err === "object" && "code" in err &&
+        (err.code === "UPGRADE_REQUIRED" || err.code === "QUOTA_EXCEEDED"),
+      ));
       setError(
         isQuotaOrRateLimitError(err)
           ? QUOTA_ERROR_MESSAGE_HI
@@ -397,10 +426,22 @@ Rules:
           )}
 
         {error && (
-          <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
-            {error}
-          </p>
+          <div className="mb-4 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2">
+            <p className="text-xs text-[#f0958a]">{error}</p>
+            {upgradeRequired && (
+              <Link href="/plans?feature=milan_full_report" className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+                View report plans
+              </Link>
+            )}
+          </div>
         )}
+
+        <Link
+          href="/plans?feature=milan_full_report"
+          className="mb-3 block rounded-lg border border-[#d8b36a]/25 px-3 py-2 text-center text-xs text-[#f8d27a] transition-colors hover:bg-[#d8b36a]/10"
+        >
+          View full-report plans
+        </Link>
 
         <button
           onClick={runMilan}

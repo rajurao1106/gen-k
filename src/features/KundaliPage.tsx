@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -17,7 +18,7 @@ import {
 } from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
-import { saveUserDetail } from "../lib/api";
+import { deleteMyProfile, saveUserDetail } from "../lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -85,6 +86,7 @@ export default function KundaliPage() {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
   const [kundali, setKundali] = useState<KundaliRecord[]>(() =>
     getSavedKundalis(),
   );
@@ -108,6 +110,7 @@ export default function KundaliPage() {
       setChartLoading(true);
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: "kundali",
         input: `Based on this person's exact birth details, compute their Vedic (sidereal) birth chart.
 
 Name: ${input.name}
@@ -136,6 +139,7 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
       return;
     }
     setError(null);
+    setUpgradeRequired(false);
     saveUserKundaliProfile(input);
     setProfiles(getUserKundaliProfiles());
     setMessages([]);
@@ -150,6 +154,7 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
     if (!trimmedQuestion || loading) return;
 
     setError(null);
+    setUpgradeRequired(false);
     setSelectedTopic(topicId ?? null);
     setMessageInput("");
     setMessages((previous) => [
@@ -177,6 +182,19 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
     try {
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: allTopics ? "kundali" : "chat",
+        ...(allTopics
+          ? {
+              report: {
+                type: "kundali" as const,
+                fullName: input.name,
+                dateOfBirth: input.dob,
+                timeOfBirth: input.bot,
+                placeOfBirth: input.bop,
+                gender: input.gender,
+              },
+            }
+          : {}),
         input: `You are an expert Vedic astrology (Jyotish) assistant. Give personalized, balanced guidance based on the user's birth details and the current conversation.
 
 Birth details:
@@ -206,7 +224,7 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
 
       if (messages.length === 0) {
         try {
-          await saveUserDetail({
+          const savedRecord = await saveUserDetail({
             fullName: input.name,
             dateOfBirth: input.dob,
             timeOfBirth: input.bot,
@@ -216,14 +234,25 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
             content: assistantMessage,
             chart: chartData,
           });
+          setKundali(saveKundaliRecord({
+            ...input,
+            content: assistantMessage,
+            chart: chartData,
+            _id: savedRecord._id,
+          }));
         } catch (saveError) {
           console.error("Could not save the user's reading:", saveError);
           setError(
-            "Your answer is ready, but it could not be saved. You can continue chatting or save it on this device.",
+            "Your answer is ready, but it could not be saved to your account. Please try again.",
           );
         }
       }
     } catch (requestError) {
+      setUpgradeRequired(Boolean(
+        requestError && typeof requestError === "object" &&
+        "code" in requestError &&
+        (requestError.code === "UPGRADE_REQUIRED" || requestError.code === "QUOTA_EXCEEDED"),
+      ));
       setError(getErrorMessage(requestError));
     } finally {
       setLoading(false);
@@ -271,8 +300,19 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
     setError(null);
   };
 
-  const removeSavedReading = (index: number, event: React.MouseEvent) => {
+  const removeSavedReading = async (index: number, event: React.MouseEvent) => {
     event.stopPropagation();
+    const record = getSavedKundalis()[index];
+    if (!record?._id) {
+      setError("This reading is not linked to an account record.");
+      return;
+    }
+    try {
+      await deleteMyProfile(record._id);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this reading.");
+      return;
+    }
     const updated = deleteKundaliRecord(index);
     setKundali(updated);
     if (activeIndex === index) setActiveIndex(null);
@@ -281,21 +321,35 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
     }
   };
 
-  const saveChatLocally = () => {
+  const saveChatLocally = async () => {
     const lastAssistantMessage = [...messages]
       .reverse()
       .find((message) => message.role === "assistant");
     if (!lastAssistantMessage) return;
 
-    const updated = saveKundaliRecord({
-      ...input,
-      content: lastAssistantMessage.content,
-      chart: chartData,
-    });
-    setKundali(updated);
-    setActiveIndex(updated.length - 1);
-    setSavedLocally(true);
-    setError(null);
+    try {
+      const savedRecord = await saveUserDetail({
+        fullName: input.name,
+        dateOfBirth: input.dob,
+        timeOfBirth: input.bot,
+        placeOfBirth: input.bop,
+        gender: input.gender,
+        content: lastAssistantMessage.content,
+        chart: chartData,
+      });
+      const updated = saveKundaliRecord({
+        ...input,
+        content: lastAssistantMessage.content,
+        chart: chartData,
+        _id: savedRecord._id,
+      });
+      setKundali(updated);
+      setActiveIndex(updated.length - 1);
+      setSavedLocally(true);
+      setError(null);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save this reading.");
+    }
   };
 
   const backToDetails = () => {
@@ -627,12 +681,14 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
             )}
 
             {error && (
-              <p
-                role="alert"
-                className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-sm text-[#f0958a]"
-              >
-                {error}
-              </p>
+              <div role="alert" className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-sm text-[#f0958a]">
+                <p>{error}</p>
+                {upgradeRequired && (
+                  <Link href="/plans?feature=kundali_full_report" className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+                    View report and premium plans
+                  </Link>
+                )}
+              </div>
             )}
             <div ref={messageEndRef} />
           </div>

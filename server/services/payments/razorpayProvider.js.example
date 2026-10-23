@@ -1,0 +1,13 @@
+// Example integration outline only. Do not import this file or add a gateway
+// SDK until a real payment integration is explicitly approved.
+//
+// Implement the same interface as demoProvider.js:
+// - createOrder({ order }): create a gateway order using the server's trusted
+//   amountPaise and currency, then return { providerOrderId }.
+// - verifyPayment(payload): verify gateway order/payment identifiers and the
+//   provider's payment signature using its documented signing scheme.
+// - verifyWebhook(rawBody, headers): verify the webhook signature against the
+//   exact raw request body before accepting payment/refund events.
+//
+// Keep secret keys server-only and route verified results through the shared
+// verifyAndGrant() / refund logic in routes/paymentRoutes.js.

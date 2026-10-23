@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { PageKey } from "../types";
 import { getUserKundaliProfile } from "../lib/storage";
 import { NavIcon, type NavIconName } from "./NavIcon";
@@ -18,6 +18,7 @@ const MENU_ITEMS: MenuItem[] = [
   { key: "milan", label: "Kundli Milan", icon: "rings" },
   { key: "numerology", label: "Numerology", icon: "numbers" },
   { key: "mahadasha", label: "Mahadasha", icon: "orbit" },
+  { key: "plans", label: "Plans & billing", icon: "sparkles" },
   { key: "profile", label: "Profile", icon: "user" },
 ];
 
@@ -133,19 +134,21 @@ export function Sidebar({
 }) {
   // `collapsed` only affects desktop (lg+). On mobile the drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
-  const [query, setQuery] = useState("");
   const [userName, setUserName] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
 
+  // Hydrate persisted sidebar preferences and the account's local profile name.
   useEffect(() => {
     try {
+      // oxlint-disable-next-line react/set-state-in-effect
       setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
     } catch {
       /* storage unavailable */
     }
     try {
+      // oxlint-disable-next-line react/set-state-in-effect
       setUserName(getUserKundaliProfile()?.name ?? "");
     } catch {
+      // oxlint-disable-next-line react/set-state-in-effect
       setUserName("");
     }
   }, []);
@@ -163,11 +166,6 @@ export function Sidebar({
     onNavigate(page);
     onClose();
   };
-
-  const q = query.trim().toLowerCase();
-  const items = q
-    ? MENU_ITEMS.filter((i) => i.label.toLowerCase().includes(q))
-    : MENU_ITEMS;
 
   // Class helpers: "c" variants apply only on desktop when collapsed.
   const hideWhenCollapsed = collapsed ? "lg:hidden" : "";
@@ -233,7 +231,7 @@ export function Sidebar({
           <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Pages">
             <p className={`px-3 pb-2 pt-1 text-[15px] ${DIM} ${hideWhenCollapsed}`}>Menu</p>
             <ul className="flex flex-col gap-1">
-              {items.map((item) => {
+              {MENU_ITEMS.map((item) => {
                 const active = item.key === activePage;
                 return (
                   <li key={item.key}>
@@ -254,9 +252,6 @@ export function Sidebar({
                   </li>
                 );
               })}
-              {items.length === 0 && (
-                <li className={`px-3 py-2 text-sm ${DIM} ${hideWhenCollapsed}`}>No match</li>
-              )}
             </ul>
           </nav>
 

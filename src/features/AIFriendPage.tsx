@@ -8,9 +8,11 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   callGemini,
+  isUpgradeOrQuotaError,
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
@@ -24,10 +26,12 @@ import {
 } from "../lib/storage";
 import {
   deleteVoiceSample,
-  getVoiceSample,
+  getVoiceSamples,
   saveVoiceSample,
   synthesizeWithSavedVoice,
   type SavedVoiceSample,
+  type VoiceAudioBlob,
+  type VoiceConsentConfirmation,
   type VoiceSampleLanguage,
 } from "../lib/voiceStorage";
 
@@ -92,10 +96,16 @@ const T = {
     cancel: "Cancel",
     myVoice: "My voice",
     voiceOn: "Replies use this voice.",
-    voiceOff: "No voice added. Upload a clear 30–60 sec recording of your friend (no music/noise). Until then a browser voice is used.",
-    remove: "Remove",
+    voiceOff: "Add a clear 30–60 sec voice recording (no music/noise). Until then, a browser voice is used.",
+    voiceName: "Voice label",
+    deleteVoice: "Delete my voice",
+    aiGenerated: "Voice replies are AI-generated.",
+    consent: "I confirm this is my own voice, or the person has given me clear permission to create a voice from their recording.",
+    consentBy: "Whose voice is this?",
+    consentSelf: "My own voice",
+    consentPermission: "Someone else's voice (I have clear permission)",
     save: "Save voice",
-    consent: "This is my own voice, or I have permission to use it.",
+    plans: "View voice add-on",
     noProfile: "Add your birth details to start talking.",
     blocked: "The browser blocked audio. Tap the orb to replay.",
     typeInstead: "Type instead",
@@ -115,7 +125,7 @@ const T = {
     micFail: "Could not use the microphone. Check permission and try again.",
     saveFail: "This chat could not be saved in this browser.",
     sampleBig: "The audio sample must be 10 MB or smaller.",
-    sampleType: "Choose a WAV, MP3, FLAC, or OGG file.",
+    sampleType: "Choose a WAV, MP3, FLAC, or OPUS file.",
     emptyReply: "AI Friend returned an empty reply.",
     failed: "AI Friend could not reply. Please try again.",
     suggestions: [
@@ -145,10 +155,16 @@ const T = {
     cancel: "रद्द करें",
     myVoice: "मेरी आवाज़",
     voiceOn: "जवाब इसी आवाज़ में आएँगे।",
-    voiceOff: "कोई आवाज़ नहीं जोड़ी गई। दोस्त की साफ़ 30–60 सेकंड की रिकॉर्डिंग (बिना music/शोर) अपलोड करें। तब तक Browser की आवाज़ इस्तेमाल होगी।",
-    remove: "हटाएँ",
+    voiceOff: "साफ़ 30–60 सेकंड की आवाज़ की रिकॉर्डिंग अपलोड करें (बिना music/शोर)। तब तक Browser की आवाज़ इस्तेमाल होगी।",
+    voiceName: "आवाज़ का नाम",
+    deleteVoice: "मेरी आवाज़ हटाएँ",
+    aiGenerated: "आवाज़ में जवाब AI द्वारा बनाए जाते हैं।",
+    consent: "मैं पुष्टि करता/करती हूँ कि यह मेरी अपनी आवाज़ है, या उस व्यक्ति ने उनकी रिकॉर्डिंग से आवाज़ बनाने की स्पष्ट अनुमति दी है।",
+    consentBy: "यह किसकी आवाज़ है?",
+    consentSelf: "मेरी अपनी आवाज़",
+    consentPermission: "किसी और की आवाज़ (मेरे पास स्पष्ट अनुमति है)",
     save: "Voice सेव करें",
-    consent: "यह मेरी अपनी आवाज़ है, या मेरे पास इसकी अनुमति है।",
+    plans: "Voice add-on देखें",
     noProfile: "बात शुरू करने के लिए पहले जन्म विवरण जोड़ें।",
     blocked: "Browser ने audio रोक दिया। Orb पर टैप करके दोबारा सुनें।",
     typeInstead: "टाइप करें",
@@ -168,7 +184,7 @@ const T = {
     micFail: "Microphone नहीं चला। Permission देखकर दोबारा कोशिश करें।",
     saveFail: "यह चैट इस browser में सेव नहीं हो सकी।",
     sampleBig: "Audio sample 10 MB या उससे छोटा होना चाहिए।",
-    sampleType: "WAV, MP3, FLAC या OGG file चुनें।",
+    sampleType: "WAV, MP3, FLAC या OPUS file चुनें।",
     emptyReply: "AI Friend ने खाली जवाब दिया।",
     failed: "AI Friend जवाब नहीं दे सका। दोबारा कोशिश करें।",
     suggestions: [
@@ -344,7 +360,7 @@ export default function AIFriendPage() {
   const router = useRouter();
   const [profiles] = useState(() => getUserKundaliProfiles());
   const [selectedProfileId, setSelectedProfileId] = useState(() => {
-    const saved = localStorage.getItem("ai_friend_selected_profile");
+    const saved = sessionStorage.getItem("ai_friend_selected_profile");
     if (saved && profiles.some((p) => getKundaliProfileId(p) === saved)) return saved;
     const fallback = getUserKundaliProfile() ?? profiles[0];
     return fallback ? getKundaliProfileId(fallback) : "";
@@ -365,15 +381,22 @@ export default function AIFriendPage() {
   const [interim, setInterim] = useState("");
   const [listening, setListening] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [plansFeature, setPlansFeature] = useState<"QUOTA_EXCEEDED" | "voice_reply" | "">("");
   const [canRetry, setCanRetry] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const [voiceSample, setVoiceSample] = useState<SavedVoiceSample | null>(null);
+  const [voiceSamples, setVoiceSamples] = useState<SavedVoiceSample[]>([]);
+  const [activeVoiceId, setActiveVoiceId] = useState("");
+  const voiceSample =
+    voiceSamples.find((sample) => sample.id === activeVoiceId) ?? voiceSamples[0] ?? null;
   const [loadingSample, setLoadingSample] = useState(true);
   const [sampleLanguage, setSampleLanguage] = useState<VoiceSampleLanguage>("hi");
+  const [sampleLabel, setSampleLabel] = useState("");
   const [sampleFile, setSampleFile] = useState<File | null>(null);
   const [consent, setConsent] = useState(false);
+  const [consentConfirmedBy, setConsentConfirmedBy] =
+    useState<VoiceConsentConfirmation | "">("");
   const [savingSample, setSavingSample] = useState(false);
   const [voiceError, setVoiceError] = useState("");
 
@@ -382,7 +405,7 @@ export default function AIFriendPage() {
   const playToken = useRef(0);
   const busyRef = useRef(false);
   const lastQuestionRef = useRef("");
-  const blobRef = useRef<{ key: string; blob: Blob } | null>(null);
+  const blobRef = useRef<{ key: string; blob: VoiceAudioBlob } | null>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -390,7 +413,6 @@ export default function AIFriendPage() {
   const t = T[language];
   const voiceMode = mode === "voice";
   const orbState = listening ? "listening" : phase === "thinking" ? "thinking" : phase === "playing" ? "speaking" : "idle";
-  const statusText = listening ? t.listening : phase === "thinking" ? t.thinking : phase === "playing" ? t.speaking : t.online;
   const busy = listening || phase === "thinking" || phase === "playing";
   const canReset = busy || (voiceMode && Boolean(stage.answer || stage.question));
   const showStarters = !listening && phase === "idle" && !stage.answer && !stage.question;
@@ -448,14 +470,31 @@ export default function AIFriendPage() {
 
   useEffect(() => {
     let current = true;
-    getVoiceSample(selectedProfileId)
-      .then((sample) => { if (current) setVoiceSample(sample); })
+    getVoiceSamples()
+      .then((samples) => {
+        if (!current) return;
+        setVoiceSamples(samples);
+        setActiveVoiceId((selected) =>
+          selected && samples.some((sample) => sample.id === selected)
+            ? selected
+            : samples[0]?.id ?? "",
+        );
+      })
       .catch((error: unknown) => {
-        console.error("Could not load the locally saved voice sample:", error);
+        console.error("Could not load account voice profiles:", error);
+        if (current) {
+          setVoiceError(error instanceof Error ? error.message : t.saveFail);
+          if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            error.code === "UPGRADE_REQUIRED"
+          ) setPlansFeature("voice_reply");
+        }
       })
       .finally(() => { if (current) setLoadingSample(false); });
     return () => { current = false; };
-  }, [selectedProfileId]);
+  }, [t.saveFail]);
 
   // ---- playback ---------------------------------------------------------------
   const stopPlayback = () => {
@@ -468,11 +507,12 @@ export default function AIFriendPage() {
   const createPlayer = async (text: string): Promise<Player> => {
     if (voiceSample) {
       try {
-        const key = `${language}|${text}`;
+        const key = `${voiceSample.id}|${language}|${text}`;
         const blob = blobRef.current?.key === key
           ? blobRef.current.blob
           : await synthesizeWithSavedVoice(voiceSample, text, language);
         blobRef.current = { key, blob };
+        setChatError(blob.fallbackMessage ?? "");
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         let finish!: () => void;
@@ -492,6 +532,12 @@ export default function AIFriendPage() {
         };
       } catch (error) {
         console.error("Saved-voice playback failed, using the browser voice:", error);
+        if (error && typeof error === "object" && "code" in error) {
+          setPlansFeature(
+            error.code === "QUOTA_EXCEEDED" ? "QUOTA_EXCEEDED" :
+              error.code === "UPGRADE_REQUIRED" ? "voice_reply" : "",
+          );
+        }
         setChatError(error instanceof Error && error.name !== "NotAllowedError" ? error.message : t.blocked);
       }
     }
@@ -544,6 +590,7 @@ export default function AIFriendPage() {
     setInput("");
     setInterim("");
     setChatError("");
+    setPlansFeature("");
     setCanRetry(false);
     setStage({ question, answer: "" });
     setPhase("thinking");
@@ -555,6 +602,7 @@ export default function AIFriendPage() {
         .join("\n");
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
+        purpose: "chat",
         input: `You are ${profile.name}'s warm, thoughtful AI Friend. Use the user's saved birth details as personal context, but do not claim astrology is scientifically certain. Be kind, conversational, and answer the actual question. Do not invent horoscope/chart placements. Keep safety-sensitive advice cautious and encourage professional help where appropriate.${spoken ? " This reply will be read aloud: use 3 to 6 short plain sentences, with no markdown, lists or emojis." : ""}
 
 User details:
@@ -579,6 +627,14 @@ AI Friend:`,
     } catch (error) {
       console.error("AI Friend chat request failed:", error);
       setCanRetry(true);
+      const code = error && typeof error === "object" && "code" in error
+        ? error.code
+        : "";
+      setPlansFeature(
+        isUpgradeOrQuotaError(error)
+          ? code === "UPGRADE_REQUIRED" ? "voice_reply" : "QUOTA_EXCEEDED"
+          : "",
+      );
       setChatError(
         isQuotaOrRateLimitError(error) ? QUOTA_ERROR_MESSAGE_HI : error instanceof Error ? error.message : t.failed,
       );
@@ -592,7 +648,9 @@ AI Friend:`,
 
   // The speech callback outlives the render it was created in; always call the latest sendMessage.
   const sendRef = useRef(sendMessage);
-  sendRef.current = sendMessage;
+  useLayoutEffect(() => {
+    sendRef.current = sendMessage;
+  });
 
   const toggleMic = () => {
     if (listening) { recognitionRef.current?.stop(); return; }
@@ -671,7 +729,7 @@ AI Friend:`,
     const next = profiles.find((p) => getKundaliProfileId(p) === profileId) ?? null;
     const chat = loadProfileChat(next);
     setSelectedProfileId(profileId);
-    localStorage.setItem("ai_friend_selected_profile", profileId);
+    sessionStorage.setItem("ai_friend_selected_profile", profileId);
     setMessages(chat);
     const exchange = lastExchange(chat);
     setStage(exchange);
@@ -679,10 +737,9 @@ AI Friend:`,
     setInput("");
     setChatError("");
     setCanRetry(false);
-    setLoadingSample(true);
-    setVoiceSample(null);
     setSampleFile(null);
     setConsent(false);
+    setConsentConfirmedBy("");
     setVoiceError("");
   };
 
@@ -708,8 +765,18 @@ AI Friend:`,
   const pickSample = (file: File | null) => {
     setVoiceError("");
     setConsent(false);
+    setConsentConfirmedBy("");
     if (file && file.size > MAX_SAMPLE_SIZE) { setSampleFile(null); setVoiceError(t.sampleBig); return; }
-    if (file && !file.type.startsWith("audio/") && !/\.(wav|mp3|flac|ogg|oga)$/i.test(file.name)) {
+    const supportedAudioType = [
+      "audio/wav",
+      "audio/x-wav",
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/flac",
+      "audio/opus",
+      "audio/ogg",
+    ].includes(file?.type ?? "");
+    if (file && !supportedAudioType && !/\.(wav|mp3|flac|opus)$/i.test(file.name)) {
       setSampleFile(null);
       setVoiceError(t.sampleType);
       return;
@@ -719,29 +786,47 @@ AI Friend:`,
 
   const saveSample = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!profile || !sampleFile || !consent || savingSample) return;
+    if (!sampleFile || !consent || !consentConfirmedBy || savingSample) return;
     try {
       setSavingSample(true);
       setVoiceError("");
-      setVoiceSample(await saveVoiceSample(getKundaliProfileId(profile), sampleFile, sampleLanguage));
+      setPlansFeature("");
+      const saved = await saveVoiceSample(
+        sampleLabel.trim() || "My voice",
+        sampleFile,
+        sampleLanguage,
+        consentConfirmedBy,
+      );
+      setVoiceSamples((current) => [...current, saved]);
+      setActiveVoiceId(saved.id);
+      setSampleLabel("");
       setSampleFile(null);
       setConsent(false);
+      setConsentConfirmedBy("");
     } catch (error) {
-      console.error("Could not save the local voice sample:", error);
+      console.error("Could not save the account voice profile:", error);
       setVoiceError(error instanceof Error ? error.message : t.saveFail);
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "UPGRADE_REQUIRED"
+      ) setPlansFeature("voice_reply");
     } finally {
       setSavingSample(false);
     }
   };
 
-  const removeSample = async () => {
-    if (!profile) return;
+  const removeSample = async (voiceProfileId: string) => {
     try {
-      await deleteVoiceSample(getKundaliProfileId(profile));
-      setVoiceSample(null);
+      await deleteVoiceSample(voiceProfileId);
+      const remaining = voiceSamples.filter((sample) => sample.id !== voiceProfileId);
+      setVoiceSamples(remaining);
+      if (activeVoiceId === voiceProfileId) setActiveVoiceId(remaining[0]?.id ?? "");
+      setVoiceError("");
     } catch (error) {
-      console.error("Could not remove the local voice sample:", error);
-      setVoiceError(t.saveFail);
+      console.error("Could not remove the account voice profile:", error);
+      setVoiceError(error instanceof Error ? error.message : t.saveFail);
     }
   };
 
@@ -757,24 +842,15 @@ AI Friend:`,
           className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white/80">
           <Icon name="sliders" className="h-5 w-5" />
         </button>
-        {/* <div className="flex min-w-0 flex-col items-center gap-1.5">
-          <span className="rounded-full bg-[var(--af-accent)] px-4 py-1 text-sm font-medium text-[var(--af-ink)]">AI Friend</span>
-          <span className="flex items-center gap-1.5 text-xs text-[var(--af-dim)]" aria-live="polite">
-            <span className={`h-1.5 w-1.5 rounded-full bg-[var(--af-accent)] ${busy ? "animate-pulse" : ""}`} />
-            {statusText}
-          </span>
-          {profile && profiles.length > 1 && (
-            <span className="max-w-full truncate text-[0.7rem] text-white/45">{profile.name}</span>
-          )}
-        </div> */}
-        {/* <div role="group" aria-label={t.replyMode} className="flex rounded-full bg-white/10 p-0.5 text-xs">
+     <p></p>
+        <div role="group" aria-label={t.replyMode} className="flex rounded-full bg-white/10 p-0.5 text-xs">
           {(["text", "voice"] as const).map((m) => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => changeMode(m)}
               className={`rounded-full px-3 py-1.5 ${mode === m ? "bg-[var(--af-accent)] font-medium text-[var(--af-ink)]" : "text-white/70"}`}>
               {t[m]}
             </button>
           ))}
-        </div> */}
+        </div>
       </header>
 
       {!profile ? (
@@ -869,6 +945,14 @@ AI Friend:`,
               {t.retry}
             </button>
           )}
+          {plansFeature && (
+            <Link
+              href={`/plans?feature=${plansFeature}`}
+              className="rounded-full border border-[#f8d27a]/50 px-3 py-1 font-medium text-[#f8d27a]"
+            >
+              View plans
+            </Link>
+          )}
         </div>
       )}
 
@@ -945,30 +1029,112 @@ AI Friend:`,
 
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
               <h3 className="text-sm font-medium">{t.myVoice}</h3>
-              {loadingSample ? null : voiceSample ? (
-                <>
-                  <p className="text-sm text-[var(--af-dim)]">{t.voiceOn} ({voiceSample.fileName})</p>
-                  <button type="button" onClick={removeSample} className="w-fit rounded-full border border-white/20 px-4 py-2 text-sm">{t.remove}</button>
-                </>
+              <p className="text-xs text-[var(--af-dim)]">{t.aiGenerated}</p>
+              {loadingSample ? (
+                <p role="status" className="text-sm text-[var(--af-dim)]">{t.thinking}</p>
               ) : (
-                <form onSubmit={saveSample} className="flex flex-col gap-3">
-                  <p className="text-sm text-[var(--af-dim)]">{t.voiceOff}</p>
-                  <input type="file" accept="audio/*,.wav,.mp3,.flac,.ogg,.oga" aria-label={t.myVoice}
-                    onChange={(e) => pickSample(e.currentTarget.files?.[0] ?? null)} className={fieldClass} />
-                  <select value={sampleLanguage} onChange={(e) => setSampleLanguage(e.target.value as VoiceSampleLanguage)}
-                    aria-label={t.language} className={fieldClass}>
-                    <option value="hi" className="bg-black">हिंदी</option>
-                    <option value="en" className="bg-black">English</option>
-                  </select>
-                  <label className="flex items-start gap-2 text-sm text-[var(--af-dim)]">
-                    <input type="checkbox" checked={consent} disabled={!sampleFile} onChange={(e) => setConsent(e.currentTarget.checked)} className="mt-1" />
-                    {t.consent}
-                  </label>
-                  <button type="submit" disabled={!sampleFile || !consent || savingSample}
-                    className="w-fit rounded-full bg-[var(--af-accent)] px-5 py-2 text-sm font-medium text-[var(--af-ink)] disabled:opacity-40">{t.save}</button>
-                </form>
+                <>
+                  {voiceSamples.map((sample) => (
+                    <div key={sample.id} className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={voiceSample?.id === sample.id}
+                        onClick={() => setActiveVoiceId(sample.id)}
+                        className={`min-w-0 flex-1 rounded-full border px-4 py-2 text-left text-sm ${
+                          voiceSample?.id === sample.id
+                            ? "border-[var(--af-accent)] bg-[var(--af-accent)]/10"
+                            : "border-white/20"
+                        }`}
+                      >
+                        {sample.label} · {sample.language.toUpperCase()}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void removeSample(sample.id)}
+                        className="shrink-0 rounded-full border border-white/20 px-3 py-2 text-xs"
+                      >
+                        {t.deleteVoice}
+                      </button>
+                    </div>
+                  ))}
+                  {voiceSamples.length === 0 && (
+                    <p className="text-sm text-[var(--af-dim)]">{t.voiceOff}</p>
+                  )}
+                  <form onSubmit={saveSample} className="flex flex-col gap-3">
+                      <label className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
+                        {t.voiceName}
+                        <input
+                          type="text"
+                          value={sampleLabel}
+                          maxLength={40}
+                          onChange={(event) => setSampleLabel(event.currentTarget.value)}
+                          className={fieldClass}
+                        />
+                      </label>
+                      <input
+                        type="file"
+                        accept=".wav,.mp3,.flac,.opus,audio/wav,audio/mpeg,audio/flac,audio/opus"
+                        aria-label={t.myVoice}
+                        onChange={(event) => pickSample(event.currentTarget.files?.[0] ?? null)}
+                        className={fieldClass}
+                      />
+                      <select
+                        value={sampleLanguage}
+                        onChange={(event) => setSampleLanguage(event.target.value as VoiceSampleLanguage)}
+                        aria-label={t.language}
+                        className={fieldClass}
+                      >
+                        <option value="hi" className="bg-black">हिंदी</option>
+                        <option value="en" className="bg-black">English</option>
+                      </select>
+                      <label className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
+                        {t.consentBy}
+                        <select
+                          value={consentConfirmedBy}
+                          onChange={(event) => {
+                            setConsentConfirmedBy(
+                              event.currentTarget.value as VoiceConsentConfirmation | "",
+                            );
+                            setConsent(false);
+                          }}
+                          aria-label={t.consentBy}
+                          className={fieldClass}
+                        >
+                          <option value="" className="bg-black">—</option>
+                          <option value="self" className="bg-black">{t.consentSelf}</option>
+                          <option value="has_permission" className="bg-black">
+                            {t.consentPermission}
+                          </option>
+                        </select>
+                      </label>
+                      <label className="flex items-start gap-2 text-sm text-[var(--af-dim)]">
+                        <input
+                          type="checkbox"
+                          checked={consent}
+                          disabled={!sampleFile || !consentConfirmedBy}
+                          onChange={(event) => setConsent(event.currentTarget.checked)}
+                          className="mt-1"
+                        />
+                        {t.consent}
+                      </label>
+                      <button
+                        type="submit"
+                        disabled={
+                          !sampleFile || !consent || !consentConfirmedBy || savingSample
+                        }
+                        className="w-fit rounded-full bg-[var(--af-accent)] px-5 py-2 text-sm font-medium text-[var(--af-ink)] disabled:opacity-40"
+                      >
+                        {t.save}
+                      </button>
+                  </form>
+                </>
               )}
               {voiceError && <p role="alert" className="text-sm text-[#ff9d9d]">{voiceError}</p>}
+              {plansFeature === "voice_reply" && (
+                <Link href="/plans?feature=voice_reply" className="text-sm font-medium text-[var(--af-accent)] underline">
+                  {t.plans}
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-2 border-t border-white/10 pt-4">

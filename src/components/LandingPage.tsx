@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import LegalFooter from "./LegalFooter";
 
 const services = [
   {
@@ -269,6 +270,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="mb-4"><LegalFooter /></div>
         <p className="mx-auto max-w-2xl">
           Gen-K readings are AI-generated for reflection and information only.
           They are not a substitute for professional medical, legal, financial

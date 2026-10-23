@@ -1,65 +1,72 @@
 import express from "express";
-
-// Hosted voice cloning + text-to-speech. Two providers, picked by .env:
-//   Fish Audio  (FISH_API_KEY)        -> has a FREE API tier  (default if set)
-//   ElevenLabs  (ELEVENLABS_API_KEY)  -> paid plan needed for cloning
-// The API key stays on the server; the browser only ever sees a voice id.
-//
-//   POST   /api/voice/clone        raw audio body  -> { success, voiceId }
-//   POST   /api/voice/speak        { voiceId, text } -> audio/mpeg
-//   DELETE /api/voice/:voiceId     removes the cloned voice
-//
-// .env:
-//   VOICE_PROVIDER=fish|elevenlabs    (optional; auto-detected from the keys)
-//   FISH_API_KEY=...  FISH_MODEL=s2.1-pro-free
-//   ELEVENLABS_API_KEY=...  ELEVENLABS_MODEL=eleven_multilingual_v2
+import VoiceProfile from "../models/VoiceProfile.js";
+import { requireFeature, userRateLimit } from "../middleware/featureAccess.js";
+import { consumeUsage, refundUsage } from "../services/entitlements.js";
+import {
+  getPresetVoice,
+  synthesize,
+  synthesizeWithClone,
+} from "../services/voiceProvider.js";
 
 const router = express.Router();
-
-const API = "https://api.elevenlabs.io/v1";
-const VOICE_NAME_PREFIX = "genk-";
-const MAX_SAMPLE_BYTES = 10 * 1024 * 1024; // ElevenLabs limit per file
+const CONSENT_VERSION = "voice-consent-v1";
+const MAX_SAMPLE_BYTES = 10 * 1024 * 1024;
 const MAX_TEXT_CHARS = 1200;
-const VOICE_ID_RE = /^[A-Za-z0-9]{10,40}$/;
+const dailyCharacterLimit = () => Number(process.env.VOICE_CHARACTERS_PER_DAY || 10_000);
+const limitSpeakPerUser = userRateLimit({
+  limit: () => Number(process.env.VOICE_RATE_LIMIT_PER_MIN || 10),
+  code: "USER_RATE_LIMITED",
+});
+const limitDeletePerUser = userRateLimit({
+  limit: () => Number(process.env.VOICE_DELETE_RATE_LIMIT_PER_MIN || 10),
+  code: "USER_RATE_LIMITED",
+});
 
-const FISH = "https://api.fish.audio";
-const provider = () =>
-  process.env.VOICE_PROVIDER ||
-  (process.env.FISH_API_KEY ? "fish" : process.env.ELEVENLABS_API_KEY ? "elevenlabs" : "");
-const apiKey = () =>
-  provider() === "fish" ? process.env.FISH_API_KEY || "" : process.env.ELEVENLABS_API_KEY || "";
-const modelId = () => process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
-const fishModel = () => process.env.FISH_MODEL || "s2.1-pro-free";
-
-function requireKey(req, res, next) {
-  if (!apiKey()) {
+function requireBosonKey(_req, res, next) {
+  if (!process.env.BOSON_API_KEY) {
     return res.status(503).json({
       success: false,
-      message: "Voice service is not configured on the server.",
+      message: "Voice generation is not configured on the server. Please try again later.",
     });
   }
   next();
 }
 
-const extFor = (type) =>
-  ({
-    "audio/mpeg": "mp3",
-    "audio/mp3": "mp3",
-    "audio/wav": "wav",
-    "audio/x-wav": "wav",
-    "audio/wave": "wav",
-    "audio/flac": "flac",
-    "audio/ogg": "ogg",
-    "audio/webm": "webm",
-    "audio/mp4": "m4a",
-    "audio/x-m4a": "m4a",
-    "audio/aac": "aac",
-  })[type] || "mp3";
+function publicVoice(profile) {
+  return {
+    id: profile._id.toString(),
+    label: profile.label,
+    language: profile.language,
+    createdAt: profile.createdAt,
+  };
+}
 
-// ---- clone ------------------------------------------------------------------
+function referenceTypeFor(type) {
+  const normalized = type.toLowerCase();
+  if (["audio/mpeg", "audio/mp3"].includes(normalized)) return "audio/mpeg";
+  if (["audio/wav", "audio/x-wav", "audio/wave"].includes(normalized)) return "audio/wav";
+  if (normalized === "audio/flac") return "audio/flac";
+  if (["audio/opus", "audio/ogg"].includes(normalized)) return "audio/opus";
+  return "";
+}
+
+router.get("/", async (req, res, next) => {
+  try {
+    const profiles = await VoiceProfile.find({ userId: req.user._id })
+      .where("referenceAudio").exists(true)
+      .select("_id label language createdAt")
+      .sort({ createdAt: 1 })
+      .lean();
+    res.json({ success: true, voices: profiles.map(publicVoice) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post(
   "/clone",
-  requireKey,
+  requireFeature("voice_reply"),
+  requireBosonKey,
   express.raw({ type: () => true, limit: MAX_SAMPLE_BYTES }),
   async (req, res) => {
     const audio = req.body;
@@ -70,150 +77,199 @@ router.post(
       });
     }
 
+    if (req.get("x-voice-consent") !== "true") {
+      return res.status(400).json({
+        success: false,
+        code: "VOICE_CONSENT_REQUIRED",
+        message: "Confirm that you own this voice or have clear permission before uploading.",
+      });
+    }
+    const consentConfirmedBy = req.get("x-voice-consent-confirmed-by");
+    if (!["self", "has_permission"].includes(consentConfirmedBy)) {
+      return res.status(400).json({
+        success: false,
+        code: "VOICE_CONSENT_REQUIRED",
+        message: "Confirm whether this is your voice or you have permission to use it.",
+      });
+    }
+    const language = req.get("x-voice-language");
+    if (!["en", "hi"].includes(language)) {
+      return res.status(400).json({
+        success: false,
+        message: "Choose Hindi or English for this voice profile.",
+      });
+    }
+
     const contentType = (req.headers["content-type"] || "audio/mpeg").split(";")[0].trim();
-    const label = String(req.query.label || "friend").replace(/[^\w .-]/g, "").slice(0, 40) || "friend";
+    const referenceAudioType = referenceTypeFor(contentType);
+    if (!referenceAudioType) {
+      return res.status(400).json({
+        success: false,
+        message: "Use an MP3, WAV, FLAC, or OPUS voice recording.",
+      });
+    }
+    const label = String(req.query.label || "My voice").slice(0, 40).trim() || "My voice";
 
     try {
-      const form = new FormData();
-      const blob = new Blob([audio], { type: contentType });
-      const fileName = `sample.${extFor(contentType)}`;
-      const title = `${VOICE_NAME_PREFIX}${label}-${Date.now()}`;
-      let upstream;
-
-      if (provider() === "fish") {
-        form.append("type", "tts");
-        form.append("title", title);
-        form.append("train_mode", "fast");
-        form.append("visibility", "private");
-        form.append("enhance_audio_quality", "true");
-        form.append("voices", blob, fileName);
-        upstream = await fetch(`${FISH}/model`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey()}` },
-          body: form,
-        });
-      } else {
-        form.append("name", title);
-        form.append("remove_background_noise", "true");
-        form.append("files", blob, fileName);
-        upstream = await fetch(`${API}/voices/add`, {
-          method: "POST",
-          headers: { "xi-api-key": apiKey() },
-          body: form,
-        });
-      }
-      const data = await upstream.json().catch(() => null);
-      const voiceId = provider() === "fish" ? data?._id : data?.voice_id;
-
-      if (!upstream.ok || !voiceId) {
-        console.error("Voice clone failed:", provider(), upstream.status, JSON.stringify(data));
-        const status = upstream.status === 401 || upstream.status === 402 ? 503 : 502;
-        return res.status(status).json({
-          success: false,
-          message:
-            upstream.status === 402
-              ? "Voice cloning needs a paid plan or more credits on the server."
-              : "Could not create a voice from this sample. Try a clearer 30–60 second recording.",
-        });
-      }
-      res.status(201).json({ success: true, voiceId });
+      const profile = await VoiceProfile.create({
+        userId: req.user._id,
+        referenceAudio: audio,
+        referenceAudioType,
+        label,
+        language,
+        consentAt: new Date(),
+        consentVersion: CONSENT_VERSION,
+        consentConfirmedBy,
+      });
+      return res.status(201).json({ success: true, voice: publicVoice(profile) });
     } catch (error) {
-      console.error("Voice clone error:", error);
-      res.status(502).json({ success: false, message: "Voice service is unreachable." });
+      console.error("Voice sample save failed:", error?.message ?? error);
+      return res.status(500).json({
+        success: false,
+        message: "Could not save this voice sample. Please try again.",
+      });
     }
   },
 );
 
-// ---- speak ------------------------------------------------------------------
-router.post("/speak", requireKey, async (req, res) => {
-  const { voiceId, text } = req.body || {};
-  const clean = typeof text === "string" ? text.trim() : "";
-
-  if (typeof voiceId !== "string" || !VOICE_ID_RE.test(voiceId)) {
-    return res.status(400).json({ success: false, message: "Invalid voice." });
-  }
-  if (!clean || clean.length > MAX_TEXT_CHARS) {
-    return res.status(400).json({
-      success: false,
-      message: `Text must be 1–${MAX_TEXT_CHARS} characters.`,
-    });
-  }
-
-  try {
-    const upstream =
-      provider() === "fish"
-        ? await fetch(`${FISH}/v1/tts`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey()}`,
-              "Content-Type": "application/json",
-              model: fishModel(),
-            },
-            body: JSON.stringify({ text: clean, reference_id: voiceId, format: "mp3" }),
-          })
-        : await fetch(`${API}/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
-            method: "POST",
-            headers: {
-              "xi-api-key": apiKey(),
-              "Content-Type": "application/json",
-              Accept: "audio/mpeg",
-            },
-            body: JSON.stringify({
-              text: clean,
-              model_id: modelId(),
-              voice_settings: { stability: 0.5, similarity_boost: 0.85, style: 0.2, use_speaker_boost: true },
-            }),
-          });
-
-    if (!upstream.ok) {
-      console.error("TTS failed:", provider(), upstream.status, await upstream.text().catch(() => ""));
-      return res.status(upstream.status === 404 ? 404 : 502).json({
+router.post(
+  "/speak",
+  requireFeature("voice_reply"),
+  limitSpeakPerUser,
+  requireBosonKey,
+  async (req, res) => {
+    const { voiceProfileId, text } = req.body || {};
+    const clean = typeof text === "string" ? text.trim() : "";
+    const characterCount = Array.from(clean).length;
+    if (typeof voiceProfileId !== "string" || !/^[a-f\d]{24}$/i.test(voiceProfileId)) {
+      return res.status(400).json({ success: false, message: "Invalid voice profile." });
+    }
+    if (!clean || characterCount > MAX_TEXT_CHARS) {
+      return res.status(400).json({
         success: false,
-        message:
-          upstream.status === 404
-            ? "This voice no longer exists. Please add it again."
-            : "Could not generate speech right now.",
+        message: `Text must be 1–${MAX_TEXT_CHARS} characters.`,
       });
     }
 
-    const buffer = Buffer.from(await upstream.arrayBuffer());
-    res.set({ "Content-Type": "audio/mpeg", "Cache-Control": "no-store" });
-    res.send(buffer);
-  } catch (error) {
-    console.error("Voice speak error:", error);
-    res.status(502).json({ success: false, message: "Voice service is unreachable." });
-  }
-});
+    let usageAt;
+    let usageConsumed = false;
+    try {
+      const profile = await VoiceProfile.findOne({
+        _id: voiceProfileId,
+        userId: req.user._id,
+        referenceAudio: { $exists: true },
+      }).select("referenceAudio referenceAudioType");
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          code: "VOICE_NOT_FOUND",
+          message: "This voice is not available on your account.",
+        });
+      }
 
-// ---- delete -----------------------------------------------------------------
-router.delete("/:voiceId", requireKey, async (req, res) => {
-  const { voiceId } = req.params;
-  if (!VOICE_ID_RE.test(voiceId)) {
-    return res.status(400).json({ success: false, message: "Invalid voice." });
+      usageAt = new Date();
+      const usage = await consumeUsage(
+        req.user._id,
+        "voice_characters",
+        characterCount,
+        dailyCharacterLimit(),
+        usageAt,
+      );
+      if (!usage.allowed) {
+        return res.status(402).json({
+          success: false,
+          code: "QUOTA_EXCEEDED",
+          message: "Today's voice character limit has been reached.",
+          upgrade: true,
+          usage: { used: usage.count, limit: usage.limit, remaining: usage.remaining },
+        });
+      }
+      usageConsumed = true;
+
+      let audio;
+      let fallbackMessage = "";
+      try {
+        audio = await synthesizeWithClone(
+          clean,
+          profile.referenceAudio,
+          profile._id.toString(),
+          profile.referenceAudioType,
+        );
+      } catch (cloneError) {
+        console.warn("Saved voice generation failed; trying a preset voice:", cloneError?.message);
+        try {
+          audio = await synthesize(clean, getPresetVoice());
+          fallbackMessage =
+            "Your saved voice could not be used, so this reply was spoken with a preset voice.";
+        } catch (presetError) {
+          const message = presetError?.code === "BAD_API_KEY"
+            ? "Voice generation is temporarily unavailable. Please contact support."
+            : "Voice generation failed, including the preset voice fallback. Please try again later.";
+          console.error("Preset voice fallback failed:", presetError?.message ?? presetError);
+          await refundUsage(req.user._id, "voice_characters", characterCount, usageAt);
+          usageConsumed = false;
+          return res.status(presetError?.code === "BAD_API_KEY" ? 503 : 502).json({
+            success: false,
+            code: presetError?.code || "VOICE_GENERATION_FAILED",
+            message,
+          });
+        }
+      }
+
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "no-store",
+        ...(fallbackMessage
+          ? { "X-Voice-Fallback": "preset", "X-Voice-Message": fallbackMessage }
+          : {}),
+      });
+      return res.send(audio);
+    } catch (error) {
+      if (usageConsumed) {
+        await refundUsage(req.user._id, "voice_characters", characterCount, usageAt);
+      }
+      console.error("Voice speak error:", error?.message ?? error);
+      return res.status(error?.code === "BAD_API_KEY" ? 503 : 502).json({
+        success: false,
+        code: error?.code || "VOICE_GENERATION_FAILED",
+        message: error?.code === "BAD_API_KEY"
+          ? "Voice generation is temporarily unavailable. Please contact support."
+          : error?.code === "TIMEOUT"
+            ? "Voice generation timed out. Please try again."
+            : error?.code === "RATE_LIMITED"
+              ? "Voice generation is busy right now. Please try again shortly."
+              : "Could not complete this voice reply. Please try again.",
+      });
+    }
+  },
+);
+
+router.delete("/:voiceProfileId", limitDeletePerUser, async (req, res) => {
+  const { voiceProfileId } = req.params;
+  if (!/^[a-f\d]{24}$/i.test(voiceProfileId)) {
+    return res.status(400).json({ success: false, message: "Invalid voice profile." });
   }
 
   try {
-    const fish = provider() === "fish";
-    const url = fish ? `${FISH}/model/${voiceId}` : `${API}/voices/${voiceId}`;
-    const headers = fish ? { Authorization: `Bearer ${apiKey()}` } : { "xi-api-key": apiKey() };
-
-    // Only ever delete voices this app created.
-    const info = await fetch(url, { headers });
-    if (info.status === 404) return res.json({ success: true });
-    const meta = await info.json().catch(() => null);
-    const name = fish ? meta?.title : meta?.name;
-    if (!info.ok || !String(name || "").startsWith(VOICE_NAME_PREFIX)) {
-      return res.status(403).json({ success: false, message: "Not allowed." });
+    const profile = await VoiceProfile.findOne({
+      _id: voiceProfileId,
+      userId: req.user._id,
+    });
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        code: "VOICE_NOT_FOUND",
+        message: "This voice is not available on your account.",
+      });
     }
-
-    const del = await fetch(url, { method: "DELETE", headers });
-    if (!del.ok && del.status !== 404) {
-      return res.status(502).json({ success: false, message: "Could not remove the voice." });
-    }
-    res.json({ success: true });
+    await VoiceProfile.deleteOne({ _id: profile._id, userId: req.user._id });
+    return res.json({ success: true });
   } catch (error) {
-    console.error("Voice delete error:", error);
-    res.status(502).json({ success: false, message: "Voice service is unreachable." });
+    console.error("Voice delete error:", error?.message ?? error);
+    return res.status(500).json({
+      success: false,
+      message: "Could not delete this voice profile. Please try again.",
+    });
   }
 });
 
