@@ -85,7 +85,10 @@ environment; do not add them to source control. Gemini accepts
 
 Phone authentication requires `MONGODB_URI`, `JWT_SECRET`, and `OTP_SECRET`
 (each secret must contain at least 32 characters) in production, plus
-`CORS_ORIGINS` (comma-separated allowed web origins) and `SMS_PROVIDER`.
+`SMS_PROVIDER`. Same-origin browser/API requests are accepted automatically.
+If the frontend and API use different origins, set `CORS_ORIGINS` to the
+comma-separated exact frontend origins (scheme and host, no path), for example
+`https://app.example.com`.
 Local demo mode (`SMS_PROVIDER=dev`) supplies development-only fallback
 secrets when either is omitted. `OTP_HMAC_SECRET` remains supported as a legacy
 alias when `OTP_SECRET` is unset.

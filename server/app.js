@@ -20,9 +20,27 @@ const app = express();
 const allowedOrigins = new Set(
   (process.env.CORS_ORIGINS || "http://localhost:3000")
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
     .filter(Boolean),
 );
+
+function isAllowedOrigin(req, origin) {
+  if (!origin || allowedOrigins.has(origin)) return true;
+
+  try {
+    const parsedOrigin = new URL(origin);
+    const requestHost = req.get("host");
+    const forwardedProtocol = req.get("x-forwarded-proto")?.split(",")[0].trim();
+    const requestProtocol = forwardedProtocol || req.protocol;
+    return (
+      parsedOrigin.origin === origin &&
+      parsedOrigin.host.toLowerCase() === requestHost?.toLowerCase() &&
+      parsedOrigin.protocol === `${requestProtocol}:`
+    );
+  } catch {
+    return false;
+  }
+}
 
 if (process.env.TRUST_PROXY) {
   app.set("trust proxy", Number(process.env.TRUST_PROXY) || 1);
@@ -30,13 +48,13 @@ if (process.env.TRUST_PROXY) {
 
 app.use(helmet());
 app.use(
-  cors({
-    exposedHeaders: ["X-Voice-Message"],
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
-      return callback(new Error("Origin is not allowed by CORS."));
-    },
-    credentials: true,
+  cors((req, callback) => {
+    const origin = req.get("Origin");
+    callback(null, {
+      exposedHeaders: ["X-Voice-Message"],
+      credentials: true,
+      origin: isAllowedOrigin(req, origin) ? origin : false,
+    });
   }),
 );
 app.use(express.json({ limit: "10mb" }));
