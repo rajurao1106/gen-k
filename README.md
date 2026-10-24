@@ -99,8 +99,14 @@ setup, set it to the old `OTP_SECRET` value to preserve existing referral
 phone-hash checks; after migration, the legacy `OTP_SECRET` variable is no
 longer used.
 
-`PAYMENT_MODE=demo` and `DEMO_PAYMENT_SECRET` enable the local simulated
-checkout; it creates no real charge and is disabled in production.
+`PAYMENT_MODE=demo` and `DEMO_PAYMENT_SECRET` enable simulated checkout; it
+creates no real charge. It is disabled in production by default. To temporarily
+enable free simulated checkout on the live site for all signed-in users, set
+`ENABLE_PRODUCTION_DEMO_PAYMENTS=true` in the server environment and redeploy.
+Any user can then activate any listed plan without paying, including voice
+access. Voice generation can still incur costs from the configured AI provider;
+monitor usage and disable this flag when testing ends. This is not a real
+payment integration.
 `GEMINI_API_KEYS` accepts a comma-separated list of server-only keys, or use
 `GEMINI_API_KEY`, `GEMINI_API_KEY_2`, etc. `BOSON_API_KEY` is required for
 Boson AI Higgs TTS voice generation and must remain server-only. The voice
@@ -154,9 +160,10 @@ Gemini key configured):
 ### Phase 3: demo payments
 
 Set `PAYMENT_MODE=demo` and configure `DEMO_PAYMENT_SECRET` with at least 32
-characters in a local development environment. Demo checkout generates
-server-signed fake payment proofs and never contacts a payment gateway or moves
-money. Demo payment routes are disabled when `NODE_ENV=production`.
+characters. Demo checkout generates server-signed fake payment proofs and never
+contacts a payment gateway or moves money. Demo payment routes are disabled in
+production unless `ENABLE_PRODUCTION_DEMO_PAYMENTS=true`; when enabled, any
+signed-in user can activate plans without paying.
 
 Authenticated endpoints:
 

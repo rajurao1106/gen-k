@@ -283,7 +283,8 @@ export default function PlansPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c9d8ed]">
           Compare the available plans and see what is active on your account.
-          Payments here are simulated for development; no money is charged.
+          Test-mode checkout simulates purchases; no money is charged. Voice
+          generation may still use paid AI provider credits.
         </p>
         {account && (
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
@@ -443,7 +444,8 @@ export default function PlansPage() {
 
       <p className="rounded-xl border border-[#f2c36b]/20 bg-[#10273d]/70 p-4 text-xs leading-5 text-[#c9d8ed]">
         Demo checkout simulates a successful payment to test entitlements. It is
-        not a live payment method and does not charge your account.
+        not a live payment method and does not charge your account. Test-mode
+        plans are available to all signed-in users while enabled.
       </p>
       <footer className="pb-5 text-xs text-[#a6bddb]">
         <LegalFooter />
