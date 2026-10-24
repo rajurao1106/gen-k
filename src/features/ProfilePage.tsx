@@ -301,7 +301,7 @@ export default function ProfilePage() {
         </label>
         <div className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#b994dc]/15 text-[#c9a8ed]" aria-hidden="true">☎</span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Mobile number</span><span className="mt-0.5 block text-xs text-[#a6bddb]">{user?.phone}</span></span><span className="text-xs text-[#a6bddb]">Verified</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Mobile number</span><span className="mt-0.5 block text-xs text-[#a6bddb]">{user?.phone}</span></span><span className="text-xs text-[#a6bddb]">Not verified</span>
         </div>
         <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-2xl border border-[#ef9f90]/30 bg-[#10273d] px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:bg-[#ef9f90]/10">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ef9f90]/15 text-[#ef9f90]" aria-hidden="true">↪</span>
@@ -334,7 +334,7 @@ export default function ProfilePage() {
             <span aria-hidden="true" className="text-lg text-[#a6bddb]">›</span>
           </button>
         )}
-        <p className="px-1 pt-1 text-[11px] leading-4 text-[#a6bddb]">Your profile and saved readings are stored with your account. Sign in again with this verified number to access them.</p>
+        <p className="px-1 pt-1 text-[11px] leading-4 text-[#a6bddb]">Your profile and saved readings are stored with this account. Since phone verification is disabled, use this browser session to keep access.</p>
         {error && !editing && <p role="alert" className="px-1 text-sm text-[#ffd1c9]">{error}</p>}
       </section>
     </main>

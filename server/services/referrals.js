@@ -2,11 +2,11 @@ import crypto from "node:crypto";
 import User from "../models/User.js";
 import Entitlement from "../models/Entitlement.js";
 import ReferralReward from "../models/ReferralReward.js";
-import { getOtpSecret } from "../config/authSecrets.js";
+import { getReferralHashSecret } from "../config/authSecrets.js";
 
 export function hashReferralPhone(phone) {
   return crypto
-    .createHmac("sha256", getOtpSecret())
+    .createHmac("sha256", getReferralHashSecret())
     .update(phone)
     .digest("hex");
 }

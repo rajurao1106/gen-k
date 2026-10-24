@@ -20,9 +20,8 @@ npm run dev
 Next.js runs at `http://localhost:3000`; the Express API runs at
 `http://localhost:5000`. Before starting, set `MONGODB_URI`, `JWT_SECRET`,
 and `DEMO_PAYMENT_SECRET` in `.env` (configured secrets must contain at least
-32 characters). For local demo mode with `SMS_PROVIDER=dev`, authentication
-uses development-only fallback secrets if `JWT_SECRET` or `OTP_SECRET` is
-omitted. Production requires both secrets to be configured explicitly. Use a
+32 characters). Local development has a fallback `JWT_SECRET`; production
+requires it to be configured explicitly. Use a
 dedicated local/test MongoDB replica set because account, payment, and referral
 flows use transactions. `npm run build` creates a production Next.js build,
 and `npm start` serves that build. At startup, the API removes a legacy unique
@@ -64,7 +63,7 @@ The public landing page is:
 
 - `/`
 
-The astrology tools require phone OTP authentication:
+The astrology tools require an account:
 
 - `/kundali`
 - `/milan`
@@ -83,32 +82,22 @@ environment; do not add them to source control. Gemini accepts
 `gemini-3.5-flash-lite` by default. If `GEMINI_ALLOWED_MODELS` is set, include
 `gemini-3.5-flash-lite` in its comma-separated values.
 
-Phone authentication requires `MONGODB_URI`, `JWT_SECRET`, and `OTP_SECRET`
-(each secret must contain at least 32 characters) in production, plus
-`SMS_PROVIDER`. Same-origin browser/API requests are accepted automatically.
+Account creation requires `MONGODB_URI`. Production also requires `JWT_SECRET`
+(at least 32 characters). Phone numbers are not verified: a new number creates
+an account immediately, while an already-registered number cannot sign in.
+Same-origin browser/API requests are accepted automatically.
 If the frontend and API use different origins, set `CORS_ORIGINS` to the
 comma-separated exact frontend origins (scheme and host, no path), for example
 `https://app.example.com`.
-Local demo mode (`SMS_PROVIDER=dev`) supplies development-only fallback
-secrets when either is omitted. `OTP_HMAC_SECRET` remains supported as a legacy
-alias when `OTP_SECRET` is unset.
-`ADMIN_PHONES` is an optional comma-separated list of E.164 numbers that
-receive the admin role after OTP verification. For local/demo development, set
-`SMS_PROVIDER=dev`; the OTP is fixed at `000000` outside production.
-`DEV_SHOW_OTP=true` additionally prints that code in the Express server
-terminal; set it to `false` to suppress the log.
-
-**Temporary production demo only:** If SMS delivery is not configured yet, set
-`SMS_PROVIDER=demo` in the deployment environment and set `DEMO_OTP_PHONES` to a
-comma-separated allowlist of test phone numbers in E.164 format. Only those
-numbers can request or verify the fixed code `000000`; demo numbers listed in
-`ADMIN_PHONES` are rejected. The API explicitly tells the user that no SMS was
-sent. This mode is not real phone verification—remove it and configure a live
-SMS provider before inviting real users. Never use `SMS_PROVIDER=demo` without
-an explicit, minimal allowlist.
-`msg91` and `twilio` are reserved provider names but are not wired to a live
-SMS service yet, so production OTP delivery requires implementing the chosen
-provider before deployment.
+Configure `ADMIN_PHONES` as a comma-separated list of E.164 numbers allowed
+to use administrator login. Set `ADMIN_LOGIN_PASSWORD` to a unique,
+server-only password of at least 32 characters for `/login`. Admin numbers are
+blocked from public signup. Do not expose the password through a `NEXT_PUBLIC_`
+or `VITE_` variable.
+`REFERRAL_PHONE_HMAC_SECRET` is optional. When migrating from the previous OTP
+setup, set it to the old `OTP_SECRET` value to preserve existing referral
+phone-hash checks; after migration, the legacy `OTP_SECRET` variable is no
+longer used.
 
 `PAYMENT_MODE=demo` and `DEMO_PAYMENT_SECRET` enable the local simulated
 checkout; it creates no real charge and is disabled in production.
@@ -120,19 +109,17 @@ provider base URL and preset voice can be configured with
 and site settings are documented inline in `.env.example`; never commit `.env`
 or paste credentials into source files.
 
-### Authentication smoke test
+### Account smoke test
 
-Use a dedicated local/test MongoDB database. Set `SMS_PROVIDER=dev`, start
-`npm run dev`, request a code from `/account`, and enter `000000`. If
-`DEV_SHOW_OTP=true`, the code is also printed in the Express server terminal.
-Verify that login opens onboarding
-for a new phone number and that `/api/auth/me` returns the signed-in account.
-Save a profile, log out, and
-confirm that the profile is no longer available until signing in again. Verify
-that a regular account cannot access `/api/users/all` (403) and that an
-unauthenticated request to `/api/users/me/profiles` returns 401. Configure an
-`ADMIN_PHONES` test number separately and verify that only that number receives
-the admin role.
+Use a dedicated local/test MongoDB database. Configure `JWT_SECRET`,
+`ADMIN_PHONES`, and `ADMIN_LOGIN_PASSWORD`, then start `npm run dev`. Submit a
+new mobile number at `/account`; verify an account is created immediately,
+`/api/auth/me` returns it, and onboarding opens. Submit the same number again
+and verify signup is rejected. Save a profile and verify it is associated with
+the new account. Log out and confirm protected data requires a session. Verify
+that a regular account cannot access `/api/users/all` (403) and an
+unauthenticated request to `/api/users/me/profiles` returns 401. Verify admin
+login works only with a configured admin number and the server-side password.
 
 Existing records without an owner are deliberately not assigned to a newly
 authenticated user. To mark them as legacy/unowned before rollout, run
@@ -306,9 +293,10 @@ after explicit approval:
   `5000`.
 When migrating an existing `.env`, rename any `VITE_API_URL` setting to
 `NEXT_PUBLIC_API_URL`.
-Remove any `VITE_ADMIN_PASSWORD` or `NEXT_PUBLIC_ADMIN_PASSWORD` setting; admin
-access is assigned server-side to numbers in `ADMIN_PHONES`. Keep Gemini keys
-server-only.
+Remove any `VITE_ADMIN_PASSWORD` or `NEXT_PUBLIC_ADMIN_PASSWORD` setting.
+`ADMIN_LOGIN_PASSWORD` must be configured only in the server environment;
+successful login creates or promotes an admin account for a number in
+`ADMIN_PHONES`. Keep Gemini keys server-only.
 
 ## AI Friend voice replies
 
@@ -341,8 +329,9 @@ references are anonymized. Saved voice reference audio is deleted with the
 account's voice profiles.
 
 Development tools are available at `/dev-tools` only to admin accounts and
-only outside production. `ADMIN_PHONES` assigns the admin role after OTP
-verification. Use a non-production database when granting/revoking test
+only outside production. Public signup cannot create or promote admin accounts;
+the separate admin login requires both an allowlisted phone and the server-only
+password. Use a non-production database when granting/revoking test
 entitlements, resetting usage, expiring subscriptions or viewing orders.
 
 The share card at `/api/og` contains only a whitelisted rashi and fixed insight;
@@ -385,16 +374,17 @@ admin account, returns no key fragments, and is hidden in production unless
 ### Manual QA checklist
 
 Use two separate test accounts and a dedicated, disposable MongoDB replica-set
-database. Configure `SMS_PROVIDER=dev`,
-`PAYMENT_MODE=demo`, and a Gemini key. Configure `BOSON_API_KEY` and grant the
-voice add-on only for voice checks. Do not use real customer data.
+database. Configure `PAYMENT_MODE=demo`, `ADMIN_PHONES`,
+`ADMIN_LOGIN_PASSWORD`, and a Gemini key. Configure `BOSON_API_KEY` and grant
+the voice add-on only for voice checks. Do not use real customer data.
 
-1. **OTP:** Request a code, verify the correct code, then try an incorrect,
-   expired and reused code. In non-production with `SMS_PROVIDER=dev`, verify
-   only `000000` succeeds. Confirm wrong attempts are capped and the code is
-   printed only when `DEV_SHOW_OTP=true`. Confirm the fixed code is not accepted
-   or generated by the dev provider in production.
-2. **Ownership:** Create a profile as account A. Sign in as account B and try
+1. **Account creation:** Create an account with a new number and verify it is
+   signed in immediately. Retry with that number and confirm the API rejects
+   duplicate signup rather than opening the existing account. Confirm numbers
+   in `ADMIN_PHONES` are blocked from public signup and admin login requires the
+   server-side password.
+2. **Ownership:** Create a profile as account A. Create account B with another
+   number and try
    to read, update, delete, or request a guide/report for A's profile ID.
    Confirm private routes reject unauthenticated requests with 401 and B cannot
    retrieve or mutate A's data.

@@ -1,7 +1,7 @@
 "use client";
 
-import PhoneOtpLogin from "./PhoneOtpLogin";
+import PhoneAccountLogin from "./PhoneAccountLogin";
 
 export default function LoginPage() {
-  return <PhoneOtpLogin adminOnly />;
+  return <PhoneAccountLogin adminOnly />;
 }

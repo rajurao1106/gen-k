@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       sections={[
         {
           title: "Information we store",
-          content: <p>When you create an account, we store your verified phone number. If you use Gen-K tools, we store the profile details you submit, including name, date, time and place of birth, optional gender and saved report content. Account data is associated with your account so it is available after you sign in again.</p>,
+          content: <p>When you create an account, we store the mobile number you provide; it is not verified. If you use Gen-K tools, we store the profile details you submit, including name, date, time and place of birth, optional gender and saved report content. Account data is associated with your account.</p>,
         },
         {
           title: "Voice data and consent",

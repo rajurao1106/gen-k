@@ -3,32 +3,17 @@ import express from "express";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { z } from "zod";
 import User from "../models/User.js";
-import OtpCode from "../models/OtpCode.js";
-import { getOtpSecret } from "../config/authSecrets.js";
 import { AUTH_COOKIE_NAME, requireAuth, signAuthToken } from "../middleware/auth.js";
-import {
-  generateOtpCode,
-  getSmsProvider,
-  isDemoPhoneAllowed,
-} from "../services/smsProvider.js";
 import { ensureReferralCode } from "../services/referrals.js";
 
 const router = express.Router();
-const OTP_TTL_MS = 5 * 60 * 1000;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const phoneSchema = z.string().trim().min(10).max(20).regex(/^\+?[\d\s().-]+$/);
-const requestOtpSchema = z.object({ phone: phoneSchema });
-const verifyOtpSchema = z.object({
+const signupSchema = z.object({ phone: phoneSchema });
+const adminLoginSchema = z.object({
   phone: phoneSchema,
-  code: z.string().regex(/^\d{6}$/),
+  password: z.string().min(1).max(200),
 });
-
-router.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-}));
 
 function normalizePhone(value) {
   if (typeof value !== "string") return null;
@@ -36,17 +21,6 @@ function normalizePhone(value) {
   if (digits.length === 10) return `+91${digits}`;
   if (digits.length >= 11 && digits.length <= 15) return `+${digits}`;
   return null;
-}
-
-function hashOtp(phone, code) {
-  return crypto.createHmac("sha256", getOtpSecret()).update(`${phone}:${code}`).digest("hex");
-}
-
-function safeHashEquals(expected, actual) {
-  const expectedBuffer = Buffer.from(expected, "hex");
-  const actualBuffer = Buffer.from(actual, "hex");
-  return expectedBuffer.length === actualBuffer.length &&
-    crypto.timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
 function configuredAdminPhones() {
@@ -58,176 +32,132 @@ function configuredAdminPhones() {
   );
 }
 
-const requestIpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  message: {
-    success: false,
-    code: "OTP_RATE_LIMITED",
-    message: "Too many OTP requests. Please try again later.",
-  },
-});
-
-const requestPhoneLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 3,
-  keyGenerator: (req) => normalizePhone(req.body?.phone) || ipKeyGenerator(req.ip || "127.0.0.1"),
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  message: {
-    success: false,
-    code: "OTP_RATE_LIMITED",
-    message: "Too many OTP requests for this number. Please try again later.",
-  },
-});
-
-function validationFailure(res, result) {
-  return res.status(400).json({
-    success: false,
-    code: "BAD_REQUEST",
-    message: "Enter a valid mobile number and verification code.",
-    errors: result.error.issues.map(({ path, message }) => ({ path, message })),
+function limiter(message, limit = 10) {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit,
+    keyGenerator: (req) => ipKeyGenerator(req.ip || "127.0.0.1"),
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { success: false, code: "RATE_LIMITED", message },
   });
 }
 
-router.post("/request-otp", requestIpLimiter, requestPhoneLimiter, async (req, res, next) => {
-  const parsed = requestOtpSchema.safeParse(req.body);
-  if (!parsed.success) return validationFailure(res, parsed);
+const signupLimiter = limiter("Too many account attempts. Please try again later.");
+const adminLoginLimiter = limiter("Too many administrator login attempts. Please try again later.", 5);
+
+function setSessionCookie(res, user) {
+  res.cookie(AUTH_COOKIE_NAME, signAuthToken(user), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_TTL_MS,
+  });
+}
+
+function authUser(user, referralCode, extra = {}) {
+  return {
+    id: user._id.toString(),
+    phone: user.phone,
+    role: user.role,
+    referralCode,
+    ...extra,
+  };
+}
+
+function passwordsMatch(expected, actual) {
+  const expectedBuffer = Buffer.from(expected);
+  const actualBuffer = Buffer.from(actual);
+  return expectedBuffer.length === actualBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+}
+
+router.post("/signup", signupLimiter, async (req, res, next) => {
+  const parsed = signupSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      code: "BAD_REQUEST",
+      message: "Enter a valid mobile number.",
+      errors: parsed.error.issues.map(({ path, message }) => ({ path, message })),
+    });
+  }
 
   const phone = normalizePhone(parsed.data.phone);
-  if (!phone) return res.status(400).json({ success: false, message: "Enter a valid phone number." });
+  if (!phone) return res.status(400).json({ success: false, message: "Enter a valid mobile number." });
+  if (configuredAdminPhones().has(phone)) {
+    return res.status(409).json({
+      success: false,
+      code: "ADMIN_NUMBER_RESERVED",
+      message: "This number is reserved for administrator access.",
+    });
+  }
 
   try {
-    const smsProvider = getSmsProvider();
-    if (smsProvider.demoMode && !isDemoPhoneAllowed(phone)) {
-      return res.status(403).json({
-        success: false,
-        code: "DEMO_PHONE_NOT_ALLOWED",
-        message: "This number is not enabled for the temporary demo.",
-      });
-    }
-    const code = generateOtpCode(phone);
-    const codeHash = hashOtp(phone, code);
-    await OtpCode.findOneAndUpdate(
-      { phone },
-      { codeHash, expiresAt: new Date(Date.now() + OTP_TTL_MS), attempts: 0 },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
+    let user;
     try {
-      await smsProvider.sendOtp(phone, code);
-    } catch {
-      await OtpCode.deleteOne({ phone, codeHash });
-      return res.status(503).json({
-        success: false,
-        code: "SMS_UNAVAILABLE",
-        message: "Could not send the verification code. Please try again later.",
-      });
+      user = await User.create({ phone, role: "user", lastLoginAt: new Date() });
+    } catch (error) {
+      if (error?.code === 11000 && error?.keyPattern?.phone) {
+        return res.status(409).json({
+          success: false,
+          code: "PHONE_ALREADY_REGISTERED",
+          message: "This number already has an account. Without verification, existing accounts cannot be signed in to.",
+        });
+      }
+      throw error;
     }
-    return res.json({
+
+    const referralCode = await ensureReferralCode(user);
+    setSessionCookie(res, user);
+    return res.status(201).json({
       success: true,
-      message: smsProvider.demoMode
-        ? "Temporary demo mode: use verification code 000000. No SMS was sent."
-        : "Verification code sent.",
+      data: authUser(user, referralCode, { isNewAccount: true }),
     });
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/verify-otp", async (req, res, next) => {
-  const parsed = verifyOtpSchema.safeParse(req.body);
-  if (!parsed.success) return validationFailure(res, parsed);
+router.post("/admin-login", adminLoginLimiter, async (req, res, next) => {
+  const parsed = adminLoginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      code: "BAD_REQUEST",
+      message: "Enter the administrator mobile number and password.",
+    });
+  }
 
   const phone = normalizePhone(parsed.data.phone);
-  if (!phone) return res.status(400).json({ success: false, message: "Enter a valid phone number." });
-  const smsProvider = getSmsProvider();
-  if (smsProvider.demoMode && !isDemoPhoneAllowed(phone)) {
-    return res.status(403).json({
+  if (!phone) return res.status(400).json({ success: false, message: "Enter a valid mobile number." });
+
+  const configuredPassword = process.env.ADMIN_LOGIN_PASSWORD;
+  if (!configuredPassword || configuredPassword.length < 32) {
+    return res.status(503).json({
       success: false,
-      code: "DEMO_PHONE_NOT_ALLOWED",
-      message: "This number is not enabled for the temporary demo.",
+      code: "ADMIN_LOGIN_NOT_CONFIGURED",
+      message: "Administrator password login is not configured.",
+    });
+  }
+  if (!configuredAdminPhones().has(phone) || !passwordsMatch(configuredPassword, parsed.data.password)) {
+    return res.status(401).json({
+      success: false,
+      code: "ADMIN_LOGIN_FAILED",
+      message: "The administrator number or password is incorrect.",
     });
   }
 
   try {
-    const otp = await OtpCode.findOne({
-      phone,
-      expiresAt: { $gt: new Date() },
-      attempts: { $lt: 5 },
-    });
-    if (!otp) {
-      return res.status(400).json({
-        success: false,
-        code: "OTP_INVALID_OR_EXPIRED",
-        message: "The code is invalid or expired. Request a new one.",
-      });
-    }
-
-    if (!safeHashEquals(otp.codeHash, hashOtp(phone, parsed.data.code))) {
-      const updated = await OtpCode.findOneAndUpdate(
-        { _id: otp._id, attempts: { $lt: 5 } },
-        { $inc: { attempts: 1 } },
-        { new: true },
-      );
-      return res.status(400).json({
-        success: false,
-        code: updated?.attempts >= 5 ? "OTP_ATTEMPTS_EXCEEDED" : "OTP_INVALID",
-        message: updated?.attempts >= 5
-          ? "Too many incorrect codes. Request a new one."
-          : "The verification code is incorrect.",
-      });
-    }
-
-    const consumed = await OtpCode.findOneAndDelete({
-      _id: otp._id,
-      codeHash: otp.codeHash,
-      attempts: { $lt: 5 },
-      expiresAt: { $gt: new Date() },
-    });
-    if (!consumed) {
-      return res.status(400).json({
-        success: false,
-        code: "OTP_INVALID_OR_EXPIRED",
-        message: "The code is invalid or expired. Request a new one.",
-      });
-    }
-
-    const isConfiguredAdmin = configuredAdminPhones().has(phone);
-    let user = await User.findOne({ phone });
-    let isNewAccount = false;
-    if (!user) {
-      isNewAccount = true;
-      user = await User.create({
-        phone,
-        role: isConfiguredAdmin ? "admin" : "user",
-        lastLoginAt: new Date(),
-      });
-    } else {
-      user.lastLoginAt = new Date();
-      user.role = isConfiguredAdmin ? "admin" : "user";
-      await user.save();
-    }
+    const user = await User.findOneAndUpdate(
+      { phone },
+      { $set: { role: "admin", lastLoginAt: new Date() } },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
+    );
     const referralCode = await ensureReferralCode(user);
-
-    res.cookie(AUTH_COOKIE_NAME, signAuthToken(user), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_TTL_MS,
-    });
-    return res.json({
-      success: true,
-      data: {
-        id: user._id.toString(),
-        phone: user.phone,
-        role: user.role,
-        referralCode,
-        isNewAccount,
-      },
-    });
+    setSessionCookie(res, user);
+    return res.json({ success: true, data: authUser(user, referralCode) });
   } catch (error) {
     next(error);
   }
@@ -246,15 +176,7 @@ router.post("/logout", (req, res) => {
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const referralCode = await ensureReferralCode(req.user);
-    return res.json({
-      success: true,
-      data: {
-        id: req.user._id.toString(),
-        phone: req.user.phone,
-        role: req.user.role,
-        referralCode,
-      },
-    });
+    return res.json({ success: true, data: authUser(req.user, referralCode) });
   } catch (error) {
     next(error);
   }

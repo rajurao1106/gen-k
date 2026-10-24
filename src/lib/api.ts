@@ -156,17 +156,19 @@ export type DevOrder = {
   createdAt: string;
 };
 
-export async function requestOtp(phone: string) {
-  return request<never>("/api/auth/request-otp", {
+export async function createAccount(phone: string) {
+  const response = await request<AuthUser>("/api/auth/signup", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
+  if (!response.data) throw new ApiError("The server did not create an account.", 500);
+  return response.data;
 }
 
-export async function verifyOtp(phone: string, code: string) {
-  const response = await request<AuthUser>("/api/auth/verify-otp", {
+export async function loginAdmin(phone: string, password: string) {
+  const response = await request<AuthUser>("/api/auth/admin-login", {
     method: "POST",
-    body: JSON.stringify({ phone, code }),
+    body: JSON.stringify({ phone, password }),
   });
   if (!response.data) throw new ApiError("The server did not return an account.", 500);
   return response.data;

@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import DailyGuide from "../models/DailyGuide.js";
 import Entitlement from "../models/Entitlement.js";
 import GeneratedReport from "../models/GeneratedReport.js";
-import OtpCode from "../models/OtpCode.js";
 import Order from "../models/Order.js";
 import ReferralReward from "../models/ReferralReward.js";
 import UsageCounter from "../models/UsageCounter.js";
@@ -62,7 +61,6 @@ router.delete("/", limitAccountDeletion, async (req, res, next) => {
       await VoiceProfile.deleteMany({ userId: req.user._id }, { session });
       await Entitlement.deleteMany({ userId: req.user._id }, { session });
       await UsageCounter.deleteMany({ userId: req.user._id }, { session });
-      await OtpCode.deleteOne({ phone: req.user.phone }, { session });
       await ReferralReward.updateMany(
         { referrerId: req.user._id },
         { $set: { referrerId: null } },
