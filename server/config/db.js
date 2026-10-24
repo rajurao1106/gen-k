@@ -5,30 +5,31 @@ import VoiceProfile from "../models/VoiceProfile.js";
 let connectionPromise;
 let legacyIndexesPromise;
 
-const removeLegacyUsernameIndex = async () => {
+const removeLegacyUserIndexes = async () => {
   const usersCollectionExists = await mongoose.connection.db
     .listCollections({ name: User.collection.name }, { nameOnly: true })
     .hasNext();
   if (!usersCollectionExists) return;
 
-  const usernameIndex = (await User.collection.indexes()).find(
+  const obsoleteIndexes = (await User.collection.indexes()).filter(
     (index) =>
       index.unique &&
       Object.keys(index.key).length === 1 &&
-      index.key.username === 1,
+      (index.key.username === 1 || index.key.email === 1),
   );
-  if (!usernameIndex) return;
 
-  await User.collection.dropIndex(usernameIndex.name);
-  console.warn(
-    `[database] Removed obsolete unique index "${usernameIndex.name}" from ${User.collection.name}.`,
-  );
+  for (const index of obsoleteIndexes) {
+    await User.collection.dropIndex(index.name);
+    console.warn(
+      `[database] Removed obsolete unique index "${index.name}" from ${User.collection.name}.`,
+    );
+  }
 };
 
 const ensureLegacyIndexesRemoved = () => {
   if (!legacyIndexesPromise) {
     legacyIndexesPromise = Promise.all([
-      removeLegacyUsernameIndex(),
+      removeLegacyUserIndexes(),
       removeLegacyVoiceIndexes(),
     ]).catch((error) => {
       legacyIndexesPromise = undefined;

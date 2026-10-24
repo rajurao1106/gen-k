@@ -26,8 +26,8 @@ omitted. Production requires both secrets to be configured explicitly. Use a
 dedicated local/test MongoDB replica set because account, payment, and referral
 flows use transactions. `npm run build` creates a production Next.js build,
 and `npm start` serves that build. At startup, the API removes a legacy unique
-`username` index from the users collection when present; the current phone-based
-account model does not use usernames.
+`username` or `email` index from the users collection when present; the current
+phone-based account model does not use either field.
 
 ## Deploy to Vercel
 
