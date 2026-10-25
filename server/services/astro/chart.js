@@ -6,7 +6,10 @@
 // Pipeline: place -> lat/lon/timezone -> local birth time -> UTC -> planets
 // + ascendant (tropical) -> subtract Lahiri ayanamsa -> rashi / house / nakshatra.
 
-import * as Astronomy from "astronomy-engine";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const Astronomy = require("astronomy-engine");
 
 const DEG = Math.PI / 180;
 const norm360 = (x) => ((x % 360) + 360) % 360;
