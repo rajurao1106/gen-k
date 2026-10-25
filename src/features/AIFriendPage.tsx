@@ -125,7 +125,7 @@ const T = {
     micFail: "Could not use the microphone. Check permission and try again.",
     saveFail: "This chat could not be saved in this browser.",
     sampleBig: "The audio sample must be 10 MB or smaller.",
-    sampleType: "Choose a WAV, MP3, FLAC, or OPUS file.",
+    sampleType: "Choose a WAV, MP3, FLAC, OPUS, M4A, or 3GP file.",
     emptyReply: "AI Friend returned an empty reply.",
     failed: "AI Friend could not reply. Please try again.",
     suggestions: [
@@ -184,7 +184,7 @@ const T = {
     micFail: "Microphone नहीं चला। Permission देखकर दोबारा कोशिश करें।",
     saveFail: "यह चैट इस browser में सेव नहीं हो सकी।",
     sampleBig: "Audio sample 10 MB या उससे छोटा होना चाहिए।",
-    sampleType: "WAV, MP3, FLAC या OPUS file चुनें।",
+    sampleType: "WAV, MP3, FLAC, OPUS, M4A या 3GP file चुनें।",
     emptyReply: "AI Friend ने खाली जवाब दिया।",
     failed: "AI Friend जवाब नहीं दे सका। दोबारा कोशिश करें।",
     suggestions: [
@@ -775,8 +775,12 @@ AI Friend:`,
       "audio/flac",
       "audio/opus",
       "audio/ogg",
+      "audio/mp4",
+      "audio/x-m4a",
+      "audio/3gpp",
+      "video/3gpp",
     ].includes(file?.type ?? "");
-    if (file && !supportedAudioType && !/\.(wav|mp3|flac|opus)$/i.test(file.name)) {
+    if (file && !supportedAudioType && !/\.(wav|mp3|flac|opus|m4a|3gp)$/i.test(file.name)) {
       setSampleFile(null);
       setVoiceError(t.sampleType);
       return;
@@ -1073,7 +1077,7 @@ AI Friend:`,
                       </label>
                       <input
                         type="file"
-                        accept=".wav,.mp3,.flac,.opus,audio/wav,audio/mpeg,audio/flac,audio/opus"
+                        accept=".wav,.mp3,.flac,.opus,.m4a,.3gp,audio/wav,audio/mpeg,audio/flac,audio/opus,audio/mp4,audio/3gpp,video/3gpp"
                         aria-label={t.myVoice}
                         onChange={(event) => pickSample(event.currentTarget.files?.[0] ?? null)}
                         className={fieldClass}

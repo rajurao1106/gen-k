@@ -47,6 +47,8 @@ function referenceTypeFor(type) {
   if (["audio/wav", "audio/x-wav", "audio/wave"].includes(normalized)) return "audio/wav";
   if (normalized === "audio/flac") return "audio/flac";
   if (["audio/opus", "audio/ogg"].includes(normalized)) return "audio/opus";
+  if (["audio/mp4", "audio/x-m4a", "audio/m4a"].includes(normalized)) return "audio/mp4";
+  if (["audio/3gpp", "video/3gpp"].includes(normalized)) return "audio/3gpp";
   return "";
 }
 
@@ -105,7 +107,7 @@ router.post(
     if (!referenceAudioType) {
       return res.status(400).json({
         success: false,
-        message: "Use an MP3, WAV, FLAC, or OPUS voice recording.",
+        message: "Use an MP3, WAV, FLAC, OPUS, M4A, or 3GP voice recording.",
       });
     }
     const label = String(req.query.label || "My voice").slice(0, 40).trim() || "My voice";

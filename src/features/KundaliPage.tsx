@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   callGemini,
-  extractJson,
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
@@ -18,7 +17,7 @@ import {
 } from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
-import { deleteMyProfile, saveUserDetail } from "../lib/api";
+import { deleteMyProfile, fetchBirthChart, saveUserDetail } from "../lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -105,32 +104,39 @@ export default function KundaliPage() {
     [input],
   );
 
-  const generateChartData = async () => {
-    try {
-      setChartLoading(true);
-      const response = await callGemini({
-        model: "gemini-3.5-flash-lite",
-        purpose: "kundali",
-        input: `Based on this person's exact birth details, compute their Vedic (sidereal) birth chart.
+  // The chart is calculated on the server with a real ephemeris (Swiss-grade
+  // planetary positions + Lahiri ayanamsa). The AI is never asked to compute it.
+  const chartPromiseRef = useRef<Promise<ChartData | null> | null>(null);
 
-Name: ${input.name}
-Date of Birth: ${input.dob}
-Time of Birth: ${input.bot}
-Place of Birth: ${input.bop}
-
-Respond with ONLY a raw JSON object, no markdown fences or explanation. Use this shape:
-{"lagna":"<ascendant rashi name>","ayanamsa":"<ayanamsa system, e.g. Lahiri>","houses":{"1":["Su","Ma"],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"8":[],"9":[],"10":[],"11":[],"12":["Ke"]}}
-
-Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me, Ju, Ve, Sa, Ra, Ke. Do not fabricate placements if they cannot be reliably calculated.`,
-      });
-      const parsed = extractJson(response.output_text ?? "");
-      setChartData(parsed?.houses ? (parsed as ChartData) : null);
-    } catch (chartError) {
-      console.error("Could not generate the birth chart:", chartError);
-      setChartData(null);
-    } finally {
-      setChartLoading(false);
-    }
+  const generateChartData = (): Promise<ChartData | null> => {
+    const run = async () => {
+      try {
+        setChartLoading(true);
+        const chart = await fetchBirthChart({
+          dob: input.dob,
+          bot: input.bot,
+          bop: input.bop,
+        });
+        setChartData(chart);
+        return chart;
+      } catch (chartError) {
+        console.error("Could not calculate the birth chart:", chartError);
+        setChartData(null);
+        setError(
+          chartError instanceof Error && chartError.message
+            ? chartError.message
+            : "Could not calculate the birth chart. Please check the birth details.",
+        );
+        return null;
+      } finally {
+        setChartLoading(false);
+      }
+    };
+    const promise = run().finally(() => {
+      if (chartPromiseRef.current === promise) chartPromiseRef.current = null;
+    });
+    chartPromiseRef.current = promise;
+    return promise;
   };
 
   const startChat = () => {
@@ -162,6 +168,16 @@ Include house keys 1 through 12 and use only these planet codes: Su, Mo, Ma, Me,
       { role: "user", content: trimmedQuestion },
     ]);
     setLoading(true);
+
+    // Use the calculated chart; wait for it if it is still loading.
+    // Old saved charts (made before the ephemeris fix) have no summary, so they are recalculated.
+    let chart = chartData;
+    if (!chart?.summary) {
+      chart = (await (chartPromiseRef.current ?? generateChartData())) ?? chart;
+    }
+    const chartFacts = chart?.summary
+      ? `\n${chart.summary}\n\nThese chart facts were calculated with an astronomical ephemeris and are FINAL. Use ONLY these placements. Never recalculate them, never contradict them, and never state a different Lagna, Moon sign (Rashi), Nakshatra or planet position.\n`
+      : `\nThe calculated birth chart is not available right now. Do NOT state any specific Lagna, Rashi, Nakshatra or planet placement; say it cannot be determined at the moment.\n`;
 
     const previousContext = messages
       .slice(-8)
@@ -203,7 +219,7 @@ Birth details:
 - Time of birth: ${input.bot}
 - Place of birth: ${input.bop}
 - Gender (optional): ${input.gender || "not provided"}
-
+${chartFacts}
 Write entirely in ${
           language === "hi" ? "Hindi using Devanagari script" : "English"
         }.
@@ -212,7 +228,7 @@ ${focus}
 User's latest request: ${trimmedQuestion}
 ${previousContext ? `\nConversation so far:\n${previousContext}` : ""}
 
-Use Vedic/sidereal astrology. Explain relevant astrological reasoning where possible, but do not invent planetary placements or calculations that are unavailable. Be clear that predictions are possibilities, not certainties. Never diagnose illness or make definitive fertility, death, accident, or financial claims. Keep the answer useful, warm, and easy to understand.`,
+Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", answer with the Moon sign (Chandra Rashi) from the chart facts and clearly distinguish it from the Lagna (Ascendant). Explain relevant astrological reasoning where possible, but do not invent planetary placements or calculations that are not in the chart facts above. Be clear that predictions are possibilities, not certainties. Never diagnose illness or make definitive fertility, death, accident, or financial claims. Keep the answer useful, warm, and easy to understand.`,
       });
       const html = await marked.parse(response.output_text ?? "");
       const assistantMessage = String(html).trim();
@@ -232,12 +248,12 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
             gender: input.gender,
             readingLanguage: language,
             content: assistantMessage,
-            chart: chartData,
+            chart,
           });
           setKundali(saveKundaliRecord({
             ...input,
             content: assistantMessage,
-            chart: chartData,
+            chart,
             _id: savedRecord._id,
           }));
         } catch (saveError) {
@@ -615,7 +631,19 @@ Use Vedic/sidereal astrology. Explain relevant astrological reasoning where poss
                 ) : chartData ? (
                   <details>
                     <summary className="cursor-pointer text-center text-sm text-[#d8b36a]">
-                      Birth chart · {chartData.lagna || "Kundli"}
+                      {language === "hi" ? "लग्न" : "Lagna (Ascendant)"}:{" "}
+                      {language === "hi"
+                        ? chartData.lagnaHi || chartData.lagna || "कुंडली"
+                        : chartData.lagna || "Kundli"}
+                      {chartData.moonSign
+                        ? ` · ${
+                            language === "hi" ? "चन्द्र राशि" : "Moon sign (Rashi)"
+                          }: ${
+                            language === "hi"
+                              ? chartData.moonSignHi || chartData.moonSign
+                              : chartData.moonSign
+                          }`
+                        : ""}
                     </summary>
                     <div className="mx-auto mt-3 max-w-md">
                       <KundaliChartSVG data={chartData} />

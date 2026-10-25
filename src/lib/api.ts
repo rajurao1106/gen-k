@@ -1,6 +1,9 @@
-const API_BASE_URL =
+import type { ChartData } from "../types";
+
+const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ??
-  (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "");
+  (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "")
+).replace(/\/+$/, "");
 
 type ApiResponse<T> = {
   success?: boolean;
@@ -193,6 +196,19 @@ export async function fetchMyProfiles(): Promise<UserDetailRecord[]> {
   if (!Array.isArray(response.data)) {
     throw new ApiError("The server returned an invalid profile list.", 500);
   }
+  return response.data;
+}
+
+export async function fetchBirthChart(payload: {
+  dob: string;
+  bot: string;
+  bop: string;
+}): Promise<ChartData> {
+  const response = await request<ChartData>("/api/chart", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!response.data) throw new ApiError("The server could not calculate the chart.", 500);
   return response.data;
 }
 

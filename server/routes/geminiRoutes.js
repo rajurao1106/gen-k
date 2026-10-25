@@ -76,6 +76,8 @@ function cacheKey(userId, purpose, model, input) {
 
 function reportKey(userId, report) {
   const identity = JSON.stringify({
+    // Bump this when the report logic changes so old (wrong) cached reports are not reused.
+    reportVersion: 2,
     userId: String(userId),
     type: report.type,
     fullName: report.fullName.toLocaleLowerCase(),

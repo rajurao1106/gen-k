@@ -12,6 +12,7 @@ import meRoutes from "./routes/meRoutes.js";
 import guideRoutes from "./routes/guideRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import geminiRoutes from "./routes/geminiRoutes.js";
+import chartRoutes from "./routes/chartRoutes.js";
 import voiceRoutes from "./routes/voiceRoutes.js";
 import devRoutes from "./routes/devRoutes.js";
 import { requireAdmin, requireAuth } from "./middleware/auth.js";
@@ -94,6 +95,7 @@ app.use("/api/guide", requireAuth, guideRoutes);
 app.use("/api/payments", requireAuth, paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/gemini", requireAuth, geminiRoutes);
+app.use("/api/chart", requireAuth, chartRoutes);
 app.use("/api/voice", requireAuth, voiceRoutes);
 if (process.env.NODE_ENV !== "production") {
   app.use("/api/dev", requireAuth, requireAdmin, devRoutes);

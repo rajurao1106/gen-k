@@ -1,7 +1,28 @@
+export type ChartPlanet = {
+  code: string;
+  name: string;
+  rashi: string;
+  rashiHi: string;
+  degree: number;
+  house: number;
+  nakshatra: string;
+  pada: number;
+  retrograde?: boolean;
+};
+
 export type ChartData = {
   lagna?: string;
+  lagnaHi?: string;
+  lagnaDegree?: number;
   ayanamsa?: string;
+  moonSign?: string;
+  moonSignHi?: string;
+  moonNakshatra?: string;
+  sunSign?: string;
   houses: Record<string, string[]>;
+  planets?: ChartPlanet[];
+  /** Plain-text chart facts that are given to the AI so it never guesses. */
+  summary?: string;
 };
 
 export type KundaliRecord = {
