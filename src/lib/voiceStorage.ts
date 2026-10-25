@@ -56,6 +56,7 @@ export async function saveVoiceSample(
     opus: "audio/opus",
     m4a: "audio/mp4",
     "3gp": "audio/3gpp",
+    amr: "audio/amr",
   };
   const contentType = contentTypeByExtension[extension || ""] || file.type || "audio/mpeg";
   let response: Response;
