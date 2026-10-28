@@ -159,12 +159,27 @@ export type DevOrder = {
   createdAt: string;
 };
 
-export async function createAccount(phone: string) {
-  const response = await request<AuthUser>("/api/auth/signup", {
+export type OtpRequestResult = {
+  sent: boolean;
+  expiresInSeconds: number;
+  devOtp?: string;
+};
+
+export async function requestPhoneOtp(phone: string) {
+  const response = await request<OtpRequestResult>("/api/auth/otp/request", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
-  if (!response.data) throw new ApiError("The server did not create an account.", 500);
+  if (!response.data) throw new ApiError("The server could not send a code.", 500);
+  return response.data;
+}
+
+export async function verifyPhoneOtp(phone: string, otp: string) {
+  const response = await request<AuthUser>("/api/auth/otp/verify", {
+    method: "POST",
+    body: JSON.stringify({ phone, otp }),
+  });
+  if (!response.data) throw new ApiError("The server did not return an account.", 500);
   return response.data;
 }
 

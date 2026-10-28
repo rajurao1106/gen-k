@@ -19,7 +19,8 @@ export type NavIconName =
   | "rings"
   | "numbers"
   | "orbit"
-  | "menu";
+  | "menu"
+  | "explore";
 
 export function NavIcon({ name }: { name: NavIconName }) {
   const common = {
@@ -176,6 +177,15 @@ export function NavIcon({ name }: { name: NavIconName }) {
           <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-30 12 12)" />
           <circle cx="12" cy="12" r="2.6" />
           <circle cx="5.2" cy="16" r="1" fill="currentColor" />
+        </svg>
+      );
+    case "explore":
+      // compass: round dial + needle
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="m15.6 8.4-2.1 5.1-5.1 2.1 2.1-5.1 5.1-2.1z" />
+          <circle cx="12" cy="12" r="0.9" fill="currentColor" />
         </svg>
       );
     case "menu":

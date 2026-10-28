@@ -16,6 +16,7 @@ import {
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
+import { chartFactsBlock, getBirthChart } from "../lib/chartFacts";
 import {
   getSavedAIFriendChat,
   getKundaliProfileId,
@@ -600,6 +601,8 @@ export default function AIFriendPage() {
       const conversation = history
         .map((e) => `${e.role === "user" ? "User" : "AI Friend"}: ${e.content.slice(0, 600)}`)
         .join("\n");
+      // Real calculated chart (ephemeris). The AI must not work out Rashi/Lagna itself.
+      const chartFacts = chartFactsBlock(await getBirthChart(profile));
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
         purpose: "chat",
@@ -611,6 +614,8 @@ User details:
 - Time of birth: ${profile.bot}
 - Place of birth: ${profile.bop}
 - Gender: ${profile.gender || "not provided"}
+${chartFacts}
+When the user asks about their Rashi, Lagna, Nakshatra or any planet, answer ONLY from the calculated chart above.
 
 Reply entirely in ${language === "hi" ? "Hindi using Devanagari script" : "English"}.
 ${conversation ? `Earlier conversation:\n${conversation}\n` : ""}

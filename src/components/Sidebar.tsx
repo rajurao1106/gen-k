@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { PageKey } from "../types";
+import { EXPLORE_PAGES, type PageKey } from "../types";
 import { getUserKundaliProfile } from "../lib/storage";
 import { NavIcon, type NavIconName } from "./NavIcon";
 
@@ -15,20 +15,23 @@ const MENU_ITEMS: MenuItem[] = [
   { key: "home", label: "Home", icon: "home" },
   { key: "kundali", label: "Kundli", icon: "kundli" },
   { key: "ai-friend", label: "AI Friend", icon: "friend" },
-  { key: "milan", label: "Kundli Milan", icon: "rings" },
-  { key: "numerology", label: "Numerology", icon: "numbers" },
-  { key: "mahadasha", label: "Mahadasha", icon: "orbit" },
+  { key: "explore", label: "Explore", icon: "explore" },
   { key: "plans", label: "Plans & billing", icon: "sparkles" },
   { key: "profile", label: "Profile", icon: "user" },
 ];
 
-// Mobile-only bottom bar: Home, Kundli Milan, Kundli, AI Friend, Menu (opens the drawer).
+// Mobile-only bottom bar: Home, Explore, Kundli, AI Friend, Menu (opens the drawer).
 const BOTTOM_ITEMS: { key: PageKey; label: string; icon: NavIconName }[] = [
   { key: "home", label: "Home", icon: "home" },
-  { key: "milan", label: "Milan", icon: "rings" },
+  { key: "explore", label: "Explore", icon: "explore" },
   { key: "kundali", label: "Kundli", icon: "kundli" },
   { key: "ai-friend", label: "AI Friend", icon: "friend" },
 ];
+
+// Milan / Mahadasha / Numerology belong to the "Explore" hub, so Explore stays highlighted on them.
+function isNavActive(itemKey: PageKey, activePage: PageKey) {
+  return itemKey === activePage || (itemKey === "explore" && EXPLORE_PAGES.includes(activePage));
+}
 
 export function BottomNav({
   activePage,
@@ -49,7 +52,7 @@ export function BottomNav({
     >
       <ul className="mx-auto flex max-w-md items-stretch gap-1">
         {BOTTOM_ITEMS.map((item) => {
-          const active = item.key === activePage;
+          const active = isNavActive(item.key, activePage);
           return (
             <li key={item.key} className="flex flex-1">
               <button
@@ -232,7 +235,7 @@ export function Sidebar({
             <p className={`px-3 pb-2 pt-1 text-[15px] ${DIM} ${hideWhenCollapsed}`}>Menu</p>
             <ul className="flex flex-col gap-1">
               {MENU_ITEMS.map((item) => {
-                const active = item.key === activePage;
+                const active = isNavActive(item.key, activePage);
                 return (
                   <li key={item.key}>
                     <button

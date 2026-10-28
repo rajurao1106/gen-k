@@ -6,6 +6,7 @@ import {
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
+import { chartFactsBlock, getBirthChart, vimshottariFacts } from "../lib/chartFacts";
 import { getSavedKundalis, saveKundaliRecord } from "../lib/storage";
 import { saveUserDetail } from "../lib/api";
 import { BIRTH_FIELDS } from "../types";
@@ -274,6 +275,14 @@ export default function MahadashaPage() {
 
       const currentYear = new Date().getFullYear();
 
+      // Real calculated chart + Vimshottari periods. The AI must not calculate these itself.
+      const chart = await getBirthChart(input);
+      const dashaFacts = vimshottariFacts(chart, input.dob);
+      if (!chart?.summary || !dashaFacts) {
+        setError("Birth chart calculate nahi ho paya. Birth date, time aur place check karke dobara try karein.");
+        return;
+      }
+
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
         purpose: "mahadasha",
@@ -284,6 +293,10 @@ Date of Birth: ${input.dob}
 Time of Birth: ${input.bot}
 Place of Birth: ${input.bop}
 Current year: ${currentYear}
+${chartFactsBlock(chart)}
+${dashaFacts}
+
+The Vimshottari periods above were calculated from the Moon's real position and are FINAL. Never recalculate or change them.
 
 Respond with ONLY a raw JSON object, no markdown fences, no explanation outside the JSON. Use exactly this shape:
 
@@ -302,11 +315,11 @@ Respond with ONLY a raw JSON object, no markdown fences, no explanation outside 
 }
 
 Rules:
-- Compute the full Vimshottari Mahadasha sequence (all 9 planets: Ketu, Shukra, Surya, Chandra, Mangal, Rahu, Guru, Shani, Budh) starting from birth based on Moon's Nakshatra, with realistic start/end years for each period, covering from birth through at least 20 years past the current year.
-- currentMahadasha and currentAntardasha must be the ones active in ${currentYear}, matching an entry in "timeline".
+- Build "timeline" from the calculated Mahadasha sequence above: use its planets in the same order, with start/end given as the year of each calculated date. Do not invent or shift any period.
+- currentMahadasha and currentAntardasha must be the ones marked (CURRENT) in the calculated Dasha above (give the year of their start/end dates), matching an entry in "timeline".
 - yearlyOutlook must cover exactly ${currentYear}, ${currentYear + 1}, ${currentYear + 2}, ${currentYear + 3}, ${currentYear + 4} (5 entries), each grounded in whichever dasha/antardasha is active that year.
 - Use phrases like "यह अवधि...की संभावना दर्शाती है" rather than definite claims. Never guarantee events, and never make medical/death predictions.
-- If birth time is uncertain, still give best estimates — do not omit fields.
+- Do not omit fields.
 - Do not include any text outside the JSON object.`,
       });
 

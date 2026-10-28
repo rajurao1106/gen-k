@@ -120,7 +120,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/start?new=1"
+              href="/start"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f2c36b] px-6 py-3 text-sm font-bold text-[#17130c] transition hover:-translate-y-0.5 hover:bg-[#ffda91]"
             >
               Create your free kundali <span aria-hidden="true">→</span>

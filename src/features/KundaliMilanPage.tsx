@@ -6,6 +6,7 @@ import {
   isQuotaOrRateLimitError,
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
+import { getBirthChart } from "../lib/chartFacts";
 import { getSavedKundalis, saveKundaliRecord } from "../lib/storage";
 import { saveUserDetail } from "../lib/api";
 import type { KundaliRecord } from "../types";
@@ -306,6 +307,16 @@ export default function KundaliMilanPage() {
       setUpgradeRequired(false);
       setResult(null);
 
+      // Real calculated charts for both people (Moon sign / Nakshatra come from the ephemeris).
+      const [varChart, vadhuChart] = await Promise.all([
+        getBirthChart(varRecord),
+        getBirthChart(vadhuRecord),
+      ]);
+      if (!varChart?.summary || !vadhuChart?.summary) {
+        setError("Birth chart calculate nahi ho paya. Birth date, time aur place check karke dobara try karein.");
+        return;
+      }
+
       const response = await callGemini({
         model: "gemini-3.5-flash-lite",
         purpose: "milan",
@@ -320,6 +331,14 @@ export default function KundaliMilanPage() {
 
 वर (Groom): Name: ${varRecord.name}, DOB: ${varRecord.dob}, Time: ${varRecord.bot}, Place: ${varRecord.bop}
 वधु (Bride): Name: ${vadhuRecord.name}, DOB: ${vadhuRecord.dob}, Time: ${vadhuRecord.bot}, Place: ${vadhuRecord.bop}
+
+वर's calculated chart:
+${varChart.summary}
+
+वधु's calculated chart:
+${vadhuChart.summary}
+
+These chart facts were calculated with an astronomical ephemeris and are FINAL. Use exactly these Moon signs and Nakshatras for the guna computation. Never recalculate them and never state a different Rashi or Nakshatra.
 
 Compute their Moon sign / Nakshatra based Ashtakoot Milan across the 8 traditional gunas: वर्ण (Varna, max 1), वश्य (Vashya, max 2), तारा (Tara, max 3), योनि (Yoni, max 4), ग्रह मैत्री (Graha Maitri, max 5), गण (Gana, max 6), भकूट (Bhakoot, max 7), नाड़ी (Nadi, max 8). Total max is 36.
 

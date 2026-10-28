@@ -7,22 +7,21 @@
  *   gol notch (curve) kat-ta hai.
  * - Tab badalne par bubble + notch dono smoothly slide karte hain.
  * - Same props as purana BottomNav, to App.tsx mein sirf import badalna hai.
- * - Jo page bottom bar mein nahi hai (Numerology / Mahadasha), unke liye
- *   notch "Menu" tab par baith jata hai.
+ * - Milan / Mahadasha / Numerology "Explore" page ke andar khulte hain,
+ *   isliye un pages par notch "Explore" tab par rehta hai.
  *
  * Place at: src/components/CurvedBottomNav.tsx
  */
 
-import type { PageKey } from "../types";
+import { EXPLORE_PAGES, type PageKey } from "../types";
 import { NavIcon, type NavIconName } from "./NavIcon";
 
 type Slot = { key: PageKey; label: string; icon: NavIconName };
 
 const SLOTS: Slot[] = [
-
-  { key: "milan", label: "Milan", icon: "rings" },
+  { key: "explore", label: "Explore", icon: "explore" },
   { key: "kundali", label: "Kundli", icon: "kundli" },
-    { key: "home", label: "Home", icon: "home" },
+  { key: "home", label: "Home", icon: "home" },
   { key: "ai-friend", label: "AI Friend", icon: "friend" },
   { key: "profile", label: "Profile", icon: "user" },
 ];
@@ -78,7 +77,9 @@ export function CurvedBottomNav({
   onNavigate: (page: PageKey) => void;
   onOpenProfile: () => void;
 }) {
-  const found = SLOTS.findIndex((s) => s.key === activePage);
+  // Milan / Mahadasha / Numerology open from the Explore hub, so Explore stays active on them.
+  const navKey: PageKey = EXPLORE_PAGES.includes(activePage) ? "explore" : activePage;
+  const found = SLOTS.findIndex((s) => s.key === navKey);
   const activeIndex = found === -1 ? COUNT - 1 : found; // bottom bar mein nahi => Profile
   const centerPct = activeIndex * SLOT_PCT + SLOT_PCT / 2;
   const half = NOTCH_W / 2;

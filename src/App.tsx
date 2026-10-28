@@ -5,11 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { CurvedBottomNav as BottomNav } from "./components/CurvedBottomNav";
 import DashboardHome from "./components/DashboardHome";
-import type { PageKey } from "./types";
+import { EXPLORE_PAGES, type PageKey } from "./types";
 import KundaliPage from "./features/KundaliPage";
 import KundaliMilanPage from "./features/KundaliMilanPage";
 import NumerologyPage from "./features/NumerologyPage";
 import MahadashaPage from "./features/MahadashaPage";
+import ExplorePage from "./features/ExplorePage";
 import LoginPage from "./features/LoginPage";
 import UserDataPage from "./features/UserDataPage";
 import AIFriendPage from "./features/AIFriendPage";
@@ -28,6 +29,7 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   milan: { hi: "कुंडली मिलान", sub: "Ashtakoot compatibility match" },
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
+  explore: { hi: "Explore", sub: "Milan, Mahadasha and Numerology" },
   profile: { hi: "Profile", sub: "Your details and settings" },
   plans: { hi: "Plans", sub: "Plans, access and billing" },
 };
@@ -39,6 +41,7 @@ const PAGE_ROUTES: Record<PageKey, string> = {
   milan: "/milan",
   numerology: "/numerology",
   mahadasha: "/mahadasha",
+  explore: "/explore",
   profile: "/profile",
   plans: "/plans",
 };
@@ -148,6 +151,8 @@ function KundaliExperience() {
         return "numerology";
       case "/mahadasha":
         return "mahadasha";
+      case "/explore":
+        return "explore";
       case "/kundali":
         return "kundali";
       case "/ai-friend":
@@ -343,7 +348,17 @@ html, body { max-width: 100%; overflow-x: clip; }
           </header>
 
           <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-4 font-body sm:px-6 lg:px-8 lg:pb-8 lg:pt-8">
+            {EXPLORE_PAGES.includes(page) && (
+              <button
+                type="button"
+                onClick={() => router.push(PAGE_ROUTES.explore)}
+                className="no-print mb-4 inline-flex items-center gap-2 rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10"
+              >
+                <span aria-hidden="true">←</span> Explore
+              </button>
+            )}
             {page === "home" && <DashboardHome />}{" "}
+            {page === "explore" && <ExplorePage onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])} />}
             {page === "kundali" && <KundaliPage />}
             {page === "ai-friend" && <AIFriendPage />}
             {page === "milan" && <KundaliMilanPage />}

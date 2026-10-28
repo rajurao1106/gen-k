@@ -48,8 +48,12 @@ export type PageKey =
   | "milan"
   | "numerology"
   | "mahadasha"
+  | "explore"
   | "profile"
   | "plans";
+
+/** Pages that live under the "Explore" hub (shown as one nav item). */
+export const EXPLORE_PAGES: PageKey[] = ["milan", "mahadasha", "numerology"];
 
 export type FieldKey = "name" | "dob" | "bot" | "bop" | "gender";
 
