@@ -218,6 +218,11 @@ export async function fetchBirthChart(payload: {
   dob: string;
   bot: string;
   bop: string;
+  /** Optional, user-confirmed coordinates. If omitted the server uses the ones saved for this place, else looks the name up. */
+  lat?: number;
+  lon?: number;
+  timeZone?: string;
+  nodeType?: "mean" | "true";
 }): Promise<ChartData> {
   const response = await request<ChartData>("/api/chart", {
     method: "POST",
@@ -263,6 +268,15 @@ export async function deleteMyProfile(id: string) {
   return request<UserDetailRecord>(`/api/users/me/profiles/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+/** Remove only the saved birth-place coordinates of one of my profiles. */
+export async function deleteMyLocation(id: string): Promise<UserDetailRecord> {
+  const response = await request<UserDetailRecord>(`/api/users/me/profiles/${encodeURIComponent(id)}/location`, {
+    method: "DELETE",
+  });
+  if (!response.data) throw new ApiError("The server did not confirm the removal.", 500);
+  return response.data;
 }
 
 export async function fetchPlans(): Promise<Plan[]> {

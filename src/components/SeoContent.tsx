@@ -15,7 +15,7 @@ export default function SeoContent({ page }: { page: SeoPageKey }) {
 
   return (
     <article className="border-t border-white/10 bg-[#071a2a] text-[#d5d9e2]">
-      <div className="mx-auto w-full max-w-7xl px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
+      {/* <div className="mx-auto w-full max-w-7xl px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
         <header className="mb-9 max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d9ad62]">
             Learn more
@@ -77,7 +77,7 @@ export default function SeoContent({ page }: { page: SeoPageKey }) {
             ))}
           </div>
         </section>
-      </div>
+      </div> */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
     </article>
   );

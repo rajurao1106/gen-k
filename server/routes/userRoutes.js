@@ -5,6 +5,7 @@ import UserDetail from "../models/UserDetail.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { userRateLimit } from "../middleware/featureAccess.js";
 import { applyReferralReward } from "../services/referrals.js";
+import { normalizeBirthLocation, InvalidPlaceError } from "../services/astro/birthLocation.js";
 
 const router = express.Router();
 const limitProfileWrites = userRateLimit({
@@ -22,11 +23,18 @@ const saveSchema = z.object({
   chart: z.record(z.string(), z.unknown()).nullable().optional(),
   relationshipStatus: z.string().trim().max(80).optional(),
   birthTimeUnknown: z.boolean().optional(),
-  birthLatitude: z.number().finite().optional(),
-  birthLongitude: z.number().finite().optional(),
+  // Birth-place coordinates are personal data: validated, rounded (~1 km) and clearable.
+  birthLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
+  birthLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
   birthTimezone: z.string().trim().max(100).optional(),
   referralCode: z.string().trim().min(1).max(16).regex(/^[A-Za-z0-9]+$/).optional(),
+}).refine((v) => (v.birthLatitude == null) === (v.birthLongitude == null), {
+  message: "Send both birthLatitude and birthLongitude, or neither.",
+  path: ["birthLatitude"],
 });
+
+const invalidLocation = (res, error) =>
+  res.status(400).json({ success: false, code: "INVALID_BIRTH_LOCATION", message: error.message });
 
 router.post("/save", requireAuth, limitProfileWrites, async (req, res, next) => {
   const parsed = saveSchema.safeParse(req.body);
@@ -39,7 +47,14 @@ router.post("/save", requireAuth, limitProfileWrites, async (req, res, next) => 
     });
   }
 
-  const { referralCode, ...profileData } = parsed.data;
+  const { referralCode, ...rawProfileData } = parsed.data;
+  let profileData;
+  try {
+    profileData = await normalizeBirthLocation(rawProfileData);
+  } catch (error) {
+    if (error instanceof InvalidPlaceError) return invalidLocation(res, error);
+    return next(error);
+  }
   const session = await mongoose.startSession();
   try {
     let userDetail;
@@ -117,16 +132,47 @@ router.put("/me/profiles/:id", requireAuth, limitProfileWrites, async (req, res,
       errors: parsed.error.issues.map(({ path, message }) => ({ path, message })),
     });
   }
+  let update;
+  try {
+    update = await normalizeBirthLocation(parsed.data);
+  } catch (error) {
+    if (error instanceof InvalidPlaceError) return invalidLocation(res, error);
+    return next(error);
+  }
   try {
     const updatedRecord = await UserDetail.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
-      { $set: parsed.data },
+      { $set: update },
       { new: true, runValidators: true },
     );
     if (!updatedRecord) {
       return res.status(404).json({ success: false, message: "Profile not found." });
     }
     return res.json({ success: true, data: updatedRecord });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Remove ONLY the saved birth-place coordinates (keeps name, date, time and place name).
+// Charts then fall back to looking the place up from its name.
+router.delete("/me/profiles/:id/location", requireAuth, limitProfileWrites, async (req, res, next) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(400).json({ success: false, message: "Invalid profile ID." });
+  }
+  try {
+    const record = await UserDetail.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      {
+        $set: { birthLatitude: null, birthLongitude: null, birthTimezone: "" },
+        $unset: { "chart.place": "" }, // the saved chart copy also carries the coordinates
+      },
+      { new: true },
+    );
+    if (!record) {
+      return res.status(404).json({ success: false, message: "Profile not found." });
+    }
+    return res.json({ success: true, message: "Saved birth-place coordinates removed.", data: record });
   } catch (error) {
     next(error);
   }
@@ -157,7 +203,10 @@ router.delete("/me/profiles/:id", requireAuth, limitProfileWrites, async (req, r
 
 router.get("/all", requireAuth, requireAdmin, async (_req, res, next) => {
   try {
-    const records = await UserDetail.find().sort({ createdAt: -1 });
+    // Admins do not need users' exact birth-place coordinates.
+    const records = await UserDetail.find()
+      .select("-birthLatitude -birthLongitude -chart.place")
+      .sort({ createdAt: -1 });
     return res.json({ success: true, count: records.length, data: records });
   } catch (error) {
     next(error);

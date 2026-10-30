@@ -7,6 +7,8 @@ import { saveUserKundaliProfile } from "../lib/storage";
 import { saveUserDetail } from "../lib/api";
 import { trackAnalytics } from "../lib/analytics";
 import { ART, IMAGES, STEP_KEYS, TEXT } from "../lib/onboardingSteps"
+import AdvancedPlaceInput from "./AdvancedPlaceInput";
+import BirthPlaceMap from "./BirthPlaceMap";
 
 type Place = { label: string; lat: number; lng: number; tz: string };
 type Data = {
@@ -89,6 +91,7 @@ export default function Onboarding() {
   const [searching, setSearching] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Place[]>([]);
+  const [mapPlace, setMapPlace] = useState<Place | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -257,7 +260,7 @@ export default function Onboarding() {
         {step === 6 && (<>
           <p className="text-[15px] leading-6 text-[#aeb6c5]">{TEXT.place.intro}</p>
           <p className="mt-3 text-base font-semibold">{TEXT.place.title}</p>
-          <button type="button" onClick={() => { setQ(""); setSearching(true); }}
+          <button type="button" onClick={() => { setQ(data.place?.label ?? ""); setMapPlace(data.place); setSearching(true); }}
             className={`mt-4 w-full border-b border-[#f2c36b]/30 pb-2 text-left font-display text-3xl ${data.place ? "text-[#f6f0e6]" : "text-[#f6f0e6]/20"}`}>
             {data.place ? data.place.label : TEXT.place.placeholder}
           </button>
@@ -286,14 +289,49 @@ export default function Onboarding() {
               className="w-full bg-transparent pb-2 font-display text-3xl outline-none" />
             {q && <button type="button" aria-label="Clear" onClick={() => { setQ(""); setResults([]); }} className="pb-2 text-[#858e9d]">✕</button>}
           </div>
+          <div className="mt-3 shrink-0">
+            <p className="mb-1 text-xs text-[#aeb6c5]">Map par tap karein ya pin ko drag karke exact jagah chunein.</p>
+            <BirthPlaceMap
+              lat={mapPlace?.lat ?? null}
+              lng={mapPlace?.lng ?? null}
+              center={results[0] ? { lat: results[0].lat, lng: results[0].lng } : undefined}
+              onPick={(lat, lng) => setMapPlace({
+                label: q.trim() || "Map pin",
+                lat,
+                lng,
+                tz: "",
+              })}
+            />
+            {mapPlace && (
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <p className="text-xs text-[#c9d8ed]">
+                  {mapPlace.lat.toFixed(5)}, {mapPlace.lng.toFixed(5)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    set({ place: mapPlace });
+                    setSearching(false);
+                    setResults([]);
+                  }}
+                  className="rounded-lg bg-[#f2c36b] px-3 py-2 text-xs font-semibold text-[#17130c]"
+                >
+                  Use this location
+                </button>
+              </div>
+            )}
+          </div>
           <ul className="mt-2 flex-1 overflow-y-auto pb-6">
             {results.map((p) => (
               <li key={`${p.label}${p.lat}`}>
-                <button type="button" onClick={() => { set({ place: p }); setSearching(false); setResults([]); }}
+                <button type="button" onClick={() => { set({ place: p }); setMapPlace(null); setSearching(false); setResults([]); }}
                   className="w-full py-3 text-left text-[15px] text-[#d5d9e2] hover:text-[#ffda91]">{p.label}</button>
               </li>
             ))}
           </ul>
+          <div className="pb-6">
+            <AdvancedPlaceInput onUse={(p) => { set({ place: p }); setMapPlace(null); setSearching(false); setResults([]); }} />
+          </div>
         </div>
       )}
     </Shell>

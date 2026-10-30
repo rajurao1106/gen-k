@@ -18,6 +18,16 @@ export default function PrivacyPage() {
           content: <p>When you create an account, we store the mobile number you provide; it is not verified. If you use Gen-K tools, we store the profile details you submit, including name, date, time and place of birth, optional gender and saved report content. Account data is associated with your account.</p>,
         },
         {
+          title: "Birth place and coordinates",
+          content: (
+            <>
+              <p>Your place of birth affects the Lagna (ascendant) and houses of your chart, so we also save the coordinates (latitude, longitude) and time zone of that place with your profile. They come from the place you pick in search or, optionally, from coordinates you enter yourself under "Advanced". We round them to about 1 km before saving.</p>
+              <p>Coordinates are used only to calculate your chart. They are not included in the text sent to the AI service, which receives your place name and the calculated chart facts. Our admin tools do not display exact coordinates.</p>
+              <p>You can remove the saved coordinates at any time from your profile (your place name stays), or delete the profile or your whole account, which deletes them too.</p>
+            </>
+          ),
+        },
+        {
           title: "Voice data and consent",
           content: <p>If you use the optional voice feature, Gen-K stores your reference audio, display label, language and consent confirmation with your account. When you request speech, the reference audio and requested text are sent to Boson AI to generate speech. Voice replies are AI-generated. You can remove a saved voice from your profile settings.</p>,
         },

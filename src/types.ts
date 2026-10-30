@@ -10,6 +10,25 @@ export type ChartPlanet = {
   retrograde?: boolean;
 };
 
+export type ChartPlaceInfo = {
+  lat: number;
+  lon: number;
+  timeZone: string;
+  label?: string;
+  /** "low" = the place name was ambiguous: ask the user to confirm (see alternatives). */
+  confidence?: "high" | "medium" | "low";
+  source?: "request" | "saved-profile" | "geocoded";
+  alternatives?: { lat: number; lon: number; timeZone: string | null; label: string }[];
+};
+
+export type ChartBoundaryAlert = {
+  body: string;
+  rashi: string;
+  minutes: number;
+  changesTo: string;
+  ifBirthTime: "earlier" | "later";
+};
+
 export type ChartData = {
   lagna?: string;
   lagnaHi?: string;
@@ -18,7 +37,11 @@ export type ChartData = {
   moonSign?: string;
   moonSignHi?: string;
   moonNakshatra?: string;
+  moonNakshatraPada?: number;
   sunSign?: string;
+  nodeType?: "mean" | "true";
+  boundaryAlerts?: ChartBoundaryAlert[];
+  place?: ChartPlaceInfo;
   houses: Record<string, string[]>;
   planets?: ChartPlanet[];
   /** Plain-text chart facts that are given to the AI so it never guesses. */

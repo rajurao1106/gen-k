@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import type { KundaliProfile } from "../types";
 import { saveUserKundaliProfile } from "../lib/storage";
 import { useAuth } from "../lib/useAuth";
+import AdvancedPlaceInput from "../components/AdvancedPlaceInput";
+import BirthPlaceMap from "../components/BirthPlaceMap";
 import {
   deleteMyAccount,
+  deleteMyLocation,
   fetchMyProfiles,
   saveUserDetail,
   updateUserDetail,
@@ -37,6 +40,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [removingLocation, setRemovingLocation] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
 
   useEffect(() => {
@@ -211,6 +215,27 @@ export default function ProfilePage() {
     }
   };
 
+  const hasSavedCoordinates =
+    typeof details.lat === "number" && typeof details.lng === "number";
+  const mapLatitude = selectedPlace?.lat ?? details.lat;
+  const mapLongitude = selectedPlace?.lng ?? details.lng;
+
+  const removeSavedLocation = async () => {
+    if (!profileRecord?._id || removingLocation) return;
+    if (!window.confirm("Remove the saved birth-place coordinates? Your place name stays; charts will look the place up from its name again.")) return;
+    setRemovingLocation(true);
+    setError("");
+    try {
+      const updated = await deleteMyLocation(profileRecord._id);
+      setProfileRecord(updated);
+      setDetails((current) => ({ ...current, lat: undefined, lng: undefined, timezone: "" }));
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : "Could not remove the saved coordinates.");
+    } finally {
+      setRemovingLocation(false);
+    }
+  };
+
   const beginEditing = () => {
     setSaved(false);
     setError("");
@@ -252,6 +277,29 @@ export default function ProfilePage() {
             <label className="block text-xs font-medium text-[#f9e6b2]">Place of birth<input value={placeQuery} onChange={(event) => { setPlaceQuery(event.target.value); setSelectedPlace(null); setSaved(false); }} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b]" /></label>
             {visiblePlaces.length > 0 && <ul className="max-h-40 overflow-y-auto rounded-xl border border-white/15 bg-[#10273d]">{visiblePlaces.map((place) => <li key={place.label + place.lat}><button type="button" onClick={() => { setSelectedPlace(place); setPlaceQuery(place.label); setPlaces([]); }} className="w-full px-3 py-2.5 text-left text-sm hover:bg-white/10">{place.label}</button></li>)}</ul>}
             {searchError && <p role="alert" className="text-sm text-[#ffd1c9]">{searchError}</p>}
+            <div>
+              <p className="mb-1 text-xs text-[#a6bddb]">Map par tap karein ya pin ko drag karke exact jagah chunein.</p>
+              <BirthPlaceMap
+                lat={selectedPlace?.lat ?? details.lat ?? null}
+                lng={selectedPlace?.lng ?? details.lng ?? null}
+                center={places[0] ? { lat: places[0].lat, lng: places[0].lng } : undefined}
+                onPick={(lat, lng) => {
+                  setSelectedPlace({
+                    label: placeQuery.trim() || profile.bop,
+                    lat,
+                    lng,
+                    tz: "",
+                  });
+                  setSaved(false);
+                }}
+              />
+              {typeof mapLatitude === "number" && typeof mapLongitude === "number" && (
+                <p className="mt-2 text-xs text-[#c9d8ed]">
+                  Selected coordinates: {mapLatitude.toFixed(5)}, {mapLongitude.toFixed(5)}
+                </p>
+              )}
+            </div>
+            <AdvancedPlaceInput onUse={(place) => { setSelectedPlace(place); setPlaceQuery(place.label); setPlaces([]); setSaved(false); }} />
             <label className="block text-xs font-medium text-[#f9e6b2]">Gender<select id="profile-gender" value={gender} onChange={(event) => setGender(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] scheme-dark"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></label>
             <label className="block text-xs font-medium text-[#f9e6b2]">Relationship status<input value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] scheme-dark" /></label>
             {error && <p role="alert" className="text-sm text-[#ffd1c9]">{error}</p>}
@@ -266,6 +314,17 @@ export default function ProfilePage() {
             <div><dt className="text-[11px] text-[#a6bddb]">Date of birth</dt><dd className="mt-0.5 text-xs font-medium">{dob}</dd></div>
             <div><dt className="text-[11px] text-[#a6bddb]">Time of birth</dt><dd className="mt-0.5 text-xs font-medium">{unknownTime ? "Unknown" : birthTime}</dd></div>
             <div className="col-span-2"><dt className="text-[11px] text-[#a6bddb]">Place of birth</dt><dd className="mt-0.5 text-xs font-medium">{profile.bop}</dd></div>
+            <div className="col-span-2">
+              <dt className="text-[11px] text-[#a6bddb]">Saved coordinates</dt>
+              <dd className="mt-0.5 flex items-center justify-between gap-3 text-xs font-medium">
+                <span>{hasSavedCoordinates ? `${details.lat!.toFixed(2)}, ${details.lng!.toFixed(2)} (about 1 km precision)` : "None saved - looked up from the place name"}</span>
+                {hasSavedCoordinates && (
+                  <button type="button" onClick={() => void removeSavedLocation()} disabled={removingLocation} className="shrink-0 text-[#ffd1c9] underline disabled:opacity-50">
+                    {removingLocation ? "Removing…" : "Remove"}
+                  </button>
+                )}
+              </dd>
+            </div>
             <div><dt className="text-[11px] text-[#a6bddb]">Gender</dt><dd className="mt-0.5 text-xs font-medium">{gender || "Not set"}</dd></div>
             <div><dt className="text-[11px] text-[#a6bddb]">Relationship</dt><dd className="mt-0.5 text-xs font-medium">{status || "Not set"}</dd></div>
           </dl>
@@ -318,7 +377,7 @@ export default function ProfilePage() {
             <span className="block text-sm font-medium text-[#ffd1c9]">
               {deletingAccount ? "Deleting account…" : "Delete my account and data"}
             </span>
-            <span className="mt-0.5 block text-xs text-[#a6bddb]">Profiles, guides, reports and saved voices will be removed.</span>
+            <span className="mt-0.5 block text-xs text-[#a6bddb]">Profiles (including birth-place coordinates), guides, reports and saved voices will be removed.</span>
           </span>
         </button>
         {user?.role === "admin" && process.env.NODE_ENV !== "production" && (
