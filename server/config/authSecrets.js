@@ -22,13 +22,14 @@ export function getJwtSecret() {
 }
 
 export function getReferralHashSecret() {
-  return resolveSecret(
+  const secret =
     process.env.REFERRAL_PHONE_HMAC_SECRET ||
-      process.env.OTP_SECRET ||
-      process.env.OTP_HMAC_SECRET ||
-      process.env.JWT_SECRET,
-    "REFERRAL_PHONE_HMAC_SECRET",
-    LOCAL_DEMO_JWT_SECRET,
-    true,
-  );
+    process.env.OTP_SECRET ||
+    process.env.OTP_HMAC_SECRET ||
+    process.env.JWT_SECRET ||
+    LOCAL_DEMO_JWT_SECRET;
+
+  // Referral hashing is optional for now; if a dedicated secret is not configured,
+  // fall back to the main JWT secret instead of failing auth requests.
+  return resolveSecret(secret, "REFERRAL_PHONE_HMAC_SECRET", LOCAL_DEMO_JWT_SECRET, true);
 }
