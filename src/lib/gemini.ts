@@ -60,7 +60,7 @@ export function isUpgradeOrQuotaError(err: unknown) {
 export const QUOTA_ERROR_MESSAGE_HI =
   "AI service ki limit abhi poori hai. Kripya thodi der baad dobara koshish karein.";
 
-export type GeminiPurpose = "chat" | "kundali" | "milan" | "mahadasha" | "guide";
+export type GeminiPurpose = "chat" | "kundali" | "milan" | "mahadasha" | "guide" | "psychologist";
 
 export type GeminiReportIdentity = {
   type: "kundali" | "milan";

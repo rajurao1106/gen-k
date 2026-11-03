@@ -10,6 +10,7 @@ import KundaliPage from "./features/KundaliPage";
 import KundaliMilanPage from "./features/KundaliMilanPage";
 import NumerologyPage from "./features/NumerologyPage";
 import MahadashaPage from "./features/MahadashaPage";
+import PsychologistInsightPage from "./features/Psychologistinsightpage";
 import ExplorePage from "./features/ExplorePage";
 import LoginPage from "./features/LoginPage";
 import UserDataPage from "./features/UserDataPage";
@@ -29,7 +30,8 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   milan: { hi: "कुंडली मिलान", sub: "Ashtakoot compatibility match" },
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
-  explore: { hi: "Explore", sub: "Milan, Mahadasha and Numerology" },
+  "psychologist-insight": { hi: "Client Insight", sub: "Kundali-based supportive insight for psychologists" },
+  explore: { hi: "Explore", sub: "Milan, Mahadasha, Numerology and Client Insight" },
   profile: { hi: "Profile", sub: "Your details and settings" },
   plans: { hi: "Plans", sub: "Plans, access and billing" },
 };
@@ -41,6 +43,7 @@ const PAGE_ROUTES: Record<PageKey, string> = {
   milan: "/milan",
   numerology: "/numerology",
   mahadasha: "/mahadasha",
+  "psychologist-insight": "/psychologist-insight",
   explore: "/explore",
   profile: "/profile",
   plans: "/plans",
@@ -151,6 +154,8 @@ function KundaliExperience() {
         return "numerology";
       case "/mahadasha":
         return "mahadasha";
+      case "/psychologist-insight":
+        return "psychologist-insight";
       case "/explore":
         return "explore";
       case "/kundali":
@@ -303,7 +308,8 @@ html, body { max-width: 100%; overflow-x: clip; }
             width: 100% !important;
             max-width: 100% !important;
             overflow: visible !important;
-            table-layout: auto;
+            table-layout: auto;import PsychologistInsightPage from './features/Psychologistinsightpage';
+
           }
         }
       `}</style>
@@ -364,6 +370,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}
             {page === "mahadasha" && <MahadashaPage />}
+            {page === "psychologist-insight" && <PsychologistInsightPage />}
             {page === "profile" && <ProfilePage />}
             {page === "plans" && <PlansPage />}
           </div>

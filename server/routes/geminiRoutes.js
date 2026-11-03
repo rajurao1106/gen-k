@@ -31,7 +31,7 @@ const rateLimitPerMin = () => Number(process.env.GEMINI_RATE_LIMIT_PER_MIN || 20
 const userLimitPerMin = () => Number(process.env.GEMINI_USER_RATE_LIMIT_PER_MIN || 12);
 const MAX_INPUT_CHARS = 20_000;
 const CACHE_TTL_MS = 2 * 60_000;
-const purposes = ["chat", "kundali", "milan", "mahadasha", "guide"];
+const purposes = ["chat", "kundali", "milan", "mahadasha", "guide", "psychologist"];
 const purposeSchema = z.enum(purposes);
 const reportSchema = z.object({
   type: z.enum(["kundali", "milan"]),
@@ -301,25 +301,32 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
       const generated = await generateWithPool({ model, input });
       text = String(generated.output_text ?? "");
     } else {
-      const cached = cache.get(key);
-      if (cached && cached.expires > Date.now()) {
-        return res.json({ success: true, output_text: cached.text, cached: true });
+      if (currentPurpose === "psychologist") {
+        // Client-privacy: this prompt contains a client's private details, so it is never
+        // kept in the in-memory response cache or the in-flight map.
+        const generated = await generateWithPool({ model, input });
+        text = String(generated.output_text ?? "");
+      } else {
+        const cached = cache.get(key);
+        if (cached && cached.expires > Date.now()) {
+          return res.json({ success: true, output_text: cached.text, cached: true });
+        }
+        let promise = inflight.get(key);
+        if (!promise) {
+          promise = generateWithPool({ model, input })
+            .then((result) => String(result.output_text ?? ""))
+            .finally(() => inflight.delete(key));
+          inflight.set(key, promise);
+        }
+        text = await promise;
       }
-      let promise = inflight.get(key);
-      if (!promise) {
-        promise = generateWithPool({ model, input })
-          .then((result) => String(result.output_text ?? ""))
-          .finally(() => inflight.delete(key));
-        inflight.set(key, promise);
-      }
-      text = await promise;
     }
     if (!text.trim()) {
       throw Object.assign(new Error("Gemini returned an empty response."), {
         code: "EMPTY_GEMINI_RESPONSE",
       });
     }
-    if (!report) {
+    if (!report && currentPurpose !== "psychologist") {
       cache.set(key, { text, expires: Date.now() + CACHE_TTL_MS });
       if (cache.size > 200) cache.delete(cache.keys().next().value);
     }

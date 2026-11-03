@@ -33,6 +33,13 @@ const TOOLS: Tool[] = [
     description: "Name and birth-number reading based on your details.",
     icon: "numbers",
   },
+  {
+    key: "psychologist-insight",
+    hi: "साइकोलॉजिस्ट क्लाइंट इनसाइट",
+    en: "Psychologist Client Insight",
+    description: "For psychologists: understand a client better with a Kundali-based supportive insight, suggested questions and practices.",
+    icon: "heart",
+  },
 ];
 
 export default function ExplorePage({ onNavigate }: { onNavigate: (page: PageKey) => void }) {
