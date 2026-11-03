@@ -262,7 +262,7 @@ export default function ProfilePage() {
       <section className="mb-6 flex flex-col items-center text-center">
         <div className="grid h-20 w-20 place-items-center rounded-full bg-[#f2c36b]/15 text-3xl font-semibold text-[#f2c36b]">{profile.name.trim().charAt(0).toUpperCase()}</div>
         <h2 className="mt-2 text-lg font-semibold">{profile.name}</h2>
-        <p className="mt-0.5 text-sm text-[#a6bddb]">{user?.phone}</p>
+        <p className="mt-0.5 text-sm text-[#a6bddb]">{user?.email || user?.phone}</p>
         <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#f2c36b]"><span aria-hidden="true">✦</span> Kundali profile</p>
       </section>
 
@@ -360,7 +360,7 @@ export default function ProfilePage() {
         </label>
         <div className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#b994dc]/15 text-[#c9a8ed]" aria-hidden="true">☎</span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Mobile number</span><span className="mt-0.5 block text-xs text-[#a6bddb]">{user?.phone}</span></span><span className="text-xs text-[#a6bddb]">Not verified</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{user?.email ? "Email" : "Mobile number"}</span><span className="mt-0.5 block text-xs text-[#a6bddb]">{user?.email || user?.phone}</span></span><span className="text-xs text-[#a6bddb]">{user?.email ? "Signed in" : "Not verified"}</span>
         </div>
         <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-2xl border border-[#ef9f90]/30 bg-[#10273d] px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:bg-[#ef9f90]/10">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ef9f90]/15 text-[#ef9f90]" aria-hidden="true">↪</span>

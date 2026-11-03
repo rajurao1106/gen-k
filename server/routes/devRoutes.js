@@ -30,12 +30,12 @@ function invalidBody(res, parsed) {
 
 router.get("/users", async (_req, res, next) => {
   try {
-    const users = await User.find().select("_id phone role").sort({ createdAt: -1 }).limit(200).lean();
+    const users = await User.find().select("_id phone email role").sort({ createdAt: -1 }).limit(200).lean();
     return res.json({
       success: true,
       data: users.map((user) => ({
         id: user._id.toString(),
-        phone: user.phone,
+        phone: user.phone || user.email,
         role: user.role,
       })),
     });
@@ -146,7 +146,7 @@ router.post("/subscriptions/expire", async (req, res, next) => {
 router.get("/orders", async (_req, res, next) => {
   try {
     const orders = await Order.find()
-      .populate("userId", "phone")
+      .populate("userId", "phone email")
       .sort({ createdAt: -1 })
       .limit(200)
       .lean();
@@ -154,7 +154,7 @@ router.get("/orders", async (_req, res, next) => {
       success: true,
       data: orders.map((order) => ({
         id: order._id.toString(),
-        userPhone: order.userId?.phone ?? "Deleted account",
+        userPhone: order.userId?.phone ?? order.userId?.email ?? "Deleted account",
         planId: order.planId,
         amountPaise: order.amountPaise,
         currency: order.currency,

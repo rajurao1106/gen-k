@@ -50,7 +50,7 @@ export async function applyReferralReward({ referredUser, referralCode, session 
     throw error;
   }
 
-  const referredPhoneHash = hashReferralPhone(referredUser.phone);
+  const referredPhoneHash = hashReferralPhone(referredUser.phone || referredUser.email);
   if (await ReferralReward.exists({ referredPhoneHash }).session(session)) {
     const error = new Error("This phone number has already received a referral reward.");
     error.status = 409;

@@ -31,7 +31,7 @@ export async function requireAuth(req, res, next) {
     ) {
       throw new Error("Invalid session claims.");
     }
-    const user = await User.findById(claims.sub).select("_id phone role");
+    const user = await User.findById(claims.sub).select("_id phone email name role");
     if (!user) {
       return res.status(401).json({
         success: false,

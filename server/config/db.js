@@ -11,11 +11,14 @@ const removeLegacyUserIndexes = async () => {
     .hasNext();
   if (!usersCollectionExists) return;
 
+  // Drop old unique indexes that would break email/Google users:
+  // username, or non-sparse email/phone (users without a phone/email would all collide on null).
   const obsoleteIndexes = (await User.collection.indexes()).filter(
     (index) =>
       index.unique &&
       Object.keys(index.key).length === 1 &&
-      (index.key.username === 1 || index.key.email === 1),
+      (index.key.username === 1 ||
+        ((index.key.email === 1 || index.key.phone === 1) && !index.sparse)),
   );
 
   for (const index of obsoleteIndexes) {
@@ -23,6 +26,10 @@ const removeLegacyUserIndexes = async () => {
     console.warn(
       `[database] Removed obsolete unique index "${index.name}" from ${User.collection.name}.`,
     );
+  }
+  if (obsoleteIndexes.length) {
+    // Recreate phone/email/firebaseUid indexes as sparse-unique from the schema.
+    await User.createIndexes();
   }
 };
 

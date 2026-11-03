@@ -7,6 +7,7 @@ import PhoneOtp from "../models/PhoneOtp.js";
 import { AUTH_COOKIE_NAME, requireAuth, signAuthToken } from "../middleware/auth.js";
 import { ensureReferralCode } from "../services/referrals.js";
 import { getJwtSecret } from "../config/authSecrets.js";
+import { verifyFirebaseIdToken } from "../config/firebaseAdmin.js";
 
 const router = express.Router();
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -24,6 +25,9 @@ const OTP_MAX_ATTEMPTS = 5;
 // Never enabled in production unless OTP_DEV_MODE=true is set explicitly.
 const OTP_DEV_MODE = () =>
   process.env.OTP_DEV_MODE === "true" || process.env.NODE_ENV !== "production";
+const firebaseLoginSchema = z.object({
+  idToken: z.string().min(20).max(6000),
+});
 const adminLoginSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(1).max(200),
@@ -59,6 +63,7 @@ function limiter(message, limit = 10) {
 
 const otpRequestLimiter = limiter("Too many OTP requests. Please try again later.", 10);
 const otpVerifyLimiter = limiter("Too many verification attempts. Please try again later.", 20);
+const firebaseLoginLimiter = limiter("Too many sign-in attempts. Please try again later.", 30);
 const adminLoginLimiter = limiter("Too many administrator login attempts. Please try again later.", 5);
 
 function setSessionCookie(res, user) {
@@ -75,6 +80,8 @@ function authUser(user, referralCode, extra = {}) {
   return {
     id: user._id.toString(),
     phone: user.phone,
+    email: user.email,
+    name: user.name,
     role: user.role,
     referralCode,
     ...extra,
@@ -288,6 +295,101 @@ router.post("/admin-login", adminLoginLimiter, async (req, res, next) => {
     const referralCode = await ensureReferralCode(user);
     setSessionCookie(res, user);
     return res.json({ success: true, data: authUser(user, referralCode) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Email/password and Google sign-in (Firebase Auth). The browser signs in with Firebase,
+// sends the Firebase ID token here, and we verify it and start our own session cookie.
+router.post("/firebase", firebaseLoginLimiter, async (req, res, next) => {
+  const parsed = firebaseLoginSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      success: false,
+      code: "BAD_REQUEST",
+      message: "Sign-in token is missing.",
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyFirebaseIdToken(parsed.data.idToken);
+  } catch (error) {
+    if (error?.code === "FIREBASE_NOT_CONFIGURED") {
+      console.error("Firebase sign-in:", error.message);
+      return res.status(503).json({
+        success: false,
+        code: "FIREBASE_NOT_CONFIGURED",
+        message: "Sign-in is not configured on the server.",
+      });
+    }
+    return res.status(401).json({
+      success: false,
+      code: "FIREBASE_TOKEN_INVALID",
+      message: "Sign-in could not be verified. Please try again.",
+    });
+  }
+
+  const email = typeof decoded.email === "string" ? decoded.email.trim().toLowerCase() : "";
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      code: "EMAIL_REQUIRED",
+      message: "Your account has no email address.",
+    });
+  }
+  const provider = decoded.firebase?.sign_in_provider || "";
+  const name = typeof decoded.name === "string" ? decoded.name.trim().slice(0, 120) : "";
+
+  try {
+    let user = await User.findOne({ firebaseUid: decoded.uid });
+    let isNewAccount = false;
+
+    // Link to an existing account with the same email only when Firebase says the email is verified.
+    if (!user && decoded.email_verified === true) {
+      user = await User.findOne({ email });
+      if (user) user.firebaseUid = decoded.uid;
+    }
+
+    if (user && user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        code: "ADMIN_USE_ADMIN_LOGIN",
+        message: "Use the administrator sign-in page for this account.",
+      });
+    }
+
+    if (user) {
+      user.lastLoginAt = new Date();
+      if (!user.email) user.email = email;
+      if (!user.name && name) user.name = name;
+      user.authProvider = provider;
+      await user.save();
+    } else {
+      try {
+        user = await User.create({
+          firebaseUid: decoded.uid,
+          email,
+          name,
+          authProvider: provider,
+          role: "user",
+          lastLoginAt: new Date(),
+        });
+        isNewAccount = true;
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        user = await User.findOne({ $or: [{ firebaseUid: decoded.uid }, { email }] });
+        if (!user) throw error;
+      }
+    }
+
+    const referralCode = await ensureReferralCode(user);
+    setSessionCookie(res, user);
+    return res.status(isNewAccount ? 201 : 200).json({
+      success: true,
+      data: authUser(user, referralCode, { isNewAccount }),
+    });
   } catch (error) {
     next(error);
   }

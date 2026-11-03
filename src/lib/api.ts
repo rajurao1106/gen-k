@@ -57,7 +57,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<ApiResp
 
 export type AuthUser = {
   id: string;
-  phone: string;
+  phone?: string;
+  email?: string;
+  name?: string;
   role: "user" | "admin";
   referralCode: string;
   isNewAccount?: boolean;
@@ -178,6 +180,15 @@ export async function verifyPhoneOtp(phone: string, otp: string) {
   const response = await request<AuthUser>("/api/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify({ phone, otp }),
+  });
+  if (!response.data) throw new ApiError("The server did not return an account.", 500);
+  return response.data;
+}
+
+export async function loginWithFirebase(idToken: string) {
+  const response = await request<AuthUser>("/api/auth/firebase", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
   });
   if (!response.data) throw new ApiError("The server did not return an account.", 500);
   return response.data;

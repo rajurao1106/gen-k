@@ -9,6 +9,7 @@ import {
 } from "react";
 import { ApiError, fetchCurrentUser, logoutCurrentUser, type AuthUser } from "./api";
 import { AuthContext, type AuthStatus } from "./auth-context";
+import { signOutFirebase } from "./firebase";
 
 function clearUserLocalData() {
   const language = localStorage.getItem("ai_friend_language");
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      await signOutFirebase();
       await logoutCurrentUser();
     } finally {
       clearUserLocalData();

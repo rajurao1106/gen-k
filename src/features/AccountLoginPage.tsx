@@ -1,7 +1,7 @@
 "use client";
 
-import PhoneAccountLogin from "./PhoneAccountLogin";
+import EmailGoogleAuth from "./EmailGoogleAuth";
 
 export default function AccountLoginPage() {
-  return <PhoneAccountLogin />;
+  return <EmailGoogleAuth />;
 }
