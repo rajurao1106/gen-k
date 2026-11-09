@@ -11,6 +11,7 @@ import planRoutes from "./routes/planRoutes.js";
 import meRoutes from "./routes/meRoutes.js";
 import guideRoutes from "./routes/guideRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import razorpayWebhookRoutes from "./routes/webhookRoutes.js";
 import geminiRoutes from "./routes/geminiRoutes.js";
 import chartRoutes from "./routes/chartRoutes.js";
 import eventChartRoutes from "./routes/eventChartRoutes.js";
@@ -61,6 +62,12 @@ app.use(
       origin: isAllowedOrigin(req, origin) ? origin : false,
     });
   }),
+);
+// Razorpay webhook needs the RAW body for signature check -> must be before express.json()
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  razorpayWebhookRoutes,
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));

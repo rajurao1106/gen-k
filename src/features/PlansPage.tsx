@@ -214,7 +214,7 @@ export default function PlansPage() {
       if (order.mode === "razorpay") {
         if (!order.keyId)
           throw new Error(
-            "Razorpay test key ID was not returned by the server.",
+            "Razorpay key ID was not returned by the server.",
           );
         const result = await openRazorpayCheckout({
           key: order.keyId,
@@ -233,11 +233,29 @@ export default function PlansPage() {
             "The Razorpay payment order did not match this checkout.",
           );
         }
-        await verifyPayment({
-          orderId: order.orderId,
-          providerPaymentId: result.razorpay_payment_id,
-          signature: result.razorpay_signature,
-        });
+        try {
+          await verifyPayment({
+            orderId: order.orderId,
+            providerPaymentId: result.razorpay_payment_id,
+            signature: result.razorpay_signature,
+          });
+        } catch {
+          // Money may already be captured. Razorpay's webhook activates the plan
+          // on the server, so wait briefly and re-check before showing an error.
+          setNotice("Payment received. Activating your plan, please wait...");
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          const history = await fetchPaymentHistory().catch(() => []);
+          const activated = history.some(
+            (item) => item.id === order.orderId && item.status === "paid",
+          );
+          if (!activated) {
+            throw new Error(
+              "Your payment was received but activation is delayed. It will activate automatically within a few minutes; if not, contact support with your payment ID " +
+                result.razorpay_payment_id +
+                ".",
+            );
+          }
+        }
       } else {
         throw new Error(
           "Demo mode never opens Razorpay and must not activate a plan. Set PAYMENT_MODE=razorpay to test checkout.",
@@ -268,9 +286,8 @@ export default function PlansPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c9d8ed]">
           Compare the available plans and see what is active on your account.
-          Checkout can use local simulation or Razorpay test mode; this build
-          rejects live Razorpay keys. Voice generation may still use paid AI
-          provider credits.
+          Payments are processed securely by Razorpay. Voice generation may
+          still use paid AI provider credits.
         </p>
         {account && (
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
