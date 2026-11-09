@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "_about": "Company / Griha kundali rules. Edit this file to change rules; bump 'version' and re-run `node server/scripts/calibrateCompany.js`, then paste the new cut-offs into 'thresholds'. Houses are whole-sign (same as chart.js). Planet codes: Su Mo Ma Me Ju Ve Sa Ra Ke. A 'theme' is one block of the result card; each theme gets its own soft signal and its own reasons.",
+  "points": {
+    "lordInGoodHouse": 1,
+    "lordInBadHouse": -1,
+    "beneficInHouse": 1,
+    "maleficInHouse": -1,
+    "jupiterAspect": 1,
+    "maleficAspect": -0.5,
+    "karakaWeight": 0.5,
+    "lordsLinked": 1,
+    "dashaConnected": 1,
+    "dashaStrained": -0.5
+  },
+  "goodHouses": [
+    1,
+    4,
+    5,
+    7,
+    9,
+    10,
+    11
+  ],
+  "badHouses": [
+    6,
+    8,
+    12
+  ],
+  "upachayaHouses": [
+    3,
+    6,
+    10,
+    11
+  ],
+  "signals": {
+    "anukool": "Anukool",
+    "mishrit": "Mishrit",
+    "dhyaan": "Dhyaan dene wala"
+  },
+  "limitations": [
+    "Ye kundali sirf registration / nirman shuru hone ke samay aur jagah ke chart par aadharit hai. Vastu (disha, kamre ka naksha) kundali se nahi nikalta, uske liye alag form (plot ka naksha, mukh ki disha) chahiye, jo is version mein nahi hai.",
+    "Samay jitna sahi hoga, utna lagna aur bhav ka nateeja bharosemand hoga. Agar samay andaaza hai, to bhav wale sanket halke maanein.",
+    "Niyam saral rakhe gaye hain (whole-sign bhav, Vimshottari dasha). Business, paise, kanooni ya nirman ke faisle ke liye apne salahkar, CA, vakeel ya engineer se zaroor poochhein."
+  ],
+  "types": {
+    "company": {
+      "label": "Company / Business",
+      "hi": "कंपनी",
+      "hint": "Registration ya business shuru hone ka tarikh, samay aur jagah",
+      "themes": [
+        {
+          "key": "work",
+          "label": "Kaam aur pehchaan (10th bhav)",
+          "house": 10
+        },
+        {
+          "key": "wealth",
+          "label": "Dhan aur bachat (2nd bhav)",
+          "house": 2
+        },
+        {
+          "key": "gains",
+          "label": "Laabh aur network (11th bhav)",
+          "house": 11
+        },
+        {
+          "key": "dasha",
+          "label": "Chal rahi dasha",
+          "dasha": true
+        }
+      ],
+      "karakas": [
+        {
+          "code": "Me",
+          "theme": "work",
+          "why": "vyapaar aur sauda-bazi ka karak"
+        },
+        {
+          "code": "Ju",
+          "theme": "gains",
+          "why": "vistaar aur laabh ka karak"
+        }
+      ],
+      "links": [
+        {
+          "houses": [
+            10,
+            11
+          ],
+          "theme": "gains",
+          "what": "kaam aur laabh"
+        },
+        {
+          "houses": [
+            2,
+            11
+          ],
+          "theme": "wealth",
+          "what": "dhan aur laabh"
+        }
+      ],
+      "planetRules": {},
+      "dashaFocusHouses": [
+        10,
+        2,
+        11
+      ],
+      "thresholds": {
+        "overall": {
+          "low": 1.5,
+          "high": 4.5
+        },
+        "themes": {
+          "work": {
+            "low": -0.5,
+            "high": 2
+          },
+          "wealth": {
+            "low": -0.5,
+            "high": 1
+          },
+          "gains": {
+            "low": -0.5,
+            "high": 2
+          },
+          "dasha": {
+            "low": -0.5,
+            "high": 2
+          }
+        }
+      }
+    },
+    "ghar": {
+      "label": "Ghar / Nirman",
+      "hi": "गृह",
+      "hint": "Nirman shuru hone ya griha pravesh ka tarikh, samay aur jagah",
+      "themes": [
+        {
+          "key": "home",
+          "label": "Ghar ki neev aur sukoon (4th bhav)",
+          "house": 4
+        },
+        {
+          "key": "mars",
+          "label": "Mangal ka sthaan",
+          "planet": "Ma"
+        },
+        {
+          "key": "saturn",
+          "label": "Shani ka sthaan",
+          "planet": "Sa"
+        },
+        {
+          "key": "dasha",
+          "label": "Chal rahi dasha",
+          "dasha": true
+        }
+      ],
+      "karakas": [],
+      "links": [],
+      "planetRules": {
+        "Ma": {
+          "good": [
+            3,
+            6,
+            10,
+            11
+          ],
+          "watch": {
+            "4": -1,
+            "8": -0.5,
+            "12": -0.5
+          },
+          "strongSigns": [
+            "Aries",
+            "Scorpio",
+            "Capricorn"
+          ],
+          "goodText": "nirman aur mehnat ke kaam mein madadgaar sthaan",
+          "watchText": "nirman mein thodi garmi, tanav ya deri ka sanket",
+          "strongText": "apne ya uchch rashi mein hai, isliye mazboot"
+        },
+        "Sa": {
+          "good": [
+            3,
+            6,
+            11
+          ],
+          "watch": {
+            "4": -1,
+            "8": -0.5,
+            "12": -0.5
+          },
+          "strongSigns": [
+            "Capricorn",
+            "Aquarius",
+            "Libra"
+          ],
+          "goodText": "dheere magar tikaau nirman ke liye madadgaar sthaan",
+          "watchText": "kaam dheere hone ya dheeraj maangne ka sanket",
+          "strongText": "apne ya uchch rashi mein hai, isliye mazboot"
+        }
+      },
+      "dashaFocusHouses": [
+        4
+      ],
+      "thresholds": {
+        "overall": {
+          "low": 0,
+          "high": 2
+        },
+        "themes": {
+          "home": {
+            "low": -0.5,
+            "high": 1
+          },
+          "mars": {
+            "low": -0.5,
+            "high": 1
+          },
+          "saturn": {
+            "low": -0.5,
+            "high": 1
+          },
+          "dasha": {
+            "low": -0.5,
+            "high": 0.5
+          }
+        }
+      }
+    }
+  }
+}

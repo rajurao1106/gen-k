@@ -8,15 +8,16 @@ import {
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
 import {
-  deleteKundaliRecord,
+  deleteUserKundaliProfile,
+  getKundaliProfileId,
   getSavedKundalis,
-  saveKundaliRecord,
   getUserKundaliProfile,
   getUserKundaliProfiles,
+  saveKundaliRecord,
   saveUserKundaliProfile,
 } from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
-import { BIRTH_FIELDS, type ChartData, type KundaliRecord } from "../types";
+import { BIRTH_FIELDS, type ChartData } from "../types";
 import { deleteMyProfile, fetchBirthChart, saveUserDetail } from "../lib/api";
 
 type ChatMessage = {
@@ -49,6 +50,15 @@ function plainText(html: string) {
 }
 
 function getErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "QUOTA_EXCEEDED" &&
+    "message" in error
+  ) {
+    return String(error.message);
+  }
   return isQuotaOrRateLimitError(error)
     ? QUOTA_ERROR_MESSAGE_HI
     : "Something went wrong while consulting the stars. Please try again.";
@@ -85,13 +95,10 @@ export default function KundaliPage() {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [upgradeRequired, setUpgradeRequired] = useState(false);
-  const [kundali, setKundali] = useState<KundaliRecord[]>(() =>
-    getSavedKundalis(),
-  );
+  const [upgradeFeature, setUpgradeFeature] = useState("");
   const [profiles, setProfiles] = useState(() => getUserKundaliProfiles());
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [savedLocally, setSavedLocally] = useState(false);
+  const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function KundaliPage() {
       return;
     }
     setError(null);
-    setUpgradeRequired(false);
+    setUpgradeFeature("");
     saveUserKundaliProfile(input);
     setProfiles(getUserKundaliProfiles());
     setMessages([]);
@@ -160,7 +167,7 @@ export default function KundaliPage() {
     if (!trimmedQuestion || loading) return;
 
     setError(null);
-    setUpgradeRequired(false);
+    setUpgradeFeature("");
     setSelectedTopic(topicId ?? null);
     setMessageInput("");
     setMessages((previous) => [
@@ -250,12 +257,12 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             content: assistantMessage,
             chart,
           });
-          setKundali(saveKundaliRecord({
+          saveKundaliRecord({
             ...input,
             content: assistantMessage,
             chart,
             _id: savedRecord._id,
-          }));
+          });
         } catch (saveError) {
           console.error("Could not save the user's reading:", saveError);
           setError(
@@ -264,11 +271,17 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
         }
       }
     } catch (requestError) {
-      setUpgradeRequired(Boolean(
-        requestError && typeof requestError === "object" &&
-        "code" in requestError &&
-        (requestError.code === "UPGRADE_REQUIRED" || requestError.code === "QUOTA_EXCEEDED"),
-      ));
+      const requestCode =
+        requestError && typeof requestError === "object" && "code" in requestError
+          ? requestError.code
+          : "";
+      setUpgradeFeature(
+        requestCode === "QUOTA_EXCEEDED"
+          ? "QUOTA_EXCEEDED"
+          : requestCode === "UPGRADE_REQUIRED"
+            ? "kundali_full_report"
+            : "",
+      );
       setError(getErrorMessage(requestError));
     } finally {
       setLoading(false);
@@ -280,27 +293,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
     void askQuestion(messageInput);
   };
 
-  const openSavedReading = (record: KundaliRecord, index: number) => {
-    setInput({
-      name: record.name,
-      dob: record.dob,
-      bot: record.bot,
-      bop: record.bop,
-      gender: record.gender,
-    });
-    setChartData(record.chart ?? null);
-    setMessages(
-      record.content ? [{ role: "assistant", content: record.content }] : [],
-    );
-    setActiveIndex(index);
-    setSavedLocally(Boolean(record.content));
-    setError(null);
-    setStage("chat");
-  };
-
   const selectProfile = (profile: (typeof profiles)[number]) => {
     setInput(profile);
-    setActiveIndex(null);
     setError(null);
   };
 
@@ -312,28 +306,33 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
       bop: "",
       gender: "",
     });
-    setActiveIndex(null);
     setError(null);
   };
 
-  const removeSavedReading = async (index: number, event: React.MouseEvent) => {
+  const removeSavedPerson = async (
+    profile: (typeof profiles)[number],
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     event.stopPropagation();
-    const record = getSavedKundalis()[index];
-    if (!record?._id) {
-      setError("This reading is not linked to an account record.");
-      return;
-    }
+    const profileId = getKundaliProfileId(profile);
+    setDeletingProfileId(profileId);
+    setError(null);
     try {
-      await deleteMyProfile(record._id);
+      const relatedReadings = getSavedKundalis().filter(
+        (record) =>
+          getKundaliProfileId({ ...record, gender: record.gender || "" }) === profileId,
+      );
+      for (const record of relatedReadings) {
+        if (record._id) await deleteMyProfile(record._id);
+      }
+      setProfiles(deleteUserKundaliProfile(profile));
+      if (getKundaliProfileId(input) === profileId) {
+        setInput({ name: "", dob: "", bot: "", bop: "", gender: "" });
+      }
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this reading.");
-      return;
-    }
-    const updated = deleteKundaliRecord(index);
-    setKundali(updated);
-    if (activeIndex === index) setActiveIndex(null);
-    else if (activeIndex !== null && index < activeIndex) {
-      setActiveIndex(activeIndex - 1);
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete this person.");
+    } finally {
+      setDeletingProfileId(null);
     }
   };
 
@@ -353,14 +352,12 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
         content: lastAssistantMessage.content,
         chart: chartData,
       });
-      const updated = saveKundaliRecord({
+      saveKundaliRecord({
         ...input,
         content: lastAssistantMessage.content,
         chart: chartData,
         _id: savedRecord._id,
       });
-      setKundali(updated);
-      setActiveIndex(updated.length - 1);
       setSavedLocally(true);
       setError(null);
     } catch (saveError) {
@@ -514,22 +511,35 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                     <li
                       key={`${profile.name}-${profile.dob}-${profile.bot}-${profile.bop}`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => selectProfile(profile)}
-                        className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                      <div
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors ${
                           selected
                             ? "border-[#d8b36a]/50 bg-[#d8b36a]/15"
                             : "border-[#d8b36a]/10 hover:border-[#d8b36a]/30"
                         }`}
                       >
-                        <span className="block truncate text-sm font-medium text-[#f5e6d3]">
-                          {profile.name}
-                        </span>
-                        <span className="block truncate text-xs text-[#afbdd7]">
-                          {profile.dob} · {profile.bot} · {profile.bop}
-                        </span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => selectProfile(profile)}
+                          className="min-w-0 flex-1 text-left"
+                        >
+                          <span className="block truncate text-sm font-medium text-[#f5e6d3]">
+                            {profile.name}
+                          </span>
+                          <span className="block truncate text-xs text-[#afbdd7]">
+                            {profile.dob} · {profile.bot} · {profile.bop}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => void removeSavedPerson(profile, event)}
+                          disabled={deletingProfileId === getKundaliProfileId(profile)}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[#afbdd7] transition-colors hover:text-[#f0958a] disabled:cursor-wait disabled:opacity-50"
+                          aria-label={`Delete saved person ${profile.name}`}
+                        >
+                          {deletingProfileId === getKundaliProfileId(profile) ? "…" : "✕"}
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
@@ -541,47 +551,6 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             )}
           </div>
 
-          {kundali.length > 0 && (
-            <div className="mt-7 border-t border-[#d8b36a]/15 pt-5">
-              <h3 className="mb-3 font-display text-lg font-semibold text-[#f5efe6]">
-                Saved readings
-              </h3>
-              <ul className="space-y-2">
-                {kundali.map((record, index) => (
-                  <li key={`${record.name}-${record.dob}-${index}`}>
-                    <div
-                      className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-sm transition-colors ${
-                        activeIndex === index
-                          ? "border-[#d8b36a]/50 bg-[#d8b36a]/15 text-[#d8b36a]"
-                          : "border-[#d8b36a]/10 text-[#e3cbb0] hover:border-[#d8b36a]/30"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => openSavedReading(record, index)}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <span className="block truncate font-medium">
-                          {record.name || "Untitled"}
-                        </span>
-                        <span className="block truncate text-xs text-[#afbdd7]">
-                          {record.dob}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => removeSavedReading(index, event)}
-                        className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[#afbdd7] transition-colors hover:text-[#f0958a]"
-                        aria-label={`Delete ${record.name}`}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </section>
       ) : (
         <section className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 shadow-xl shadow-black/30">
@@ -711,9 +680,9 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             {error && (
               <div role="alert" className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-sm text-[#f0958a]">
                 <p>{error}</p>
-                {upgradeRequired && (
-                  <Link href="/plans?feature=kundali_full_report" className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
-                    View report and premium plans
+                {upgradeFeature && (
+                  <Link href={`/plans?feature=${upgradeFeature}`} className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+                    {upgradeFeature === "QUOTA_EXCEEDED" ? "Unlock unlimited AI for ₹19" : "View report and premium plans"}
                   </Link>
                 )}
               </div>

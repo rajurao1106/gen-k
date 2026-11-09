@@ -72,12 +72,16 @@ export type PageKey =
   | "numerology"
   | "mahadasha"
   | "psychologist-insight"
+  | "self-discovery"
+  | "prashna"
+  | "muhurat"
+  | "company"
   | "explore"
   | "profile"
   | "plans";
 
 /** Pages that live under the "Explore" hub (shown as one nav item). */
-export const EXPLORE_PAGES: PageKey[] = ["milan", "mahadasha", "numerology", "psychologist-insight"];
+export const EXPLORE_PAGES: PageKey[] = ["milan", "mahadasha", "numerology", "psychologist-insight", "self-discovery", "prashna", "muhurat", "company"];
 
 export type FieldKey = "name" | "dob" | "bot" | "bop" | "gender";
 

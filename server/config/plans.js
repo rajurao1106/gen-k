@@ -1,3 +1,9 @@
+export const MONEY_TEST_PLAN_ID = "ai_chat_unlimited_money_test";
+
+export function isMoneyTestingEnabled() {
+  return process.env.MONEY_TESTING === "true";
+}
+
 export const PLANS = {
   free: {
     planId: "free",
@@ -9,8 +15,26 @@ export const PLANS = {
     grants: {
       kundali: "basic",
       dailyGuide: "preview",
-      aiMessagesPerDay: 5,
+      aiMessagesTotal: 10,
     },
+  },
+  ai_chat_unlimited: {
+    planId: "ai_chat_unlimited",
+    name: "Kundali + AI Friend Unlimited",
+    type: "one-time",
+    amountPaise: 1900,
+    currency: "INR",
+    durationDays: null,
+    grants: { aiMessagesUnlimited: true },
+  },
+  [MONEY_TEST_PLAN_ID]: {
+    planId: MONEY_TEST_PLAN_ID,
+    name: "Kundali + AI Friend Unlimited (₹1 test)",
+    type: "one-time",
+    amountPaise: 100,
+    currency: "INR",
+    durationDays: null,
+    grants: { aiMessagesUnlimited: true },
   },
   report_milan: {
     planId: "report_milan",
@@ -68,5 +92,10 @@ export const PLANS = {
 };
 
 export function getPublicPlans() {
-  return Object.values(PLANS).map((plan) => ({ ...plan, grants: { ...plan.grants } }));
+  const plans = [PLANS.free, PLANS.ai_chat_unlimited];
+  if (isMoneyTestingEnabled()) plans.push(PLANS[MONEY_TEST_PLAN_ID]);
+  return plans.map((plan) => ({
+    ...plan,
+    grants: { ...plan.grants },
+  }));
 }

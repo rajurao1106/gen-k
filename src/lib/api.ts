@@ -124,7 +124,12 @@ export type EntitlementSummary = {
   }>;
   usage: {
     dayKey: string;
-    ai_chat: { used: number; limit: number; remaining: number };
+    ai_chat: {
+      used: number;
+      limit: number | null;
+      remaining: number | null;
+      scope: "trial" | "daily" | "unlimited";
+    };
     other: Array<{ key: string; count: number }>;
   };
 };
@@ -363,6 +368,15 @@ export async function verifyPayment(input: {
     body: JSON.stringify(input),
   });
   if (!response.data) throw new ApiError("The server did not verify the payment.", 500);
+  return response.data;
+}
+
+export async function cancelMyPlan(planId: string) {
+  const response = await request<{ planId: string; status: "revoked" }>(
+    "/api/payments/cancel-plan",
+    { method: "POST", body: JSON.stringify({ planId }) },
+  );
+  if (!response.data) throw new ApiError("The server did not cancel the plan.", 500);
   return response.data;
 }
 

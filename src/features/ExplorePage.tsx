@@ -13,6 +13,34 @@ type Tool = {
 
 const TOOLS: Tool[] = [
   {
+    key: "self-discovery",
+    hi: "स्व-बोध",
+    en: "Swa-Bodh · Self Discovery",
+    description: "Understand your nature, emotions, relationships and purpose through your Kundali, with reflection questions and a private journal.",
+    icon: "sparkles",
+  },
+  {
+    key: "prashna",
+    hi: "प्रश्न कुंडली",
+    en: "Prashna Kundali",
+    description: "Ask one question and get a soft signal (favourable, mixed or unfavourable) with clear reasons, from the chart of the moment you ask.",
+    icon: "search",
+  },
+  {
+    key: "muhurat",
+    hi: "मुहूर्त कुंडली",
+    en: "Muhurat Kundali",
+    description: "Pick an activity (griha pravesh, vivah, vahan, business) and dates, and see the best-scored time slots with clear reasons.",
+    icon: "clock",
+  },
+  {
+    key: "company",
+    hi: "कंपनी / गृह कुंडली",
+    en: "Company / Griha Kundali",
+    description: "Give the date, time and place a company started or a house construction began, and get a soft signal for each theme with clear reasons. Vastu is not included.",
+    icon: "flag",
+  },
+  {
     key: "milan",
     hi: "कुंडली मिलान",
     en: "Kundli Milan",

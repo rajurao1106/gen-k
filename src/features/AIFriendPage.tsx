@@ -631,17 +631,21 @@ AI Friend:`,
       setStage({ question, answer: shown });
     } catch (error) {
       console.error("AI Friend chat request failed:", error);
-      setCanRetry(true);
       const code = error && typeof error === "object" && "code" in error
         ? error.code
         : "";
+      setCanRetry(code !== "QUOTA_EXCEEDED");
       setPlansFeature(
         isUpgradeOrQuotaError(error)
           ? code === "UPGRADE_REQUIRED" ? "voice_reply" : "QUOTA_EXCEEDED"
           : "",
       );
       setChatError(
-        isQuotaOrRateLimitError(error) ? QUOTA_ERROR_MESSAGE_HI : error instanceof Error ? error.message : t.failed,
+        isQuotaOrRateLimitError(error)
+          ? error && typeof error === "object" && "code" in error && error.code === "QUOTA_EXCEEDED" && "message" in error
+            ? String(error.message)
+            : QUOTA_ERROR_MESSAGE_HI
+          : error instanceof Error ? error.message : t.failed,
       );
     } finally {
       busyRef.current = false;

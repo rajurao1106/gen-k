@@ -90,6 +90,25 @@ export function saveUserKundaliProfiles(profiles: KundaliProfile[]) {
   sessionStorage.setItem(KUNDALI_PROFILES_KEY, JSON.stringify(profiles));
 }
 
+export function deleteUserKundaliProfile(profile: KundaliProfile) {
+  const id = profileId(profile);
+  const profiles = getUserKundaliProfiles().filter(
+    (savedProfile) => profileId(savedProfile) !== id,
+  );
+  const readings = getSavedKundalis().filter(
+    (record) => profileId({ ...record, gender: record.gender || "" }) !== id,
+  );
+  sessionStorage.setItem(KUNDALI_PROFILES_KEY, JSON.stringify(profiles));
+  sessionStorage.setItem(KUNDALI_STORAGE_KEY, JSON.stringify(readings));
+
+  const currentProfile = sessionStorage.getItem(KUNDALI_PROFILE_KEY);
+  if (currentProfile && profileId(JSON.parse(currentProfile) as KundaliProfile) === id) {
+    sessionStorage.removeItem(KUNDALI_PROFILE_KEY);
+  }
+
+  return profiles;
+}
+
 export function getKundaliProfileId(profile: KundaliProfile) {
   return profileId(profile);
 }

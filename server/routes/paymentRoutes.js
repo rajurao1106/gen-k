@@ -1,7 +1,11 @@
 import mongoose from "mongoose";
 import express from "express";
 import { z } from "zod";
-import { PLANS } from "../config/plans.js";
+import {
+  MONEY_TEST_PLAN_ID,
+  PLANS,
+  isMoneyTestingEnabled,
+} from "../config/plans.js";
 import Entitlement from "../models/Entitlement.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
@@ -30,6 +34,7 @@ const demoCompleteSchema = z.object({
 const demoRefundSchema = z.object({
   orderId: z.string().regex(/^[\da-f]{24}$/i),
 });
+const cancelPlanSchema = z.object({ planId: z.string().min(1).max(80) });
 
 class PaymentError extends Error {
   constructor(status, code, message) {
@@ -72,6 +77,26 @@ async function grantEntitlement(order, session) {
       "This plan cannot grant an entitlement.",
     );
   }
+  if (
+    ["ai_chat_unlimited", MONEY_TEST_PLAN_ID].includes(order.planId) &&
+    order.provider !== "razorpay"
+  ) {
+    throw new PaymentError(
+      409,
+      "RAZORPAY_PAYMENT_REQUIRED",
+      "Unlimited access can only be activated by a verified Razorpay payment.",
+    );
+  }
+  if (
+    order.status !== "paid" &&
+    !["ai_chat_unlimited", MONEY_TEST_PLAN_ID].includes(order.planId)
+  ) {
+    throw new PaymentError(
+      409,
+      "PLAN_NO_LONGER_AVAILABLE",
+      "This plan is no longer available for purchase.",
+    );
+  }
 
   const now = new Date();
   let kind;
@@ -104,9 +129,11 @@ async function grantEntitlement(order, session) {
     expiresAt = new Date(
       now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000,
     );
-  } else {
+  } else if (typeof plan.grants.uses === "number") {
     kind = "report";
     remainingUses = plan.grants.uses;
+  } else {
+    kind = "addon";
   }
 
   const [entitlement] = await Entitlement.create(
@@ -137,6 +164,13 @@ async function verifyAndGrant({
   const order = await Order.findOne({ _id: orderId, userId });
   if (!order)
     throw new PaymentError(404, "ORDER_NOT_FOUND", "Payment order not found.");
+  if (order.provider !== getPaymentMode()) {
+    throw new PaymentError(
+      409,
+      "PAYMENT_PROVIDER_MISMATCH",
+      "This order was created with a different payment provider.",
+    );
+  }
   if (order.status === "refunded" || order.status === "failed") {
     throw new PaymentError(
       409,
@@ -146,11 +180,14 @@ async function verifyAndGrant({
   }
 
   const proof = {
+    planId: order.planId,
     providerOrderId: order.providerOrderId,
     providerPaymentId,
     signature,
+    amountPaise: order.amountPaise,
+    currency: order.currency,
   };
-  if (!provider.verifyPayment(proof)) {
+  if (!(await provider.verifyPayment(proof))) {
     throw new PaymentError(
       400,
       "PAYMENT_SIGNATURE_INVALID",
@@ -229,7 +266,12 @@ router.post("/create-order", limitPaymentWrites, async (req, res, next) => {
     return validationError(res, parsed, "A valid planId is required.");
 
   const plan = PLANS[parsed.data.planId];
-  if (!plan || plan.type === "free" || plan.amountPaise <= 0) {
+  if (
+    !["ai_chat_unlimited", MONEY_TEST_PLAN_ID].includes(parsed.data.planId) ||
+    !plan ||
+    plan.type === "free" ||
+    plan.amountPaise <= 0
+  ) {
     return res.status(400).json({
       success: false,
       code: "INVALID_PLAN",
@@ -237,7 +279,43 @@ router.post("/create-order", limitPaymentWrites, async (req, res, next) => {
     });
   }
 
+  if (
+    parsed.data.planId === MONEY_TEST_PLAN_ID &&
+    !isMoneyTestingEnabled()
+  ) {
+    return res.status(404).json({
+      success: false,
+      code: "PLAN_NOT_AVAILABLE",
+      message: "This payment test plan is not available.",
+    });
+  }
+
+  if (getPaymentMode() !== "razorpay") {
+    return res.status(503).json({
+      success: false,
+      code: "RAZORPAY_TEST_PAYMENT_REQUIRED",
+      message: "This plan must be purchased through Razorpay; demo payments are disabled.",
+    });
+  }
+
   try {
+    if (["ai_chat_unlimited", MONEY_TEST_PLAN_ID].includes(plan.planId)) {
+      const alreadyOwned = await Entitlement.exists({
+        userId: req.user._id,
+        planId: plan.planId,
+        kind: "addon",
+        status: "active",
+        startsAt: { $lte: new Date() },
+        $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }],
+      });
+      if (alreadyOwned) {
+        return res.status(409).json({
+          success: false,
+          code: "PLAN_ALREADY_ACTIVE",
+          message: "Unlimited Kundali and AI Friend access is already active.",
+        });
+      }
+    }
     const provider = getPaymentProvider();
     const mode = getPaymentMode();
     const orderDraft = {
@@ -269,7 +347,21 @@ router.post("/create-order", limitPaymentWrites, async (req, res, next) => {
       return res.status(503).json({
         success: false,
         code: error.code,
-        message: "Razorpay test checkout is not configured.",
+        message: error.message,
+      });
+    }
+    if (error.code === "RAZORPAY_TEST_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "This plan only accepts Razorpay test keys.",
+      });
+    }
+    if (error.code === "RAZORPAY_LIVE_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "The ₹1 payment test requires Razorpay live keys.",
       });
     }
     if (
@@ -369,6 +461,20 @@ router.post("/demo/complete", limitPaymentWrites, async (req, res, next) => {
         .status(error.status)
         .json({ success: false, code: error.code, message: error.message });
     }
+    if (error.code === "RAZORPAY_TEST_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "This plan only accepts Razorpay test keys.",
+      });
+    }
+    if (error.code === "RAZORPAY_LIVE_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "The ₹1 payment test requires Razorpay live keys.",
+      });
+    }
     if (
       error.message?.includes("Demo payments are disabled") ||
       error.message?.includes("Unsupported PAYMENT_MODE")
@@ -408,6 +514,27 @@ router.post("/verify", limitPaymentWrites, async (req, res, next) => {
         .status(error.status)
         .json({ success: false, code: error.code, message: error.message });
     }
+    if (error.code === "PAYMENT_PROVIDER_NOT_CONFIGURED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+    if (error.code === "RAZORPAY_TEST_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "This plan only accepts Razorpay test keys.",
+      });
+    }
+    if (error.code === "RAZORPAY_LIVE_KEYS_REQUIRED") {
+      return res.status(503).json({
+        success: false,
+        code: error.code,
+        message: "The ₹1 payment test requires Razorpay live keys.",
+      });
+    }
     if (
       error.message?.includes("Demo payments are disabled") ||
       error.message?.includes("Unsupported PAYMENT_MODE")
@@ -418,8 +545,79 @@ router.post("/verify", limitPaymentWrites, async (req, res, next) => {
   }
 });
 
+router.post("/cancel-plan", limitPaymentWrites, async (req, res, next) => {
+  const parsed = cancelPlanSchema.safeParse(req.body);
+  if (!parsed.success)
+    return validationError(res, parsed, "A valid planId is required.");
+
+  const plan = PLANS[parsed.data.planId];
+  const cancellableAddonPlans = ["ai_chat_unlimited", MONEY_TEST_PLAN_ID];
+  const kind =
+    plan?.type === "subscription"
+      ? "subscription"
+      : cancellableAddonPlans.includes(parsed.data.planId) &&
+          plan?.type === "one-time"
+        ? "addon"
+        : null;
+  if (!kind) {
+    return res.status(400).json({
+      success: false,
+      code: "PLAN_NOT_CANCELLABLE",
+      message: "This plan cannot be cancelled.",
+    });
+  }
+
+  const session = await mongoose.startSession();
+  try {
+    let cancelledEntitlement = null;
+    const now = new Date();
+
+    await session.withTransaction(async () => {
+      cancelledEntitlement = await Entitlement.findOneAndUpdate(
+        {
+          userId: req.user._id,
+          planId: parsed.data.planId,
+          kind,
+          status: "active",
+          startsAt: { $lte: now },
+          $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+        },
+        { $set: { status: "revoked" } },
+        { new: true, sort: { startsAt: -1 } },
+      ).session(session);
+
+      if (!cancelledEntitlement) {
+        throw new PaymentError(
+          409,
+          "NO_ACTIVE_PLAN",
+          "There is no active entitlement for this plan to cancel.",
+        );
+      }
+
+      await User.updateOne(
+        { _id: req.user._id },
+        { $inc: { paymentRevision: 1 } },
+        { session },
+      );
+    });
+
+    return res.json({
+      success: true,
+      data: { planId: cancelledEntitlement.planId, status: "revoked" },
+    });
+  } catch (error) {
+    if (error instanceof PaymentError) {
+      return res
+        .status(error.status)
+        .json({ success: false, code: error.code, message: error.message });
+    }
+    next(error);
+  } finally {
+    await session.endSession();
+  }
+});
+
 router.post("/demo/refund", limitPaymentWrites, async (req, res, next) => {
-  if (!isDemoPaymentMode()) return paymentModeError(res);
   const parsed = demoRefundSchema.safeParse(req.body);
   if (!parsed.success)
     return validationError(res, parsed, "A valid orderId is required.");
@@ -438,6 +636,13 @@ router.post("/demo/refund", limitPaymentWrites, async (req, res, next) => {
           "ORDER_NOT_FOUND",
           "Payment order not found.",
         );
+      if (order.provider !== "demo") {
+        throw new PaymentError(
+          409,
+          "ORDER_PROVIDER_MISMATCH",
+          "Only demo payment orders can be revoked through this endpoint.",
+        );
+      }
       if (order.status === "refunded") {
         refundedOrder = order;
         return;

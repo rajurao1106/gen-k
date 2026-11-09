@@ -100,13 +100,26 @@ phone-hash checks; after migration, the legacy `OTP_SECRET` variable is no
 longer used.
 
 `PAYMENT_MODE=demo` and `DEMO_PAYMENT_SECRET` enable simulated checkout; it
-creates no real charge. It is disabled in production by default. To temporarily
-enable free simulated checkout on the live site for all signed-in users, set
-`ENABLE_PRODUCTION_DEMO_PAYMENTS=true` in the server environment and redeploy.
-Any user can then activate any listed plan without paying, including voice
-access. Voice generation can still incur costs from the configured AI provider;
-monitor usage and disable this flag when testing ends. This is not a real
-payment integration.
+creates no real charge and is disabled in production by default.
+`PAYMENT_MODE=razorpay` enables Razorpay payments. By default, only server-side
+test credentials (`RAZORPAY_KEY_ID=rzp_test_...` and `RAZORPAY_KEY_SECRET`)
+are accepted. Use Razorpay Dashboard test credentials and test payment methods;
+configure automatic payment capture so successful test payments can be verified.
+
+For an actual ₹1 payment test only, set `MONEY_TESTING=true` and configure
+separate server-only live credentials (`RAZORPAY_LIVE_KEY_ID=rzp_live_...` and
+`RAZORPAY_LIVE_KEY_SECRET`). Keep `RAZORPAY_KEY_ID=rzp_test_...` and
+`RAZORPAY_KEY_SECRET` as the test credentials. This exposes a ₹1 plan with the
+same unlimited Kundali chat and AI Friend access as the ₹19 plan. Live
+credentials are used only for the ₹1 plan; other plans continue to use test
+credentials. Anyone who can access the live site can see and buy this plan
+while the flag is enabled, and each purchase charges real money. Canceling
+revokes access and does not refund the payment. Turn `MONEY_TESTING` off after
+testing and redeploy. Never expose either key with a `NEXT_PUBLIC_` prefix,
+commit secrets, or paste them into chat.
+
+The regular ₹19 one-time plan grants unlimited Kundali chat and AI Friend
+replies after the 10 free replies; voice cloning remains a separate add-on.
 `GEMINI_API_KEYS` accepts a comma-separated list of server-only keys, or use
 `GEMINI_API_KEY`, `GEMINI_API_KEY_2`, etc. `BOSON_API_KEY` is required for
 Boson AI Higgs TTS voice generation and must remain server-only. The voice
@@ -145,10 +158,10 @@ Gemini generation for the same user/profile/day.
 Manual verification (use a dedicated development MongoDB database with a
 Gemini key configured):
 
-1. `GET /api/plans` returns the six configured plans and their paise amounts.
+1. `GET /api/plans` returns Free and the ₹19 unlimited AI chat plan.
 2. Without a session, `GET /api/me/entitlements` and `POST /api/guide/today`
    return 401. With a session, the entitlements response starts at the Free
-   plan with five AI messages available.
+   plan with ten lifetime AI replies available.
 3. Save two profiles under one account and one under another. Request today's
    guide for each owned profile; repeat the request and confirm `cached: true`
    and that one `DailyGuide` exists per profile/day.
@@ -157,7 +170,7 @@ Gemini key configured):
 5. Call `incrementUsage` concurrently beyond a test limit and confirm no more
    than that limit of calls are allowed for the Asia/Kolkata day key.
 
-### Phase 3: demo payments
+### Phase 3: demo and Razorpay test payments
 
 Set `PAYMENT_MODE=demo` and configure `DEMO_PAYMENT_SECRET` with at least 32
 characters. Demo checkout generates server-signed fake payment proofs and never
@@ -167,11 +180,11 @@ signed-in user can activate plans without paying.
 
 Authenticated endpoints:
 
-- `POST /api/payments/create-order` with `{ "planId": "premium_monthly" }`
+- `POST /api/payments/create-order` with `{ "planId": "ai_chat_unlimited" }`
   reads the amount only from the server-side plan catalogue.
 - `POST /api/payments/demo/complete` with `{ "orderId": "...", "outcome":
-  "success" }` simulates a successful payment; choose `"failure"` to simulate
-  a declined payment.
+  "success" }` simulates a successful payment for legacy demo orders; it cannot
+  activate the current ₹19 unlimited plan.
 - `POST /api/payments/verify` accepts the `orderId`, `providerPaymentId`, and
   `signature` returned by the success simulation. Replaying verification is
   idempotent.
@@ -179,38 +192,26 @@ Authenticated endpoints:
   demo order and revokes its entitlement.
 - `GET /api/payments/history` returns the signed-in user's recent orders.
 
-For a paid-order round trip, create an order, complete it with `success`, then
-call `/api/payments/verify` using the returned payment proof. Confirm the
-response reports `alreadyPaid: true` and that only one entitlement references
-the order. Test `failure` on a separate order and confirm it grants nothing.
-Refund a successful order and confirm the order status is `refunded` and its
-entitlement is `revoked`. MongoDB transactions are used to commit order state
-and entitlement changes atomically, so the development database must support
-transactions (for example, a replica set or MongoDB Atlas).
-
-#### How to swap in Razorpay later
-
-Do not enable a real gateway by changing `PAYMENT_MODE` alone. To integrate it
-after explicit approval:
-
-1. Implement `createOrder({ order })` in a real provider module; use only the
-   server's `amountPaise` and `currency`.
-2. Implement `verifyPayment(payload)` to validate the provider's payment
-   signature and bind the payment to the provider order.
-3. Implement `verifyWebhook(rawBody, headers)` using the exact raw request body
-   and the provider webhook secret.
-4. Add server-only gateway credentials to deployment configuration, register
-   the provider in `server/services/payments/index.js`, and add the required
-   raw-body webhook route.
-5. Keep order ownership, `verifyAndGrant`, idempotency, and entitlement grant
-   logic shared; never accept client-supplied prices or trust a browser success
-   callback as proof of payment.
+For local simulation, use `PAYMENT_MODE=demo`. To test Razorpay, set
+`PAYMENT_MODE=razorpay` and provide test credentials in the server environment.
+Checkout creates the order using the server-side plan price. The server verifies
+the Razorpay HMAC signature and confirms the payment is captured and matches the
+order amount, currency, and provider order ID before granting access. Verify a
+successful ₹19 payment grants one permanent entitlement and that retries do not
+grant it twice. Test cancelled and failed checkouts and confirm they grant no
+access. MongoDB transactions commit order state and entitlement changes
+atomically, so the database must support transactions (for example, a replica
+set or MongoDB Atlas). Live keys and live charging are intentionally not
+supported yet; production refunds and webhook-based reconciliation must be
+implemented before enabling real payments.
 
    ### Phase 4: server-side feature gates and quotas
 
    `POST /api/gemini` now requires a purpose (`chat`, `kundali`, `milan`,
    `mahadasha`, or `guide`) and is protected by both IP and per-user request
-   limits. Free and premium plans receive their configured daily AI chat quota.
+   limits. Free accounts get 10 lifetime AI chat replies across Kundali chat and
+   AI Friend; the ₹19 one-time entitlement removes that quota. Premium accounts
+   retain their configured daily quota.
    Mahadasha and full daily-guide content require premium; free users still receive
    the daily-guide preview. The full Kundali and Milan report calls include a
    server-validated report identity, consume an eligible report credit once, and
@@ -229,8 +230,10 @@ after explicit approval:
 
    1. Confirm unauthenticated Gemini and voice requests return 401. Authenticated
       Gemini requests without a valid purpose return 400.
-   2. On a Free account, send six chat requests and confirm the sixth returns
-      `402 QUOTA_EXCEEDED`; verify premium access has its own plan quota.
+   2. On a Free account, send ten chat requests across Kundali chat and AI
+      Friend; confirm the eleventh returns `402 QUOTA_EXCEEDED`. Verify the
+      lifetime count is shared across both features and survives a new day.
+      After a verified ₹19 payment, confirm both features are unlimited.
    3. Confirm Mahadasha and full-guide requests return `402 UPGRADE_REQUIRED`
       for Free. Free `/api/guide/today` responses contain the preview only
       (belief, power, caution, lucky number, and color), with no remedy or full
@@ -247,25 +250,24 @@ after explicit approval:
    ### Phase 5: plans and paywall UI
 
    The authenticated `/plans` screen displays the server plan catalogue, current
-   plan, remaining daily AI messages, report credits, and recent demo orders.
-   Contextual links lead to relevant plans when a feature is gated or a daily
-   quota is reached. The daily-guide preview remains free, with an upgrade link
-   for the full guide. Checkout is deliberately labeled as a simulation and uses
-   the Phase 3 demo endpoints; it does not charge money. A successful simulation
-   verifies the signed proof and refreshes account entitlements.
+   plan, remaining AI replies, and recent payment orders. Only the ₹19 unlimited
+   AI chat plan is available to purchase; older plans are not listed or accepted
+   for new orders. Existing entitlements are preserved. Checkout uses Razorpay
+   test mode; demo checkout cannot activate the unlimited plan.
 
-   Manual verification (use a dedicated development MongoDB database with
-   `PAYMENT_MODE=demo`):
+   Manual verification (use a dedicated development MongoDB database and
+   Razorpay test credentials):
 
-   1. Open `/plans` and confirm the six plans, current plan, usage, and order
+   1. Open `/plans` and confirm only Free and the ₹19 unlimited plan are
+      available, along with current access, usage, and order
       history load for the signed-in account.
-   2. Follow a contextual upgrade link from the daily guide, Mahadasha, Kundali,
-      Milan, or AI Friend quota/voice error and confirm the matching plan is
-      highlighted.
-   3. Simulate a purchase and confirm the demo notice, active entitlement, and
-      recent order update. Confirm no real payment provider is contacted.
-   4. Confirm the page shows existing report credits and active voice add-ons
-      instead of inviting duplicate purchases.
+   2. Exhaust the 10 free replies and follow the AI Friend or Kundali link;
+      confirm the ₹19 plan is highlighted.
+   3. Complete a Razorpay test checkout and confirm the ₹19 entitlement and
+      recent order update; confirm a failed/cancelled checkout grants nothing
+      and no real money is charged.
+   4. Confirm old entitlements remain intact while old plans are not offered
+      for new purchases.
 
    ### Phase 6: voice consent and ownership
 

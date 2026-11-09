@@ -11,6 +11,10 @@ import KundaliMilanPage from "./features/KundaliMilanPage";
 import NumerologyPage from "./features/NumerologyPage";
 import MahadashaPage from "./features/MahadashaPage";
 import PsychologistInsightPage from "./features/Psychologistinsightpage";
+import SelfDiscoveryPage from "./features/SelfDiscoveryPage";
+import PrashnaPage from "./features/PrashnaPage";
+import MuhuratPage from "./features/MuhuratPage";
+import CompanyPage from "./features/CompanyPage";
 import ExplorePage from "./features/ExplorePage";
 import LoginPage from "./features/LoginPage";
 import UserDataPage from "./features/UserDataPage";
@@ -31,7 +35,11 @@ const PAGE_TITLES: Record<PageKey, { hi: string; sub: string }> = {
   numerology: { hi: "न्यूमरोलॉजी", sub: "Name & birth-number reading" },
   mahadasha: { hi: "महादशा", sub: "Vimshottari dasha timeline & outlook" },
   "psychologist-insight": { hi: "Client Insight", sub: "Kundali-based supportive insight for psychologists" },
-  explore: { hi: "Explore", sub: "Milan, Mahadasha, Numerology and Client Insight" },
+  "self-discovery": { hi: "Swa-Bodh", sub: "Understand yourself through your Kundali" },
+  prashna: { hi: "प्रश्न कुंडली", sub: "A soft jyotish signal for the moment you ask" },
+  muhurat: { hi: "मुहूर्त कुंडली", sub: "Best-scored auspicious times for your activity" },
+  company: { hi: "कंपनी / गृह कुंडली", sub: "A soft jyotish signal for a company or a home" },
+  explore: { hi: "Explore", sub: "Milan, Mahadasha, Numerology, Self Discovery and Client Insight" },
   profile: { hi: "Profile", sub: "Your details and settings" },
   plans: { hi: "Plans", sub: "Plans, access and billing" },
 };
@@ -44,6 +52,10 @@ const PAGE_ROUTES: Record<PageKey, string> = {
   numerology: "/numerology",
   mahadasha: "/mahadasha",
   "psychologist-insight": "/psychologist-insight",
+  "self-discovery": "/self-discovery",
+  prashna: "/prashna",
+  muhurat: "/muhurat",
+  company: "/company",
   explore: "/explore",
   profile: "/profile",
   plans: "/plans",
@@ -156,6 +168,14 @@ function KundaliExperience() {
         return "mahadasha";
       case "/psychologist-insight":
         return "psychologist-insight";
+      case "/self-discovery":
+        return "self-discovery";
+      case "/prashna":
+        return "prashna";
+      case "/muhurat":
+        return "muhurat";
+      case "/company":
+        return "company";
       case "/explore":
         return "explore";
       case "/kundali":
@@ -371,6 +391,10 @@ html, body { max-width: 100%; overflow-x: clip; }
             {page === "numerology" && <NumerologyPage />}
             {page === "mahadasha" && <MahadashaPage />}
             {page === "psychologist-insight" && <PsychologistInsightPage />}
+            {page === "self-discovery" && <SelfDiscoveryPage />}
+            {page === "prashna" && <PrashnaPage />}
+            {page === "muhurat" && <MuhuratPage />}
+            {page === "company" && <CompanyPage />}
             {page === "profile" && <ProfilePage />}
             {page === "plans" && <PlansPage />}
           </div>

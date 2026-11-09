@@ -2,16 +2,11 @@
 
 import dynamic from "next/dynamic";
 import { AuthProvider } from "../lib/AuthContext";
+import PageLoader from "./PageLoader";
 
 const ClientApp = dynamic(() => import("../App"), {
   ssr: false,
-  loading: () => (
-    <div
-      aria-busy="true"
-      className="min-h-screen bg-[#071a2a]"
-      aria-label="Loading Gen-K"
-    />
-  ),
+  loading: () => <PageLoader />,
 });
 
 export default function InteractiveApp() {

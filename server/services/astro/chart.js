@@ -150,7 +150,7 @@ function eclipticLongitudeJ2000(bodyName, date) {
 }
 
 /** Sidereal longitude of a body = J2000 longitude + precession since J2000 - mean ayanamsa. */
-function siderealLongitude(bodyName, date) {
+export function siderealLongitude(bodyName, date) {
   const T = centuries(date);
   return norm360(eclipticLongitudeJ2000(bodyName, date) + precession(T) / 3600 - lahiriAyanamsa(date));
 }

@@ -20,7 +20,7 @@ export function getPaymentProvider() {
     }
     return demoProvider;
   }
-  if (mode === "razorpay" && process.env.NODE_ENV !== "production")
+  if (mode === "razorpay")
     return razorpayProvider;
   throw new Error(`Unsupported PAYMENT_MODE "${mode}".`);
 }

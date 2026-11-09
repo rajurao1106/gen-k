@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  completeDemoPayment,
   createPaymentOrder,
+  cancelMyPlan,
   fetchMyEntitlements,
   fetchPaymentHistory,
   fetchPlans,
+  refundDemoPayment,
   verifyPayment,
   type EntitlementSummary,
   type PaymentHistoryItem,
@@ -88,56 +89,27 @@ const PLAN_DETAILS: Record<
   string,
   { description: string; features: string[] }
 > = {
-  report_kundali: {
-    description: "One detailed birth-chart report",
+  ai_chat_unlimited: {
+    description: "One-time payment for permanent unlimited AI chat",
     features: [
-      "Full Kundali analysis",
-      "Saved to your account",
-      "Reuse without spending another credit",
+      "10 free replies across Kundali and AI Friend",
+      "Then unlimited Kundali chat and AI Friend replies",
+      "One-time ₹19 payment; no renewal",
     ],
   },
-  report_milan: {
-    description: "One complete compatibility report",
+  ai_chat_unlimited_money_test: {
+    description: "One-time ₹1 real payment test; includes the same features as the ₹19 plan",
     features: [
-      "Full Ashtakoot analysis",
-      "Saved to your account",
-      "Reuse without spending another credit",
-    ],
-  },
-  premium_monthly: {
-    description: "More daily guidance and premium tools",
-    features: [
-      "30 AI messages each day",
-      "Full daily guide and remedy",
-      "Mahadasha access",
-    ],
-  },
-  premium_yearly: {
-    description: "One year of premium access",
-    features: [
-      "30 AI messages each day",
-      "Full daily guide and remedy",
-      "Mahadasha access",
-    ],
-  },
-  voice_addon: {
-    description: "Use your saved voice for AI Friend replies",
-    features: [
-      "Voice replies for 30 days",
-      "Daily character quota applies",
-      "Requires an existing voice sample",
+      "10 free replies across Kundali and AI Friend",
+      "Then unlimited Kundali chat and AI Friend replies",
+      "One-time ₹1 charge; no renewal or refund on cancellation",
     ],
   },
 };
 
 const FEATURE_PLANS: Record<string, string[]> = {
-  ai_chat_extended: ["premium_monthly", "premium_yearly"],
-  QUOTA_EXCEEDED: ["premium_monthly", "premium_yearly"],
-  daily_guide_full: ["premium_monthly", "premium_yearly"],
-  mahadasha: ["premium_monthly", "premium_yearly"],
-  kundali_full_report: ["report_kundali", "premium_monthly", "premium_yearly"],
-  milan_full_report: ["report_milan", "premium_monthly", "premium_yearly"],
-  voice_reply: ["voice_addon"],
+  ai_chat_extended: ["ai_chat_unlimited"],
+  QUOTA_EXCEEDED: ["ai_chat_unlimited"],
 };
 
 function formatPrice(amountPaise: number, currency: string) {
@@ -155,6 +127,7 @@ export default function PlansPage() {
   const [feature, setFeature] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyPlan, setBusyPlan] = useState("");
+  const [cancellingPlan, setCancellingPlan] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const trackedPaywallView = useRef(false);
@@ -196,16 +169,40 @@ export default function PlansPage() {
   }, [refresh]);
 
   const recommended = useMemo(() => FEATURE_PLANS[feature] ?? [], [feature]);
-  const activeReportUses = (planId: string) =>
-    account?.entitlements
-      .filter(
-        (entitlement) =>
-          entitlement.planId === planId && entitlement.kind === "report",
+  const activeSubscription =
+    account?.plan.type === "subscription" &&
+    account.entitlements.some(
+      (entitlement) =>
+        entitlement.planId === account.plan.planId &&
+        entitlement.kind === "subscription",
+    );
+
+  const cancelPlan = async (planId: string, planName: string) => {
+    if (
+      !window.confirm(
+        `Cancel ${planName} now? Your plan access will end immediately. No refund will be issued.`,
       )
-      .reduce(
-        (total, entitlement) => total + (entitlement.remainingUses ?? 0),
-        0,
-      ) ?? 0;
+    ) {
+      return;
+    }
+
+    setCancellingPlan(true);
+    setError("");
+    setNotice("");
+    try {
+      await cancelMyPlan(planId);
+      setNotice(`${planName} was cancelled. Its access ended immediately; no refund was issued.`);
+      await refresh();
+    } catch (cancellationError) {
+      setError(
+        cancellationError instanceof Error
+          ? cancellationError.message
+          : "The plan could not be cancelled.",
+      );
+    } finally {
+      setCancellingPlan(false);
+    }
+  };
 
   const purchase = async (plan: Plan) => {
     setBusyPlan(plan.planId);
@@ -242,21 +239,9 @@ export default function PlansPage() {
           signature: result.razorpay_signature,
         });
       } else {
-        const demoResult = await completeDemoPayment(order.orderId, "success");
-        if (
-          demoResult.status !== "paid" ||
-          !demoResult.providerPaymentId ||
-          !demoResult.signature
-        ) {
-          throw new Error(
-            "Demo payment did not return a verifiable payment proof.",
-          );
-        }
-        await verifyPayment({
-          orderId: order.orderId,
-          providerPaymentId: demoResult.providerPaymentId,
-          signature: demoResult.signature,
-        });
+        throw new Error(
+          "Demo mode never opens Razorpay and must not activate a plan. Set PAYMENT_MODE=razorpay to test checkout.",
+        );
       }
       trackAnalytics("payment_success", { planId: plan.planId });
       setNotice(`${plan.name} is active on your account.`);
@@ -283,8 +268,9 @@ export default function PlansPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c9d8ed]">
           Compare the available plans and see what is active on your account.
-          Test-mode checkout simulates purchases; no money is charged. Voice
-          generation may still use paid AI provider credits.
+          Checkout can use local simulation or Razorpay test mode; this build
+          rejects live Razorpay keys. Voice generation may still use paid AI
+          provider credits.
         </p>
         {account && (
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
@@ -293,11 +279,27 @@ export default function PlansPage() {
               <strong className="text-[#f8d27a]">{account.plan.name}</strong>
             </span>
             <span className="rounded-full border border-[#f2c36b]/30 bg-[#0a1a2e] px-3 py-1.5">
-              AI messages today:{" "}
+              {account.usage.ai_chat.scope === "trial"
+                ? "Free AI replies used: "
+                : account.usage.ai_chat.scope === "unlimited"
+                  ? "AI chat access: "
+                  : "AI messages today: "}
               <strong className="text-[#f8d27a]">
-                {account.usage.ai_chat.used}/{account.usage.ai_chat.limit}
+                {account.usage.ai_chat.scope === "unlimited"
+                  ? "Unlimited"
+                  : `${account.usage.ai_chat.used}/${account.usage.ai_chat.limit}`}
               </strong>
             </span>
+            {activeSubscription && (
+            <button
+              type="button"
+              disabled={cancellingPlan}
+              onClick={() => void cancelPlan(account.plan.planId, account.plan.name)}
+              className="rounded-full border border-[#ef9f90]/40 px-3 py-1.5 text-[#ffd1c9] transition-colors hover:bg-[#ef9f90]/10 disabled:cursor-wait disabled:opacity-60"
+            >
+              {cancellingPlan ? "Cancelling…" : "Cancel active plan"}
+            </button>
+            )}
           </div>
         )}
       </header>
@@ -305,8 +307,10 @@ export default function PlansPage() {
       {feature && (
         <aside className="rounded-2xl border border-[#f2c36b]/40 bg-[#f2c36b]/10 p-4 text-sm text-[#f9e6b2]">
           {feature === "QUOTA_EXCEEDED"
-            ? "Your daily AI message quota is used. Premium plans offer a higher daily limit."
-            : `The ${feature.replaceAll("_", " ")} feature needs an eligible plan.`}
+            ? "Your 10 free Kundali and AI Friend replies are used. Pay ₹19 once for unlimited chat."
+            : feature === "voice_reply"
+              ? "Voice cloning is a separate paid feature and is not currently available for purchase."
+              : `The ${feature.replaceAll("_", " ")} feature does not currently have a plan available for purchase.`}
         </aside>
       )}
       {error && (
@@ -338,7 +342,6 @@ export default function PlansPage() {
           {plans.map((plan) => {
             const detail = PLAN_DETAILS[plan.planId];
             const current = account?.plan.planId === plan.planId;
-            const reportUses = activeReportUses(plan.planId);
             const activeAddon =
               account?.entitlements.some(
                 (entitlement) =>
@@ -394,12 +397,6 @@ export default function PlansPage() {
                     ))}
                   </ul>
                 )}
-                {reportUses > 0 && (
-                  <p className="mb-4 text-xs text-[#7fd18a]">
-                    {reportUses} report credit{reportUses === 1 ? "" : "s"}{" "}
-                    available
-                  </p>
-                )}
                 {current ? (
                   <button
                     type="button"
@@ -408,14 +405,22 @@ export default function PlansPage() {
                   >
                     Current plan
                   </button>
-                ) : activeAddon || reportUses > 0 ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="mt-auto rounded-xl border border-[#7fd18a]/35 px-4 py-2.5 text-sm text-[#7fd18a]"
-                  >
-                    {reportUses > 0 ? "Credit available" : "Active"}
-                  </button>
+                ) : activeAddon ? (
+                  <div className="mt-auto flex flex-col gap-2">
+                    <span className="rounded-xl border border-[#7fd18a]/35 px-4 py-2.5 text-center text-sm text-[#7fd18a]">
+                      Active
+                    </span>
+                    {["ai_chat_unlimited", "ai_chat_unlimited_money_test"].includes(plan.planId) && (
+                      <button
+                        type="button"
+                        disabled={cancellingPlan}
+                        onClick={() => void cancelPlan(plan.planId, plan.name)}
+                        className="rounded-xl border border-[#ef9f90]/40 px-4 py-2.5 text-sm text-[#ffd1c9] transition-colors hover:bg-[#ef9f90]/10 disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {cancellingPlan ? "Cancelling…" : "Cancel plan"}
+                      </button>
+                    )}
+                  </div>
                 ) : plan.type === "free" ? (
                   <button
                     type="button"
@@ -432,8 +437,8 @@ export default function PlansPage() {
                     className="mt-auto rounded-xl bg-[#f2c36b] px-4 py-2.5 text-sm font-semibold text-[#0b1324] transition-colors hover:bg-[#ffdc91] disabled:cursor-wait disabled:opacity-60"
                   >
                     {busyPlan === plan.planId
-                      ? "Processing demo…"
-                      : "Simulate purchase"}
+                      ? "Opening checkout…"
+                      : "Continue to checkout"}
                   </button>
                 )}
               </article>
@@ -443,9 +448,8 @@ export default function PlansPage() {
       )}
 
       <p className="rounded-xl border border-[#f2c36b]/20 bg-[#10273d]/70 p-4 text-xs leading-5 text-[#c9d8ed]">
-        Demo checkout simulates a successful payment to test entitlements. It is
-        not a live payment method and does not charge your account. Test-mode
-        plans are available to all signed-in users while enabled.
+        For Razorpay checkout, configure test credentials. Test payments do not
+        charge real money. Live Razorpay keys are rejected by this build.
       </p>
       <footer className="pb-5 text-xs text-[#a6bddb]">
         <LegalFooter />
@@ -455,7 +459,7 @@ export default function PlansPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-display text-xl font-semibold text-[#f8d27a]">
-              Recent demo orders
+              Recent payments
             </h2>
             <p className="mt-1 text-xs text-[#c9d8ed]">
               Payment activity linked to your account
@@ -493,6 +497,28 @@ export default function PlansPage() {
                   >
                     {payment.status}
                   </span>
+                  {payment.provider === "demo" && payment.status === "paid" && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setError("");
+                        try {
+                          await refundDemoPayment(payment.id);
+                          setNotice("Test-only demo access was revoked.");
+                          await refresh();
+                        } catch (refundError) {
+                          setError(
+                            refundError instanceof Error
+                              ? refundError.message
+                              : "Could not revoke demo access.",
+                          );
+                        }
+                      }}
+                      className="mt-1 text-xs text-[#ef9f90] underline"
+                    >
+                      Revoke demo access
+                    </button>
+                  )}
                 </span>
               </li>
             ))}

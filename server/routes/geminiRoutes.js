@@ -6,9 +6,12 @@ import { requireAdmin } from "../middleware/auth.js";
 import { userRateLimit as createUserRateLimit } from "../middleware/featureAccess.js";
 import {
   consumeReportCredit,
+  consumeLifetimeUsage,
   consumeUsage,
   getActivePlan,
+  hasUnlimitedAiChat,
   hasAccess,
+  refundLifetimeUsage,
   refundUsage,
   restoreReportCredit,
 } from "../services/entitlements.js";
@@ -31,7 +34,9 @@ const rateLimitPerMin = () => Number(process.env.GEMINI_RATE_LIMIT_PER_MIN || 20
 const userLimitPerMin = () => Number(process.env.GEMINI_USER_RATE_LIMIT_PER_MIN || 12);
 const MAX_INPUT_CHARS = 20_000;
 const CACHE_TTL_MS = 2 * 60_000;
-const purposes = ["chat", "kundali", "milan", "mahadasha", "guide", "psychologist"];
+const purposes = ["chat", "kundali", "milan", "mahadasha", "guide", "psychologist", "selfdiscovery", "prashna", "muhurat", "company"];
+// Prompts with personal details/questions: never kept in the response cache or in-flight map.
+const PRIVATE_PURPOSES = new Set(["psychologist", "selfdiscovery", "prashna", "company"]);
 const purposeSchema = z.enum(purposes);
 const reportSchema = z.object({
   type: z.enum(["kundali", "milan"]),
@@ -243,41 +248,63 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
     if (!(await hasAccess(req.user._id, feature))) return sendUpgradeRequired(res, feature);
   }
   let usageCharged = false;
+  let lifetimeUsageCharged = false;
   let usageDay = new Date();
   if (currentPurpose === "chat") {
     const plan = await getActivePlan(req.user._id);
-    const usage = await consumeUsage(
-      req.user._id,
-      "ai_chat",
-      1,
-      plan.grants.aiMessagesPerDay,
-      usageDay,
-    );
-    if (!usage.allowed) {
-      return res.status(402).json({
-        success: false,
-        code: "QUOTA_EXCEEDED",
-        message: "Aaj ke AI messages ki limit poori ho gayi.",
-        upgrade: true,
-        usage: { used: usage.count, limit: usage.limit, remaining: 0 },
-      });
+    if (!(await hasUnlimitedAiChat(req.user._id))) {
+      const dailyLimit = plan.grants.aiMessagesPerDay;
+      const isDailyPlan = typeof dailyLimit === "number";
+      const usage = isDailyPlan
+        ? await consumeUsage(req.user._id, "ai_chat", 1, dailyLimit, usageDay)
+        : await consumeLifetimeUsage(
+            req.user._id,
+            "ai_chat_trial",
+            1,
+            plan.grants.aiMessagesTotal,
+          );
+      if (!usage.allowed) {
+        return res.status(402).json({
+          success: false,
+          code: "QUOTA_EXCEEDED",
+          message: isDailyPlan
+            ? "Aaj ke AI messages ki limit poori ho gayi."
+            : "Aapke 10 free AI replies use ho gaye. Kundali aur AI Friend ka unlimited access ₹19 mein unlock karein.",
+          upgrade: true,
+          usage: {
+            used: usage.count,
+            limit: usage.limit,
+            remaining: 0,
+            scope: isDailyPlan ? "daily" : "trial",
+          },
+        });
+      }
+      usageCharged = true;
+      lifetimeUsageCharged = !isDailyPlan;
     }
-    usageCharged = true;
   }
+
+  const refundChatUsage = async () => {
+    if (lifetimeUsageCharged) {
+      await refundLifetimeUsage(req.user._id, "ai_chat_trial", 1);
+    } else if (usageCharged) {
+      await refundUsage(req.user._id, "ai_chat", 1, usageDay);
+    }
+  };
 
   let reservation;
   try {
     if (report) {
       reservation = await reserveReport(req.user._id, report);
       if (reservation.upgrade) {
-        if (usageCharged) await refundUsage(req.user._id, "ai_chat", 1, usageDay);
+        await refundChatUsage();
         return sendUpgradeRequired(
           res,
           report.type === "milan" ? "milan_full_report" : "kundali_full_report",
         );
       }
       if (reservation.conflict) {
-        if (usageCharged) await refundUsage(req.user._id, "ai_chat", 1, usageDay);
+        await refundChatUsage();
         return res.status(409).json({
           success: false,
           code: "REPORT_IN_PROGRESS",
@@ -285,7 +312,7 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
         });
       }
       if (reservation.cached !== undefined) {
-        if (usageCharged) await refundUsage(req.user._id, "ai_chat", 1, usageDay);
+        await refundChatUsage();
         return res.json({
           success: true,
           output_text: reservation.cached,
@@ -301,8 +328,8 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
       const generated = await generateWithPool({ model, input });
       text = String(generated.output_text ?? "");
     } else {
-      if (currentPurpose === "psychologist") {
-        // Client-privacy: this prompt contains a client's private details, so it is never
+      if (PRIVATE_PURPOSES.has(currentPurpose)) {
+        // Privacy: this prompt contains personal details, so it is never
         // kept in the in-memory response cache or the in-flight map.
         const generated = await generateWithPool({ model, input });
         text = String(generated.output_text ?? "");
@@ -326,7 +353,7 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
         code: "EMPTY_GEMINI_RESPONSE",
       });
     }
-    if (!report && currentPurpose !== "psychologist") {
+    if (!report && !PRIVATE_PURPOSES.has(currentPurpose)) {
       cache.set(key, { text, expires: Date.now() + CACHE_TTL_MS });
       if (cache.size > 200) cache.delete(cache.keys().next().value);
     }
@@ -356,7 +383,7 @@ router.post("/", rateLimit, limitPerUser, async (req, res) => {
       reportSaved: Boolean(reservation?.record),
     });
   } catch (error) {
-    if (usageCharged) await refundUsage(req.user._id, "ai_chat", 1, usageDay);
+    await refundChatUsage();
     if (reservation?.record) {
       await GeneratedReport.updateOne(
         {

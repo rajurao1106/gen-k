@@ -1,8 +1,10 @@
-import { PLANS } from "../config/plans.js";
+import { MONEY_TEST_PLAN_ID, PLANS } from "../config/plans.js";
 import Entitlement from "../models/Entitlement.js";
 import UsageCounter from "../models/UsageCounter.js";
 
 const DAY_TIME_ZONE = "Asia/Kolkata";
+const LIFETIME_USAGE_DAY_KEY = "lifetime";
+const FREE_AI_MESSAGE_LIMIT = PLANS.free.grants.aiMessagesTotal;
 
 export function getDayKey(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -65,6 +67,15 @@ export async function hasAccess(userId, feature, now = new Date()) {
   }));
 }
 
+export async function hasUnlimitedAiChat(userId, now = new Date()) {
+  return Boolean(await Entitlement.exists({
+    userId,
+    planId: { $in: ["ai_chat_unlimited", MONEY_TEST_PLAN_ID] },
+    kind: "addon",
+    ...activeAt(now),
+  }));
+}
+
 export async function consumeReport(userId, planId, now = new Date()) {
   const expectedKind = {
     report_milan: "milan_full_report",
@@ -123,6 +134,14 @@ export async function restoreReportCredit(entitlementId) {
 
 export async function refundUsage(userId, key, amount, now = new Date()) {
   const dayKey = getDayKey(now);
+  return refundCounterUsage(userId, key, amount, dayKey);
+}
+
+export async function refundLifetimeUsage(userId, key, amount) {
+  return refundCounterUsage(userId, key, amount, LIFETIME_USAGE_DAY_KEY);
+}
+
+async function refundCounterUsage(userId, key, amount, dayKey) {
   const units = Math.max(1, Math.floor(Number(amount) || 1));
   await UsageCounter.updateOne(
     { userId, key, dayKey, count: { $gte: units } },
@@ -136,8 +155,16 @@ export async function incrementUsage(userId, key, limitPerDay, now = new Date())
 
 export async function consumeUsage(userId, key, amount, limitPerDay, now = new Date()) {
   const dayKey = getDayKey(now);
+  return consumeCounterUsage(userId, key, amount, limitPerDay, dayKey);
+}
+
+export async function consumeLifetimeUsage(userId, key, amount, limit) {
+  return consumeCounterUsage(userId, key, amount, limit, LIFETIME_USAGE_DAY_KEY);
+}
+
+async function consumeCounterUsage(userId, key, amount, limitPerPeriod, dayKey) {
   const units = Math.max(1, Math.floor(Number(amount) || 1));
-  const limit = Math.max(0, Math.floor(Number(limitPerDay) || 0));
+  const limit = Math.max(0, Math.floor(Number(limitPerPeriod) || 0));
   if (!limit || units > limit) {
     const current = await UsageCounter.findOne({ userId, key, dayKey }).lean();
     return { allowed: false, count: current?.count ?? 0, remaining: 0, limit, dayKey };
@@ -181,16 +208,37 @@ export async function consumeUsage(userId, key, amount, limitPerDay, now = new D
 
 export async function getDailyUsage(userId, now = new Date()) {
   const dayKey = getDayKey(now);
-  const [plan, counters] = await Promise.all([
+  const [plan, counters, unlimited] = await Promise.all([
     getActivePlan(userId, now),
-    UsageCounter.find({ userId, dayKey }).select("key count -_id").lean(),
+    UsageCounter.find({
+      userId,
+      $or: [{ dayKey }, { key: "ai_chat_trial", dayKey: LIFETIME_USAGE_DAY_KEY }],
+    }).select("key count -_id").lean(),
+    hasUnlimitedAiChat(userId, now),
   ]);
-  const used = counters.find(({ key }) => key === "ai_chat")?.count ?? 0;
-  const limit = plan.grants.aiMessagesPerDay;
+  const premiumDailyLimit = plan.grants.aiMessagesPerDay;
+  const scope = unlimited
+    ? "unlimited"
+    : typeof premiumDailyLimit === "number"
+      ? "daily"
+      : "trial";
+  const used = scope === "daily"
+    ? counters.find(({ key }) => key === "ai_chat")?.count ?? 0
+    : counters.find(({ key }) => key === "ai_chat_trial")?.count ?? 0;
+  const limit = scope === "unlimited"
+    ? null
+    : scope === "daily"
+      ? premiumDailyLimit
+      : FREE_AI_MESSAGE_LIMIT;
   return {
     dayKey,
-    ai_chat: { used, limit, remaining: Math.max(0, limit - used) },
-    other: counters.filter(({ key }) => key !== "ai_chat"),
+    ai_chat: {
+      used,
+      limit,
+      remaining: limit === null ? null : Math.max(0, limit - used),
+      scope,
+    },
+    other: counters.filter(({ key }) => key !== "ai_chat" && key !== "ai_chat_trial"),
   };
 }
 
