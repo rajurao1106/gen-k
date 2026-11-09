@@ -11,8 +11,10 @@ import {
   deleteMyAccount,
   deleteMyLocation,
   fetchMyProfiles,
+  fetchPlans,
   saveUserDetail,
   updateUserDetail,
+  type Plan,
   type UserDetailRecord,
 } from "../lib/api";
 
@@ -25,6 +27,8 @@ export default function ProfilePage() {
   const { user, logout: logoutAccount } = useAuth();
   const [profile, setProfile] = useState<KundaliProfile | null>(null);
   const [profileRecord, setProfileRecord] = useState<UserDetailRecord | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plansError, setPlansError] = useState("");
   const [dob, setDob] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [gender, setGender] = useState("");
@@ -42,6 +46,26 @@ export default function ProfilePage() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [removingLocation, setRemovingLocation] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchPlans()
+      .then((availablePlans) => {
+        if (active) setPlans(availablePlans);
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setPlansError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Plans could not be loaded.",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -264,6 +288,58 @@ export default function ProfilePage() {
         <h2 className="mt-2 text-lg font-semibold">{profile.name}</h2>
         <p className="mt-0.5 text-sm text-[#a6bddb]">{user?.email || user?.phone}</p>
         <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#f2c36b]"><span aria-hidden="true">✦</span> Kundali profile</p>
+      </section>
+
+      <section aria-labelledby="mobile-plans-heading" className="mb-5 space-y-3 md:hidden">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <h2 id="mobile-plans-heading" className="text-sm font-semibold">Plans & access</h2>
+            <p className="mt-0.5 text-xs text-[#a6bddb]">Available plans for your account</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push("/plans")}
+            className="text-xs font-semibold text-[#f2c36b]"
+          >
+            View all
+          </button>
+        </div>
+        {plansError ? (
+          <p role="alert" className="rounded-xl border border-[#ef9f90]/30 bg-[#10273d] p-3 text-xs text-[#ffd1c9]">
+            {plansError}
+          </p>
+        ) : plans.length ? (
+          <ul className="space-y-2">
+            {plans.map((plan) => (
+              <li key={plan.planId} className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-[#f9f3eb]">{plan.name}</span>
+                  <span className="mt-0.5 block text-xs text-[#a6bddb]">
+                    {plan.amountPaise === 0
+                      ? "Free"
+                      : new Intl.NumberFormat("en-IN", {
+                          style: "currency",
+                          currency: plan.currency,
+                          maximumFractionDigits: 0,
+                        }).format(plan.amountPaise / 100)}
+                    {plan.durationDays ? ` · ${plan.durationDays} days` : ""}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => router.push("/plans")}
+                  className="shrink-0 rounded-lg border border-[#f2c36b]/35 px-3 py-2 text-xs font-semibold text-[#f2c36b] transition hover:bg-[#f2c36b]/10"
+                >
+                  Choose
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p role="status" className="rounded-xl border border-[#f2c36b]/20 bg-[#10273d] p-3 text-xs text-[#a6bddb]">
+            Loading plans…
+          </p>
+        )}
       </section>
 
       {editing ? (
