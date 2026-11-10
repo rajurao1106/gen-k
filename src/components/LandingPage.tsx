@@ -145,22 +145,32 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
           </div>
         </div>
 
-        <div aria-hidden="true" className="relative mx-auto flex h-[330px] w-full max-w-[430px] items-center justify-center sm:h-[420px]">
-          <div className="absolute h-[280px] w-[280px] rounded-full border border-[#e3b865]/15 sm:h-[360px] sm:w-[360px]" />
-          <div className="absolute h-[220px] w-[220px] rounded-full border border-dashed border-[#e3b865]/20 sm:h-[290px] sm:w-[290px]" />
-          <div className="absolute h-[170px] w-[170px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(242,195,107,0.25),rgba(84,69,112,0.22)_46%,rgba(8,13,24,0.2)_72%)] shadow-[0_0_100px_rgba(204,151,74,0.14)] sm:h-[220px] sm:w-[220px]" />
-          <div className="absolute h-[270px] w-[270px] rotate-45 border border-[#e3b865]/20 sm:h-[350px] sm:w-[350px]" />
-          <div className="absolute h-[270px] w-[270px] -rotate-45 border border-[#e3b865]/15 sm:h-[350px] sm:w-[350px]" />
-          <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-[#f4d38f]/35 bg-[#171b2a]/80 text-5xl text-[#f5d895] shadow-[0_0_55px_rgba(242,195,107,0.16)] sm:h-36 sm:w-36 sm:text-6xl">
-            <span className="translate-y-[-2px]">ॐ</span>
-          </div>
-          <span className="absolute left-[13%] top-[21%] text-xl text-[#f2c36b]">✦</span>
-          <span className="absolute right-[13%] top-[29%] text-sm text-[#b8a5e8]">✧</span>
-          <span className="absolute bottom-[20%] left-[20%] text-sm text-[#e9c77e]">✧</span>
-          <span className="absolute bottom-[18%] right-[19%] text-lg text-[#c3b5ed]">✦</span>
-          <span className="absolute right-[8%] top-[57%] h-1.5 w-1.5 rounded-full bg-[#f6d895]" />
-          <span className="absolute left-[9%] top-[62%] h-1 w-1 rounded-full bg-[#c3b5ed]" />
-        </div>
+        <div aria-hidden="true" className="relative mx-auto flex h-[360px] w-full max-w-[430px] items-center justify-center sm:h-[460px]">
+  <div className="absolute h-[280px] w-[280px] rounded-full border border-[#e3b865]/15 sm:h-[360px] sm:w-[360px]" />
+  <div className="absolute h-[220px] w-[220px] rounded-full border border-dashed border-[#e3b865]/20 sm:h-[290px] sm:w-[290px]" />
+  <div className="absolute h-[170px] w-[170px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(242,195,107,0.25),rgba(84,69,112,0.22)_46%,rgba(8,13,24,0.2)_72%)] shadow-[0_0_100px_rgba(204,151,74,0.14)] sm:h-[220px] sm:w-[220px]" />
+  <div className="absolute h-[270px] w-[270px] rotate-45 border border-[#e3b865]/20 sm:h-[350px] sm:w-[350px]" />
+  <div className="absolute h-[270px] w-[270px] -rotate-45 border border-[#e3b865]/15 sm:h-[350px] sm:w-[350px]" />
+
+  {/* Om (peeks out behind the head like a halo) */}
+  <div className="relative -translate-y-16 flex h-28 w-28 items-center justify-center rounded-full border border-[#f4d38f]/35 bg-[#171b2a]/80 text-5xl text-[#f5d895] shadow-[0_0_55px_rgba(242,195,107,0.16)] sm:-translate-y-24 sm:h-36 sm:w-36 sm:text-6xl">
+    <span className="translate-y-[-2px]">ॐ</span>
+  </div>
+
+  {/* Astrologer image on top of Om */}
+  <img
+    src="/vedic-astrologer.png"
+    alt=""
+    className="absolute bottom-0 left-1/2 z-10 w-[115%] max-w-none -translate-x-1/2 object-contain [mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)] drop-shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+  />
+
+  <span className="absolute left-[13%] top-[21%] text-xl text-[#f2c36b]">✦</span>
+  <span className="absolute right-[13%] top-[29%] text-sm text-[#b8a5e8]">✧</span>
+  <span className="absolute bottom-[20%] left-[20%] z-20 text-sm text-[#e9c77e]">✧</span>
+  <span className="absolute bottom-[18%] right-[19%] z-20 text-lg text-[#c3b5ed]">✦</span>
+  <span className="absolute right-[8%] top-[57%] h-1.5 w-1.5 rounded-full bg-[#f6d895]" />
+  <span className="absolute left-[9%] top-[62%] h-1 w-1 rounded-full bg-[#c3b5ed]" />
+</div>
       </section>
 
       <section
