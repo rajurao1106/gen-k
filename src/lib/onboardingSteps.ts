@@ -8,7 +8,7 @@ export const STEP_KEYS = ["welcome", "name", "gender", "status", "dob", "time", 
 export type StepKey = (typeof STEP_KEYS)[number];
 
 export const IMAGES: Record<StepKey, string> = {
-  welcome: "", name: "", gender: "", status: "", dob: "", time: "", place: "",
+  welcome: "/onboarding/welcome.png", name: "/onboarding/name.png", gender: "/onboarding/gender.png", status: "/onboarding/status.png", dob: "/onboarding/dob.png", time: "/onboarding/time.png", place: "/onboarding/place.png",
 };
 
 // Demo art used while an image path above is empty.
@@ -21,7 +21,7 @@ export const TEXT = {
   cta: "CONTINUE",
   welcome: {
     title: "Do you want to know your future?",
-    subtitle: "Nisi minim nisi irure voluptate voluptate cillum pariatur reprehenderit.", // dummy: replace
+    subtitle: "Explore your birth chart and discover what the stars have in store for your future.",
     cta: "GET STARTED",
     legalPre: "The data you submit will be processed in accordance with our",
     privacy: "Privacy Policy",
