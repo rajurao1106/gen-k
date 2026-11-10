@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -177,7 +178,7 @@ export default function EmailGoogleAuth() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#071a2a] px-4 text-[#c9d8ed]">
+      <main className="flex min-h-screen items-center justify-center bg-[#F8F0E8] px-4 text-[#625C56]">
         <p role="status">Checking your account…</p>
       </main>
     );
@@ -186,59 +187,88 @@ export default function EmailGoogleAuth() {
   const isSignup = mode === "signup";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#071a2a] px-4 py-8 text-[#f9f3eb]">
-      <section className="w-full max-w-md rounded-3xl border border-[#f2c36b]/30 bg-[#10273d] p-6 shadow-2xl sm:p-8">
-        <div className="mb-6 text-center">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#f2c36b]/15 text-[#f2c36b]">
-            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.6-4 5-6 8-6s6.4 2 8 6"/></svg>
-          </span>
-          <h1 className="mt-4 font-display text-2xl font-bold">{isSignup ? "Create your account" : "Welcome back"}</h1>
-          <p className="mt-2 text-sm leading-6 text-[#c9d8ed]">
-            {isSignup
-              ? "Sign up with email or Google. Next, you will add your birth details."
-              : "Sign in to open your dashboard and saved kundali."}
+    <main className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-[#F8F0E8] px-4 py-8 text-[#171717] sm:px-6 lg:py-12">
+      <div aria-hidden="true" className="pointer-events-none absolute -left-32 top-12 h-72 w-72 rounded-full bg-[#F0D8B1]/45 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-32 bottom-8 h-80 w-80 rounded-full bg-[#E8B99A]/30 blur-3xl" />
+      <section className="relative grid w-full max-w-[980px] overflow-hidden rounded-[30px] border border-[#E8D9CC] bg-white shadow-[0_28px_90px_rgba(80,54,32,0.16)] md:min-h-[610px] md:grid-cols-[0.9fr_1.1fr]">
+        <header className="relative isolate flex min-h-[230px] flex-col justify-center overflow-hidden bg-gradient-to-br from-[#F8F0E8] via-[#F8E8D8] to-[#F8F0E8] px-7 py-9 text-center text-[#171717] sm:px-10 md:min-h-full md:items-start md:px-12 md:py-14 md:text-left">
+          <div aria-hidden="true" className="absolute -left-14 top-8 -z-10 h-40 w-40 rounded-full bg-[#E8D17A]/75 sm:h-52 sm:w-52" />
+          <div aria-hidden="true" className="absolute -right-16 top-20 -z-10 h-44 w-44 rounded-full bg-[#F5C2A1]/35 sm:h-56 sm:w-56 md:-right-24 md:top-8 md:h-64 md:w-64" />
+          <div className="relative z-10 mx-auto max-w-sm md:mx-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#80602F]">Gen-K · Vedic astrology</p>
+            <h1 className="mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl">
+              {isSignup ? "Create an account" : "Welcome back"}
+            </h1>
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-[#625C56] md:mx-0">
+              {isSignup
+                ? "Your kundali journey starts here. Sign up to continue."
+                : "Sign in to open your dashboard and saved kundali."}
+            </p>
+          </div>
+          <p className="absolute bottom-7 left-12 hidden text-xs font-medium tracking-wide text-[#80602F] md:block">
+            Your chart. Your journey.
           </p>
-        </div>
+        </header>
 
-        <button
-          type="button"
-          onClick={() => void continueWithGoogle()}
-          disabled={saving}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#f2c36b]/30 bg-white px-4 py-3 font-semibold text-[#1f1f1f] disabled:opacity-60"
-        >
-          <span aria-hidden="true" className="text-lg font-bold text-[#4285F4]">G</span>
-          Continue with Google
-        </button>
+        <div className="relative z-10 -mt-11 rounded-t-[30px] bg-white px-5 pb-8 pt-7 sm:px-10 md:mt-0 md:flex md:items-center md:rounded-none md:px-12 md:py-12">
+          <div className="mx-auto w-full max-w-[420px]">
+            <button
+              type="button"
+              onClick={() => void continueWithGoogle()}
+              disabled={saving}
+              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-full border border-[#E5E5E5] bg-white px-4 py-3 text-sm font-medium text-[#242424] transition hover:bg-[#FAF8F6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A441] disabled:opacity-60"
+            >
+              <svg aria-hidden="true" className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.78.43 3.46 1.18 4.94l3.66-2.84z" />
+                <path fill="#EA4335" d="M12 5.27c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.99 14.97 1 12 1 7.73 1 4.03 3.45 2.18 7.06l3.66 2.84C6.71 7.2 9.14 5.27 12 5.27z" />
+              </svg>
+              {isSignup ? "Sign up with Google" : "Sign in with Google"}
+            </button>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-[#a6bddb]">
-          <span className="h-px flex-1 bg-white/10" />
-          or use email
-          <span className="h-px flex-1 bg-white/10" />
-        </div>
-
-        <form onSubmit={submit} className="space-y-4">
-          <label htmlFor="auth-email" className="block text-sm font-medium text-[#f9e6b2]">Email</label>
-          <input id="auth-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-xl border border-[#f2c36b]/30 bg-[#0a1a2e] px-4 py-3 text-base text-white outline-none focus:border-[#f2c36b]" />
-          <label htmlFor="auth-password" className="block text-sm font-medium text-[#f9e6b2]">Password</label>
-          <input id="auth-password" type="password" autoComplete={isSignup ? "new-password" : "current-password"} required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} placeholder={isSignup ? "At least 6 characters" : "Your password"} className="w-full rounded-xl border border-[#f2c36b]/30 bg-[#0a1a2e] px-4 py-3 text-base text-white outline-none focus:border-[#f2c36b]" />
-          {!isSignup && (
-            <div className="text-right text-xs">
-              <button type="button" onClick={() => void resetPassword()} disabled={saving} className="text-[#a6bddb] underline disabled:opacity-60">Forgot password?</button>
+            <div className="my-5 flex items-center gap-3 text-xs text-[#8A8178]">
+              <span className="h-px flex-1 bg-[#EAE7E4]" />
+              or
+              <span className="h-px flex-1 bg-[#EAE7E4]" />
             </div>
-          )}
-          {error && <p role="alert" className="rounded-lg border border-[#ef9f90]/40 bg-[#ef9f90]/10 px-3 py-2 text-sm text-[#ffd1c9]">{error}</p>}
-          {info && <p role="status" className="rounded-lg border border-[#f2c36b]/30 bg-[#f2c36b]/10 px-3 py-2 text-sm text-[#f9e6b2]">{info}</p>}
-          <button type="submit" disabled={saving} className="w-full rounded-xl bg-[#f2c36b] px-4 py-3 font-semibold text-[#0b1324] disabled:opacity-60">
-            {saving ? "Please wait…" : isSignup ? "Sign up" : "Sign in"}
-          </button>
-        </form>
 
-        <p className="mt-5 text-center text-sm text-[#c9d8ed]">
-          {isSignup ? "Already have an account?" : "New here?"}{" "}
-          <button type="button" onClick={switchMode} className="font-semibold text-[#f2c36b] underline">
-            {isSignup ? "Sign in" : "Create an account"}
-          </button>
-        </p>
+            <form onSubmit={submit} className="space-y-3.5">
+              <div>
+                <label htmlFor="auth-email" className="sr-only">Email</label>
+                <input id="auth-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" className="min-h-12 w-full rounded-2xl border border-transparent bg-[#F4F4F3] px-4 py-3 text-base text-[#171717] outline-none placeholder:text-[#8A8A88] focus:border-[#D9A441] focus:bg-white focus:ring-2 focus:ring-[#D9A441]/20" />
+              </div>
+              <div>
+                <label htmlFor="auth-password" className="sr-only">Password</label>
+                <input id="auth-password" type="password" autoComplete={isSignup ? "new-password" : "current-password"} required minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" className="min-h-12 w-full rounded-2xl border border-transparent bg-[#F4F4F3] px-4 py-3 text-base text-[#171717] outline-none placeholder:text-[#8A8A88] focus:border-[#D9A441] focus:bg-white focus:ring-2 focus:ring-[#D9A441]/20" />
+              </div>
+              {!isSignup && (
+                <div className="text-right text-xs">
+                  <button type="button" onClick={() => void resetPassword()} disabled={saving} className="text-[#80602F] underline underline-offset-2 disabled:opacity-60">Forgot password?</button>
+                </div>
+              )}
+              {error && <p role="alert" className="rounded-xl border border-[#B94E3D]/25 bg-[#B94E3D]/[0.07] px-3 py-2 text-sm text-[#8E3529]">{error}</p>}
+              {info && <p role="status" className="rounded-xl border border-[#D9A441]/35 bg-[#F8E8D8]/70 px-3 py-2 text-sm text-[#70511F]">{info}</p>}
+              <button type="submit" disabled={saving} className="min-h-12 w-full rounded-full bg-[#101010] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302A25] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A441] disabled:opacity-60">
+                {saving ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
+              </button>
+            </form>
+
+            <p className="mt-4 text-center text-[11px] leading-5 text-[#89837D]">
+              By continuing, you agree to our{" "}
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-[#A95F35]">Privacy Policy</Link>
+              {" "}and{" "}
+              <Link href="/terms" className="underline underline-offset-2 hover:text-[#A95F35]">Terms of Service</Link>.
+            </p>
+
+            <p className="mt-5 text-center text-sm text-[#625C56]">
+              {isSignup ? "Already have an account?" : "Have an account?"}{" "}
+              <button type="button" onClick={switchMode} className="font-semibold text-[#A95F35] underline underline-offset-2">
+                {isSignup ? "Log in" : "Create an account"}
+              </button>
+            </p>
+          </div>
+        </div>
       </section>
     </main>
   );
