@@ -27,6 +27,7 @@ const saveSchema = z.object({
   birthLatitude: z.number().finite().min(-90).max(90).nullable().optional(),
   birthLongitude: z.number().finite().min(-180).max(180).nullable().optional(),
   birthTimezone: z.string().trim().max(100).optional(),
+  avatarSeed: z.string().uuid().optional(),
   referralCode: z.string().trim().min(1).max(16).regex(/^[A-Za-z0-9]+$/).optional(),
 }).refine((v) => (v.birthLatitude == null) === (v.birthLongitude == null), {
   message: "Send both birthLatitude and birthLongitude, or neither.",

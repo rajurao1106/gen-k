@@ -7,6 +7,7 @@ import { saveUserKundaliProfile } from "../lib/storage";
 import { useAuth } from "../lib/useAuth";
 import AdvancedPlaceInput from "../components/AdvancedPlaceInput";
 import BirthPlaceMap from "../components/BirthPlaceMap";
+import CrittersAvatar from "../components/CrittersAvatar";
 import {
   deleteMyAccount,
   deleteMyLocation,
@@ -85,6 +86,7 @@ export default function ProfilePage() {
         bop: currentRecord.placeOfBirth!,
         gender: currentRecord.gender || "",
         recordId: currentRecord._id,
+        avatarSeed: currentRecord.avatarSeed,
       };
       setProfileRecord(currentRecord);
       setProfile(current);
@@ -284,10 +286,18 @@ export default function ProfilePage() {
       </header>
 
       <section className="mb-6 flex flex-col items-center text-center">
-        <div className="grid h-20 w-20 place-items-center rounded-full bg-[#F8E8D8] text-3xl font-semibold text-[#A95F35]">{profile.name.trim().charAt(0).toUpperCase()}</div>
+        <CrittersAvatar seed={profile.avatarSeed} name={profile.name} className="h-20 w-20 text-3xl" />
         <h2 className="mt-2 text-lg font-semibold">{profile.name}</h2>
         <p className="mt-0.5 text-sm text-[#89837D]">{user?.email || user?.phone}</p>
         <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#80602F]"><span aria-hidden="true">✦</span> Kundali profile</p>
+        <a
+          href="https://www.dicebear.com/styles/croodles/"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 text-[10px] text-[#89837D] underline underline-offset-2"
+        >
+          Croodles by Vijay Verma · DiceBear
+        </a>
       </section>
 
       <section aria-labelledby="mobile-plans-heading" className="mb-5 space-y-3 md:hidden">

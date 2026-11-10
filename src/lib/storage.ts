@@ -45,6 +45,7 @@ export function getUserKundaliProfiles(): KundaliProfile[] {
             bop: profile.bop,
             gender: typeof profile.gender === "string" ? profile.gender : "",
             recordId: typeof profile.recordId === "string" ? profile.recordId : undefined,
+            avatarSeed: typeof profile.avatarSeed === "string" ? profile.avatarSeed : undefined,
           };
           profiles.set(profileId(validProfile), validProfile);
         }

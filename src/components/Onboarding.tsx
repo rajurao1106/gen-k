@@ -171,6 +171,7 @@ export default function Onboarding() {
       bot: data.unknown ? "12:00" : `${pad(h24)}:${pad(data.mi)}`,
       bop: data.place.label,
       gender: data.gender,
+      avatarSeed: crypto.randomUUID(),
     };
     setSaving(true);
     setError("");
@@ -186,6 +187,7 @@ export default function Onboarding() {
         birthLatitude: data.place.lat,
         birthLongitude: data.place.lng,
         birthTimezone: data.place.tz,
+        avatarSeed: profile.avatarSeed,
         ...(referralCode.trim() ? { referralCode: referralCode.trim().toUpperCase() } : {}),
       });
       saveUserKundaliProfile(profile);

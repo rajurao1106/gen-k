@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { EXPLORE_PAGES, type PageKey } from "../types";
 import { getUserKundaliProfile } from "../lib/storage";
 import { NavIcon, type NavIconName } from "./NavIcon";
+import CrittersAvatar from "./CrittersAvatar";
 
 type MenuItem = {
   key: PageKey;
@@ -122,7 +123,6 @@ export function HamburgerButton({
 const INK = "text-[#edf2fb]";
 const DIM = "text-[#cbd9ee]";
 const LINE = "border-[#f2c36b]/20";
-const ACCENT = "#f2c36b";
 
 export function Sidebar({
   open,
@@ -140,6 +140,7 @@ export function Sidebar({
   // `collapsed` only affects desktop (lg+). On mobile the drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
   const [userName, setUserName] = useState("");
+  const [avatarSeed, setAvatarSeed] = useState("");
 
   // Hydrate persisted sidebar preferences and the account's local profile name.
   useEffect(() => {
@@ -151,7 +152,9 @@ export function Sidebar({
     }
     try {
       // oxlint-disable-next-line react/set-state-in-effect
-      setUserName(getUserKundaliProfile()?.name ?? "");
+      const profile = getUserKundaliProfile();
+      setUserName(profile?.name ?? "");
+      setAvatarSeed(profile?.avatarSeed ?? "");
     } catch {
       // oxlint-disable-next-line react/set-state-in-effect
       setUserName("");
@@ -178,7 +181,6 @@ export function Sidebar({
   const ink = lightTheme ? "text-[#171717]" : INK;
   const dim = lightTheme ? "text-[#625C56]" : DIM;
   const line = lightTheme ? "border-[#E8D9CC]" : LINE;
-  const accent = lightTheme ? "#D9A441" : ACCENT;
 
   return (
     <>
@@ -287,14 +289,7 @@ export function Sidebar({
               lightTheme ? "hover:bg-[#FAF8F6]" : "hover:bg-[#f2c36b]/8"
             } ${centerWhenCollapsed}`}
           >
-            <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold ${
-                lightTheme ? "text-[#80602F]" : "text-[#0b1324]"
-              }`}
-              style={{ background: lightTheme ? "#F8E8D8" : accent }}
-            >
-              {(userName.trim()[0] || "G").toUpperCase()}
-            </span>
+            <CrittersAvatar seed={avatarSeed} name={userName || "Guest"} className="h-10 w-10 text-[15px]" />
             <span className={`min-w-0 leading-tight ${hideWhenCollapsed}`}>
               <span className="block truncate text-[15px] font-medium">{userName || "Guest"}</span>
               <span className={`block truncate text-[13px] ${dim}`}>

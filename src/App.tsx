@@ -72,6 +72,7 @@ function toKundaliProfile(record: UserDetailRecord) {
     bop: record.placeOfBirth,
     gender: record.gender || "",
     recordId: record._id,
+    avatarSeed: record.avatarSeed,
   };
 }
 

@@ -79,6 +79,7 @@ export type SaveUserDetailPayload = {
   birthLatitude?: number | null;
   birthLongitude?: number | null;
   birthTimezone?: string;
+  avatarSeed?: string;
   referralCode?: string;
 };
 

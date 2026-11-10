@@ -34,6 +34,10 @@ const userDetailSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    avatarSeed: {
+      type: String,
+      default: "",
+    },
     readingLanguage: {
       type: String,
       enum: ["en", "hi"],

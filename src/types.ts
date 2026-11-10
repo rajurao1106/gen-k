@@ -62,7 +62,7 @@ export type KundaliRecord = {
 export type KundaliProfile = Pick<
   KundaliRecord,
   "name" | "dob" | "bot" | "bop" | "gender"
-> & { recordId?: string };
+> & { recordId?: string; avatarSeed?: string };
 
 export type PageKey =
   | "home"
