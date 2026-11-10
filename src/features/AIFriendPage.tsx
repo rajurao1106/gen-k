@@ -37,7 +37,7 @@ import {
 } from "../lib/voiceStorage";
 
 // ---------------------------------------------------------------------------
-// AI Friend - orb UI (navy + gold)
+// AI Friend - orb UI (warm cream + charcoal)
 //
 //  * Mic is the default input; the keyboard button swaps it for a text field.
 //  * Reply mode: Text = chat bubbles + small orb, Voice = big orb with the
@@ -198,17 +198,17 @@ const T = {
 } as const;
 
 const STYLES = `
-.af{--af-accent:#d8b36a;--af-ink:#1a1405;--af-navy:#232c63;--af-dim:rgba(255,255,255,.6);color:#f4f1ea;
-background:radial-gradient(90% 55% at 50% 36%,#18215a 0%,#0a0e22 58%,#060814 100%)}
+.af{--af-accent:#D9A441;--af-ink:#171717;--af-navy:#101010;--af-dim:#625C56;color:#171717;
+background:radial-gradient(90% 55% at 50% 36%,#F8E8D8 0%,#FFFCF8 58%,#F8F0E8 100%)}
 .af button:focus-visible,.af input:focus-visible,.af select:focus-visible{outline:2px solid var(--af-accent);outline-offset:2px}
 .af-orb{--morph:11s;--spin:18s;--pulse:6s;position:relative;isolation:isolate;aspect-ratio:1;animation:af-pulse var(--pulse) ease-in-out infinite;transition:width .5s ease,height .5s ease}
-.af-orb::before{content:"";position:absolute;inset:-22%;z-index:-1;border-radius:50%;background:radial-gradient(circle,rgba(216,179,106,.30),transparent 66%)}
+.af-orb::before{content:"";position:absolute;inset:-22%;z-index:-1;border-radius:50%;background:radial-gradient(circle,rgba(217,164,65,.24),transparent 66%)}
 .af-orb[data-s=listening]{--morph:4s;--spin:6s;--pulse:1.6s}
 .af-orb[data-s=thinking]{--morph:3s;--spin:2.4s;--pulse:2.4s}
 .af-orb[data-s=speaking]{--morph:2.6s;--spin:8s;--pulse:.9s}
 .af-blob{position:absolute;inset:0;border-radius:46% 54% 52% 48%/50% 44% 56% 50%;
-background:radial-gradient(circle at 50% 50%,#050714 34%,transparent 60%),conic-gradient(from 0deg,#f6dc96,#d8b36a,#7d6cf0,#4cc3f5,#f08fb8,#f6dc96);
-box-shadow:0 0 52px rgba(216,179,106,.35),inset 0 0 22px rgba(255,255,255,.5);
+background:radial-gradient(circle at 50% 50%,#FFFCF8 34%,transparent 60%),conic-gradient(from 0deg,#f6dc96,#d9a441,#a95f35,#e8b99a,#f0d8b1,#f6dc96);
+box-shadow:0 0 52px rgba(217,164,65,.28),inset 0 0 22px rgba(255,255,255,.7);
 animation:af-morph var(--morph) ease-in-out infinite,af-spin var(--spin) linear infinite}
 .af-sheen{position:absolute;inset:6%;border-radius:50%;pointer-events:none;mix-blend-mode:screen;
 background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.7),transparent 42%),radial-gradient(circle at 75% 80%,rgba(255,255,255,.22),transparent 40%)}
@@ -264,8 +264,8 @@ function RoundButton({
   disabled?: boolean;
 }) {
   const tones = {
-    navy: "bg-[var(--af-navy)] text-white",
-    dark: "bg-white/10 text-white/80",
+    navy: "bg-[#F8E8D8] text-[#80602F]",
+    dark: "bg-[#F4F4F3] text-[#625C56]",
     accent: "bg-[var(--af-accent)] text-[var(--af-ink)]",
   };
   return (
@@ -281,7 +281,7 @@ function Chips({ items, onPick, disabled }: { items: readonly string[]; onPick: 
     <div className="flex flex-wrap justify-center gap-2">
       {items.map((q) => (
         <button key={q} type="button" disabled={disabled} onClick={() => onPick(q)}
-          className="rounded-full border border-[var(--af-accent)]/35 bg-white/5 px-3.5 py-2 text-left text-[0.8rem] leading-snug text-white/85 transition-colors active:bg-[var(--af-accent)]/20 disabled:opacity-40">
+          className="rounded-full border border-[#E8D9CC] bg-white px-3.5 py-2 text-left text-[0.8rem] leading-snug text-[#625C56] transition-colors active:bg-[#F8E8D8] disabled:opacity-40">
           {q}
         </button>
       ))}
@@ -844,23 +844,23 @@ AI Friend:`,
     }
   };
 
-  const fieldClass = "w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white";
+  const fieldClass = "w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-2.5 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white";
 
   // ---- render ---------------------------------------------------------------
   return (
-    <main className="af relative mx-auto flex h-[min(44rem,calc(100dvh-13rem))] lg:h-[min(44rem,calc(100dvh-4rem))] max-lg:h-[90vh] w-full max-w-[26rem] flex-col overflow-hidden  ring-1 ring-[var(--af-accent)]/20">
+    <main className="af relative mx-auto flex h-[min(44rem,calc(100dvh-13rem))] lg:h-[min(44rem,calc(100dvh-4rem))] max-lg:h-[90vh] w-full max-w-[26rem] flex-col overflow-hidden rounded-3xl border border-[#E8D9CC] shadow-[0_16px_50px_rgba(80,54,32,0.12)]">
       <style>{STYLES}</style>
 
       <header className="grid shrink-0 grid-cols-[2.5rem_1fr_auto] items-start gap-2 px-4 pt-4">
         <button type="button" onClick={() => setSheet(true)} aria-label={t.settings} title={t.settings}
-          className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white/80">
+          className="grid h-10 w-10 place-items-center rounded-full bg-[#F4F4F3] text-[#625C56]">
           <Icon name="sliders" className="h-5 w-5" />
         </button>
      <p></p>
-        <div role="group" aria-label={t.replyMode} className="flex rounded-full bg-white/10 p-0.5 text-xs">
+        <div role="group" aria-label={t.replyMode} className="flex rounded-full bg-[#F4F4F3] p-0.5 text-xs">
           {(["text", "voice"] as const).map((m) => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => changeMode(m)}
-              className={`rounded-full px-3 py-1.5 ${mode === m ? "bg-[var(--af-accent)] font-medium text-[var(--af-ink)]" : "text-white/70"}`}>
+              className={`rounded-full px-3 py-1.5 ${mode === m ? "bg-[#101010] font-medium text-white" : "text-[#625C56]"}`}>
               {t[m]}
             </button>
           ))}
@@ -871,7 +871,7 @@ AI Friend:`,
         <section className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
           <p className="text-sm text-[var(--af-dim)]">{t.noProfile}</p>
           <button type="button" onClick={() => router.push("/kundali?newProfile=1")}
-            className="rounded-full bg-[var(--af-accent)] px-5 py-2.5 text-sm font-medium text-[var(--af-ink)]">
+            className="rounded-full bg-[#101010] px-5 py-2.5 text-sm font-medium text-white">
             {t.addUser}
           </button>
         </section>
@@ -900,7 +900,7 @@ AI Friend:`,
                 </div>
               ) : (
                 <div ref={viewRef} className={`af-fade h-40 w-full shrink-0 ${phase === "done" ? "overflow-y-auto" : "overflow-hidden"}`}>
-                  <div ref={textRef} className="whitespace-pre-wrap px-1 pb-8 pt-5 text-center font-serif text-[1.2rem] leading-8 text-white will-change-transform">
+                  <div ref={textRef} className="whitespace-pre-wrap px-1 pb-8 pt-5 text-center font-serif text-[1.2rem] leading-8 text-[#171717] will-change-transform">
                     {phase === "thinking" ? (
                       <span className="text-[var(--af-dim)]"><Dots /><span className="sr-only">{t.thinking}</span></span>
                     ) : (
@@ -909,7 +909,7 @@ AI Friend:`,
                   </div>
                 </div>
               )}
-              <p className="h-5 text-center text-[0.7rem] text-white/40" aria-hidden="true">
+              <p className="h-5 text-center text-[0.7rem] text-[#89837D]" aria-hidden="true">
                 {phase === "playing" ? t.tapOrbStop : phase === "done" && stage.answer ? t.tapOrbPlay : ""}
               </p>
             </>
@@ -928,19 +928,19 @@ AI Friend:`,
                   </p>
                 ) : (
                   <div key={i} className="mr-auto flex max-w-[92%] flex-col items-start">
-                    <p className="whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-white/[0.08] px-3.5 py-2 text-sm leading-6 ring-1 ring-white/10">
+                    <p className="whitespace-pre-wrap rounded-2xl rounded-bl-sm border border-[#E8D9CC] bg-[#FFFCF8] px-3.5 py-2 text-sm leading-6 text-[#171717]">
                       {m.content}
                     </p>
                     <button type="button" aria-label={t.orbPlay} title={t.orbPlay}
                       onClick={() => void runPlayback(clean(m.content))}
-                      className="ml-1 mt-0.5 grid h-8 w-8 place-items-center rounded-full text-white/45 active:text-[var(--af-accent)]">
+                      className="ml-1 mt-0.5 grid h-8 w-8 place-items-center rounded-full text-[#89837D] active:text-[#A95F35]">
                       <Icon name="speaker" className="h-4 w-4" />
                     </button>
                   </div>
                 ),
               )}
               {(phase === "thinking" || listening) && (
-                <p className="mr-auto w-fit rounded-2xl bg-white/[0.08] px-3.5 py-2 text-sm text-[var(--af-dim)]">
+                <p className="mr-auto w-fit rounded-2xl border border-[#E8D9CC] bg-[#F8F0E8] px-3.5 py-2 text-sm text-[var(--af-dim)]">
                   {listening ? interim || t.listening : (<><Dots /><span className="sr-only">{t.thinking}</span></>)}
                 </p>
               )}
@@ -951,18 +951,18 @@ AI Friend:`,
       )}
 
       {chatError && (
-        <div role="alert" className="flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 px-6 pb-2 text-xs text-[#ff9d9d]">
+        <div role="alert" className="flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 px-6 pb-2 text-xs text-[#8E3529]">
           <span className="text-center">{chatError}</span>
           {canRetry && (
             <button type="button" onClick={() => void sendMessage(lastQuestionRef.current, true)}
-              className="rounded-full border border-[#ff9d9d]/50 px-3 py-1 font-medium">
+              className="rounded-full border border-[#B94E3D]/40 px-3 py-1 font-medium">
               {t.retry}
             </button>
           )}
           {plansFeature && (
             <Link
               href={`/plans?feature=${plansFeature}`}
-              className="rounded-full border border-[#f8d27a]/50 px-3 py-1 font-medium text-[#f8d27a]"
+              className="rounded-full border border-[#D9A441]/50 px-3 py-1 font-medium text-[#80602F]"
             >
               View plans
             </Link>
@@ -975,7 +975,7 @@ AI Friend:`,
           <RoundButton label={t.speak} tone="navy" onClick={() => setTyping(false)}><Icon name="mic" /></RoundButton>
           <input value={input} onChange={(e) => setInput(e.currentTarget.value)} autoFocus enterKeyHint="send"
             placeholder={t.placeholder} aria-label={t.placeholder}
-            className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-4 text-sm text-white placeholder:text-white/40" />
+            className="h-12 min-w-0 flex-1 rounded-full border border-transparent bg-[#F4F4F3] px-4 text-sm text-[#171717] placeholder:text-[#8A8A88] focus:border-[#D9A441] focus:outline-none" />
           <RoundButton label={t.send} tone="accent" type="submit" disabled={!input.trim() || phase === "thinking"}>
             <Icon name="send" />
           </RoundButton>
@@ -989,16 +989,16 @@ AI Friend:`,
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <div className="relative grid h-20 w-20 place-items-center">
-              <span className="absolute -inset-3 rounded-full border border-white/10" aria-hidden="true" />
-              <span className="absolute -inset-7 rounded-full border border-white/[0.06]" aria-hidden="true" />
+              <span className="absolute -inset-3 rounded-full border border-[#D9A441]/20" aria-hidden="true" />
+              <span className="absolute -inset-7 rounded-full border border-[#D9A441]/10" aria-hidden="true" />
               {listening && (<><span className="af-ring" aria-hidden="true" /><span className="af-ring" style={{ animationDelay: "1.1s" }} aria-hidden="true" /></>)}
               <button type="button" onClick={toggleMic} aria-pressed={listening}
                 aria-label={listening ? t.tapSend : t.speak}
-                className={`relative grid h-20 w-20 place-items-center rounded-full bg-[var(--af-accent)] text-[var(--af-ink)] shadow-[0_0_28px_rgba(216,179,106,.35)] transition-transform active:scale-95 ${listening ? "scale-95" : ""}`}>
+                className={`relative grid h-20 w-20 place-items-center rounded-full bg-[#101010] text-white shadow-[0_0_28px_rgba(80,54,32,.18)] transition-transform active:scale-95 ${listening ? "scale-95" : ""}`}>
                 <Icon name={listening ? "send" : "mic"} className="h-8 w-8" />
               </button>
             </div>
-            <span className="mt-4 text-[0.7rem] text-white/50">{listening ? t.tapSend : t.tapSpeak}</span>
+            <span className="mt-4 text-[0.7rem] text-[#89837D]">{listening ? t.tapSend : t.tapSpeak}</span>
           </div>
           <div className="pt-4">
             <RoundButton label={busy ? t.stop : t.startOver} tone="dark" onClick={stopOrReset} disabled={!canReset}>
@@ -1012,7 +1012,7 @@ AI Friend:`,
         <div className="absolute inset-0 z-20 flex items-end bg-black/60" onClick={closeSheet}>
           <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={t.settings}
             onClick={(e) => e.stopPropagation()}
-            className="af-sheet flex max-h-[92%] w-full flex-col gap-5 overflow-y-auto rounded-t-3xl border-t border-[var(--af-accent)]/25 bg-[#0c1128] p-5">
+            className="af-sheet flex max-h-[92%] w-full flex-col gap-5 overflow-y-auto rounded-t-3xl border-t border-[#E8D9CC] bg-white p-5 text-[#171717]">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium">{t.settings}</h2>
               <RoundButton label={t.close} tone="dark" onClick={closeSheet}><Icon name="x" /></RoundButton>
@@ -1022,26 +1022,26 @@ AI Friend:`,
               {t.user}
               <select value={selectedProfileId} onChange={(e) => selectProfile(e.target.value)} className={fieldClass}>
                 {profiles.map((p) => (
-                  <option key={getKundaliProfileId(p)} value={getKundaliProfileId(p)} className="bg-black">{p.name}</option>
+                  <option key={getKundaliProfileId(p)} value={getKundaliProfileId(p)} className="bg-white text-[#171717]">{p.name}</option>
                 ))}
               </select>
             </label>
             <button type="button" onClick={() => router.push("/kundali?newProfile=1")}
-              className="w-fit rounded-full border border-white/20 px-4 py-2 text-sm">{t.addUser}</button>
+              className="w-fit rounded-full border border-[#E8D9CC] px-4 py-2 text-sm text-[#625C56]">{t.addUser}</button>
 
             <div className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
               {t.language}
-              <div role="group" aria-label={t.language} className="flex w-fit rounded-full bg-white/10 p-0.5 text-sm">
+              <div role="group" aria-label={t.language} className="flex w-fit rounded-full bg-[#F4F4F3] p-0.5 text-sm">
                 {([["en", "English"], ["hi", "हिंदी"]] as const).map(([code, label]) => (
                   <button key={code} type="button" aria-pressed={language === code} onClick={() => changeLanguage(code)}
-                    className={`rounded-full px-4 py-1.5 ${language === code ? "bg-[var(--af-accent)] font-medium text-[var(--af-ink)]" : "text-white/70"}`}>
+                    className={`rounded-full px-4 py-1.5 ${language === code ? "bg-[#101010] font-medium text-white" : "text-[#625C56]"}`}>
                     {label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
+            <div className="flex flex-col gap-3 border-t border-[#E8D9CC] pt-4">
               <h3 className="text-sm font-medium">{t.myVoice}</h3>
               <p className="text-xs text-[var(--af-dim)]">{t.aiGenerated}</p>
               {loadingSample ? (
@@ -1057,7 +1057,7 @@ AI Friend:`,
                         className={`min-w-0 flex-1 rounded-full border px-4 py-2 text-left text-sm ${
                           voiceSample?.id === sample.id
                             ? "border-[var(--af-accent)] bg-[var(--af-accent)]/10"
-                            : "border-white/20"
+                            : "border-[#E8D9CC]"
                         }`}
                       >
                         {sample.label} · {sample.language.toUpperCase()}
@@ -1065,7 +1065,7 @@ AI Friend:`,
                       <button
                         type="button"
                         onClick={() => void removeSample(sample.id)}
-                        className="shrink-0 rounded-full border border-white/20 px-3 py-2 text-xs"
+                        className="shrink-0 rounded-full border border-[#E8D9CC] px-3 py-2 text-xs"
                       >
                         {t.deleteVoice}
                       </button>
@@ -1098,8 +1098,8 @@ AI Friend:`,
                         aria-label={t.language}
                         className={fieldClass}
                       >
-                        <option value="hi" className="bg-black">हिंदी</option>
-                        <option value="en" className="bg-black">English</option>
+                        <option value="hi" className="bg-white text-[#171717]">हिंदी</option>
+                        <option value="en" className="bg-white text-[#171717]">English</option>
                       </select>
                       <label className="flex flex-col gap-2 text-sm text-[var(--af-dim)]">
                         {t.consentBy}
@@ -1114,9 +1114,9 @@ AI Friend:`,
                           aria-label={t.consentBy}
                           className={fieldClass}
                         >
-                          <option value="" className="bg-black">—</option>
-                          <option value="self" className="bg-black">{t.consentSelf}</option>
-                          <option value="has_permission" className="bg-black">
+                          <option value="" className="bg-white text-[#171717]">—</option>
+                          <option value="self" className="bg-white text-[#171717]">{t.consentSelf}</option>
+                          <option value="has_permission" className="bg-white text-[#171717]">
                             {t.consentPermission}
                           </option>
                         </select>
@@ -1143,7 +1143,7 @@ AI Friend:`,
                   </form>
                 </>
               )}
-              {voiceError && <p role="alert" className="text-sm text-[#ff9d9d]">{voiceError}</p>}
+              {voiceError && <p role="alert" className="text-sm text-[#8E3529]">{voiceError}</p>}
               {plansFeature === "voice_reply" && (
                 <Link href="/plans?feature=voice_reply" className="text-sm font-medium text-[var(--af-accent)] underline">
                   {t.plans}
@@ -1151,13 +1151,13 @@ AI Friend:`,
               )}
             </div>
 
-            <div className="flex items-center gap-2 border-t border-white/10 pt-4">
+            <div className="flex items-center gap-2 border-t border-[#E8D9CC] pt-4">
               <button type="button" onClick={clearChat}
-                className={`w-fit rounded-full border px-4 py-2 text-sm ${confirmClear ? "border-[#ff9d9d] bg-[#ff9d9d]/15 text-[#ffb4b4]" : "border-[#ff9d9d]/40 text-[#ff9d9d]"}`}>
+                className={`w-fit rounded-full border px-4 py-2 text-sm ${confirmClear ? "border-[#B94E3D] bg-[#B94E3D]/[0.07] text-[#8E3529]" : "border-[#B94E3D]/40 text-[#8E3529]"}`}>
                 {confirmClear ? t.clearConfirm : t.clear}
               </button>
               {confirmClear && (
-                <button type="button" onClick={() => setConfirmClear(false)} className="rounded-full px-3 py-2 text-sm text-white/60">{t.cancel}</button>
+                <button type="button" onClick={() => setConfirmClear(false)} className="rounded-full px-3 py-2 text-sm text-[#625C56]">{t.cancel}</button>
               )}
             </div>
           </div>

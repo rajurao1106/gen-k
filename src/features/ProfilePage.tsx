@@ -268,14 +268,14 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <main className="mx-auto max-w-xl rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-5 text-[#f9f3eb]">
-        {error ? <p role="alert" className="text-sm text-[#ffd1c9]">{error}</p> : <p role="status" className="text-sm text-[#c9d8ed]">Loading profile…</p>}
+      <main className="mx-auto max-w-xl rounded-2xl border border-[#E8D9CC] bg-white p-5 text-[#171717] shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+        {error ? <p role="alert" className="text-sm text-[#8E3529]">{error}</p> : <p role="status" className="text-sm text-[#625C56]">Loading profile…</p>}
       </main>
     );
   }
 
   return (
-    <main className="-mx-4 -mt-4 min-h-[calc(100svh-4rem)] w-[calc(100%+2rem)] bg-[#071a2a] px-5 pb-32 pt-6 text-[#f9f3eb] sm:mx-auto sm:mt-0 sm:min-h-0 sm:w-full sm:max-w-xl sm:rounded-3xl sm:px-7 sm:py-7 sm:shadow-xl">
+    <main className="-mx-4 -mt-4 min-h-[calc(100svh-4rem)] w-[calc(100%+2rem)] bg-[#F8F0E8] px-5 pb-32 pt-6 text-[#171717] sm:mx-auto sm:mt-0 sm:min-h-0 sm:w-full sm:max-w-xl sm:rounded-3xl sm:border sm:border-[#E8D9CC] sm:bg-white sm:px-7 sm:py-7 sm:shadow-[0_16px_50px_rgba(80,54,32,0.1)]">
       <header className="mb-5 flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">My profile</h1>
         {/*         {/* <button type="button" onClick={beginEditing} aria-label="Edit profile" className="grid h-10 w-10 place-items-center rounded-full bg-[#f2c36b]/15 text-[#f2c36b] transition hover:bg-[#f2c36b]/25">
@@ -284,37 +284,37 @@ export default function ProfilePage() {
       </header>
 
       <section className="mb-6 flex flex-col items-center text-center">
-        <div className="grid h-20 w-20 place-items-center rounded-full bg-[#f2c36b]/15 text-3xl font-semibold text-[#f2c36b]">{profile.name.trim().charAt(0).toUpperCase()}</div>
+        <div className="grid h-20 w-20 place-items-center rounded-full bg-[#F8E8D8] text-3xl font-semibold text-[#A95F35]">{profile.name.trim().charAt(0).toUpperCase()}</div>
         <h2 className="mt-2 text-lg font-semibold">{profile.name}</h2>
-        <p className="mt-0.5 text-sm text-[#a6bddb]">{user?.email || user?.phone}</p>
-        <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#f2c36b]"><span aria-hidden="true">✦</span> Kundali profile</p>
+        <p className="mt-0.5 text-sm text-[#89837D]">{user?.email || user?.phone}</p>
+        <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#80602F]"><span aria-hidden="true">✦</span> Kundali profile</p>
       </section>
 
       <section aria-labelledby="mobile-plans-heading" className="mb-5 space-y-3 md:hidden">
         <div className="flex items-center justify-between px-1">
           <div>
             <h2 id="mobile-plans-heading" className="text-sm font-semibold">Plans & access</h2>
-            <p className="mt-0.5 text-xs text-[#a6bddb]">Available plans for your account</p>
+            <p className="mt-0.5 text-xs text-[#89837D]">Available plans for your account</p>
           </div>
           <button
             type="button"
             onClick={() => router.push("/plans")}
-            className="text-xs font-semibold text-[#f2c36b]"
+            className="text-xs font-semibold text-[#A95F35]"
           >
             View all
           </button>
         </div>
         {plansError ? (
-          <p role="alert" className="rounded-xl border border-[#ef9f90]/30 bg-[#10273d] p-3 text-xs text-[#ffd1c9]">
+          <p role="alert" className="rounded-xl border border-[#B94E3D]/25 bg-white p-3 text-xs text-[#8E3529]">
             {plansError}
           </p>
         ) : plans.length ? (
           <ul className="space-y-2">
             {plans.map((plan) => (
-              <li key={plan.planId} className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+              <li key={plan.planId} className="flex items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white p-3.5 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-[#f9f3eb]">{plan.name}</span>
-                  <span className="mt-0.5 block text-xs text-[#a6bddb]">
+                  <span className="block text-sm font-medium text-[#171717]">{plan.name}</span>
+                  <span className="mt-0.5 block text-xs text-[#89837D]">
                     {plan.amountPaise === 0
                       ? "Free"
                       : new Intl.NumberFormat("en-IN", {
@@ -328,7 +328,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => router.push("/plans")}
-                  className="shrink-0 rounded-lg border border-[#f2c36b]/35 px-3 py-2 text-xs font-semibold text-[#f2c36b] transition hover:bg-[#f2c36b]/10"
+                  className="shrink-0 rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs font-semibold text-[#80602F] transition hover:bg-[#F8E8D8]"
                 >
                   Choose
                 </button>
@@ -336,25 +336,25 @@ export default function ProfilePage() {
             ))}
           </ul>
         ) : (
-          <p role="status" className="rounded-xl border border-[#f2c36b]/20 bg-[#10273d] p-3 text-xs text-[#a6bddb]">
+          <p role="status" className="rounded-xl border border-[#E8D9CC] bg-white p-3 text-xs text-[#625C56]">
             Loading plans…
           </p>
         )}
       </section>
 
       {editing ? (
-        <section className="mb-5 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+        <section className="mb-5 rounded-2xl border border-[#E8D9CC] bg-white p-4 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
           <h2 className="mb-4 text-sm font-semibold">Personal details</h2>
           <form onSubmit={save} className="space-y-3">
-            <label className="block text-xs font-medium text-[#f9e6b2]">Name<input value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b]" /></label>
-            <label className="block text-xs font-medium text-[#f9e6b2]">Date of birth<input id="profile-dob" type="date" value={dob} onChange={(event) => setDob(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b]" /></label>
-            <label className="block text-xs font-medium text-[#f9e6b2]">Time of birth<input id="profile-time" type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} disabled={unknownTime} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b] disabled:opacity-50" /></label>
-            <label className="flex items-center gap-2 text-sm text-[#f9e6b2]"><input type="checkbox" checked={unknownTime} onChange={(event) => setUnknownTime(event.target.checked)} />Birth time is unknown</label>
-            <label className="block text-xs font-medium text-[#f9e6b2]">Place of birth<input value={placeQuery} onChange={(event) => { setPlaceQuery(event.target.value); setSelectedPlace(null); setSaved(false); }} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b]" /></label>
-            {visiblePlaces.length > 0 && <ul className="max-h-40 overflow-y-auto rounded-xl border border-white/15 bg-[#10273d]">{visiblePlaces.map((place) => <li key={place.label + place.lat}><button type="button" onClick={() => { setSelectedPlace(place); setPlaceQuery(place.label); setPlaces([]); }} className="w-full px-3 py-2.5 text-left text-sm hover:bg-white/10">{place.label}</button></li>)}</ul>}
-            {searchError && <p role="alert" className="text-sm text-[#ffd1c9]">{searchError}</p>}
+            <label className="block text-xs font-medium text-[#625C56]">Name<input value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white" /></label>
+            <label className="block text-xs font-medium text-[#625C56]">Date of birth<input id="profile-dob" type="date" value={dob} onChange={(event) => setDob(event.target.value)} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white" /></label>
+            <label className="block text-xs font-medium text-[#625C56]">Time of birth<input id="profile-time" type="time" value={birthTime} onChange={(event) => setBirthTime(event.target.value)} disabled={unknownTime} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white disabled:opacity-50" /></label>
+            <label className="flex items-center gap-2 text-sm text-[#625C56]"><input type="checkbox" checked={unknownTime} onChange={(event) => setUnknownTime(event.target.checked)} />Birth time is unknown</label>
+            <label className="block text-xs font-medium text-[#625C56]">Place of birth<input value={placeQuery} onChange={(event) => { setPlaceQuery(event.target.value); setSelectedPlace(null); setSaved(false); }} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white" /></label>
+            {visiblePlaces.length > 0 && <ul className="max-h-40 overflow-y-auto rounded-xl border border-[#E8D9CC] bg-white">{visiblePlaces.map((place) => <li key={place.label + place.lat}><button type="button" onClick={() => { setSelectedPlace(place); setPlaceQuery(place.label); setPlaces([]); }} className="w-full px-3 py-2.5 text-left text-sm text-[#171717] hover:bg-[#F8F0E8]">{place.label}</button></li>)}</ul>}
+            {searchError && <p role="alert" className="text-sm text-[#8E3529]">{searchError}</p>}
             <div>
-              <p className="mb-1 text-xs text-[#a6bddb]">Map par tap karein ya pin ko drag karke exact jagah chunein.</p>
+              <p className="mb-1 text-xs text-[#625C56]">Map par tap karein ya pin ko drag karke exact jagah chunein.</p>
               <BirthPlaceMap
                 lat={selectedPlace?.lat ?? details.lat ?? null}
                 lng={selectedPlace?.lng ?? details.lng ?? null}
@@ -370,52 +370,52 @@ export default function ProfilePage() {
                 }}
               />
               {typeof mapLatitude === "number" && typeof mapLongitude === "number" && (
-                <p className="mt-2 text-xs text-[#c9d8ed]">
+                <p className="mt-2 text-xs text-[#625C56]">
                   Selected coordinates: {mapLatitude.toFixed(5)}, {mapLongitude.toFixed(5)}
                 </p>
               )}
             </div>
             <AdvancedPlaceInput onUse={(place) => { setSelectedPlace(place); setPlaceQuery(place.label); setPlaces([]); setSaved(false); }} />
-            <label className="block text-xs font-medium text-[#f9e6b2]">Gender<select id="profile-gender" value={gender} onChange={(event) => setGender(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] scheme-dark"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></label>
-            <label className="block text-xs font-medium text-[#f9e6b2]">Relationship status<input value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 w-full rounded-xl border border-white/15 bg-[#10273d] px-3 py-3 text-sm text-[#f9f3eb] scheme-dark" /></label>
-            {error && <p role="alert" className="text-sm text-[#ffd1c9]">{error}</p>}
-            {saved && <p role="status" className="text-sm text-[#a9e6b4]">Profile saved.</p>}
-            <button type="submit" className="w-full rounded-xl bg-[#f2c36b] px-4 py-3 text-sm font-semibold text-[#0b1324] transition hover:bg-[#ffda91]">Save changes</button>
+            <label className="block text-xs font-medium text-[#625C56]">Gender<select id="profile-gender" value={gender} onChange={(event) => setGender(event.target.value)} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441]"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></label>
+            <label className="block text-xs font-medium text-[#625C56]">Relationship status<input value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 w-full rounded-xl border border-transparent bg-[#F4F4F3] px-3 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441]" /></label>
+            {error && <p role="alert" className="text-sm text-[#8E3529]">{error}</p>}
+            {saved && <p role="status" className="text-sm text-[#49643C]">Profile saved.</p>}
+            <button type="submit" className="w-full rounded-xl bg-[#101010] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302A25]">Save changes</button>
           </form>
         </section>
       ) : (
-        <section className="mb-5 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">Birth details</h2><button type="button" onClick={beginEditing} className="text-xs font-semibold text-[#f2c36b]">Edit</button></div>
+        <section className="mb-5 rounded-2xl border border-[#E8D9CC] bg-white p-4 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">Birth details</h2><button type="button" onClick={beginEditing} className="text-xs font-semibold text-[#A95F35]">Edit</button></div>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-            <div><dt className="text-[11px] text-[#a6bddb]">Date of birth</dt><dd className="mt-0.5 text-xs font-medium">{dob}</dd></div>
-            <div><dt className="text-[11px] text-[#a6bddb]">Time of birth</dt><dd className="mt-0.5 text-xs font-medium">{unknownTime ? "Unknown" : birthTime}</dd></div>
-            <div className="col-span-2"><dt className="text-[11px] text-[#a6bddb]">Place of birth</dt><dd className="mt-0.5 text-xs font-medium">{profile.bop}</dd></div>
+            <div><dt className="text-[11px] text-[#89837D]">Date of birth</dt><dd className="mt-0.5 text-xs font-medium">{dob}</dd></div>
+            <div><dt className="text-[11px] text-[#89837D]">Time of birth</dt><dd className="mt-0.5 text-xs font-medium">{unknownTime ? "Unknown" : birthTime}</dd></div>
+            <div className="col-span-2"><dt className="text-[11px] text-[#89837D]">Place of birth</dt><dd className="mt-0.5 text-xs font-medium">{profile.bop}</dd></div>
             <div className="col-span-2">
-              <dt className="text-[11px] text-[#a6bddb]">Saved coordinates</dt>
+              <dt className="text-[11px] text-[#89837D]">Saved coordinates</dt>
               <dd className="mt-0.5 flex items-center justify-between gap-3 text-xs font-medium">
                 <span>{hasSavedCoordinates ? `${details.lat!.toFixed(2)}, ${details.lng!.toFixed(2)} (about 1 km precision)` : "None saved - looked up from the place name"}</span>
                 {hasSavedCoordinates && (
-                  <button type="button" onClick={() => void removeSavedLocation()} disabled={removingLocation} className="shrink-0 text-[#ffd1c9] underline disabled:opacity-50">
+                  <button type="button" onClick={() => void removeSavedLocation()} disabled={removingLocation} className="shrink-0 text-[#8E3529] underline disabled:opacity-50">
                     {removingLocation ? "Removing…" : "Remove"}
                   </button>
                 )}
               </dd>
             </div>
-            <div><dt className="text-[11px] text-[#a6bddb]">Gender</dt><dd className="mt-0.5 text-xs font-medium">{gender || "Not set"}</dd></div>
-            <div><dt className="text-[11px] text-[#a6bddb]">Relationship</dt><dd className="mt-0.5 text-xs font-medium">{status || "Not set"}</dd></div>
+            <div><dt className="text-[11px] text-[#89837D]">Gender</dt><dd className="mt-0.5 text-xs font-medium">{gender || "Not set"}</dd></div>
+            <div><dt className="text-[11px] text-[#89837D]">Relationship</dt><dd className="mt-0.5 text-xs font-medium">{status || "Not set"}</dd></div>
           </dl>
-          {saved && <p role="status" className="mt-3 text-xs font-medium text-[#a9e6b4]">Profile saved.</p>}
+          {saved && <p role="status" className="mt-3 text-xs font-medium text-[#49643C]">Profile saved.</p>}
         </section>
       )}
 
       <section className="space-y-2.5">
         <h2 className="px-1 pb-0.5 text-sm font-semibold">Settings</h2>
         {user?.referralCode && (
-          <div className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white px-3.5 py-3 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">Your referral code</span>
-              <span className="mt-0.5 block text-xs text-[#a6bddb]">Share it with a friend; both accounts get one report credit after onboarding.</span>
-              <strong className="mt-1 block tracking-[0.18em] text-[#f2c36b]">{user.referralCode}</strong>
+              <span className="mt-0.5 block text-xs text-[#625C56]">Share it with a friend; both accounts get one report credit after onboarding.</span>
+              <strong className="mt-1 block tracking-[0.18em] text-[#80602F]">{user.referralCode}</strong>
             </span>
             <button
               type="button"
@@ -423,54 +423,54 @@ export default function ProfilePage() {
                 void navigator.clipboard.writeText(user.referralCode).then(() => setReferralCopied(true))
                   .catch((copyError: unknown) => setError(copyError instanceof Error ? copyError.message : "Could not copy the referral code."));
               }}
-              className="rounded-lg border border-[#f2c36b]/30 px-3 py-2 text-xs text-[#f2c36b]"
+              className="rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs text-[#80602F]"
             >
               {referralCopied ? "Copied" : "Copy"}
             </button>
           </div>
         )}
-        <label className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#5fa9d0]/15 text-[#82c6e8]" aria-hidden="true">文</span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">AI Friend language</span><span className="mt-0.5 block text-xs text-[#a6bddb]">Choose your preferred language</span></span>
-          <select aria-label="AI Friend language" value={language} onChange={(event) => changeLanguage(event.target.value)} className="max-w-24 bg-transparent text-right text-xs text-[#c9d8ed] outline-none scheme-dark"><option value="en">English</option><option value="hi">Hindi</option></select>
+        <label className="flex items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white px-3.5 py-3 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F8E8D8] text-[#A95F35]" aria-hidden="true">文</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">AI Friend language</span><span className="mt-0.5 block text-xs text-[#625C56]">Choose your preferred language</span></span>
+          <select aria-label="AI Friend language" value={language} onChange={(event) => changeLanguage(event.target.value)} className="max-w-24 bg-transparent text-right text-xs text-[#171717] outline-none"><option value="en">English</option><option value="hi">Hindi</option></select>
         </label>
-        <div className="flex items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#b994dc]/15 text-[#c9a8ed]" aria-hidden="true">☎</span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{user?.email ? "Email" : "Mobile number"}</span><span className="mt-0.5 block text-xs text-[#a6bddb]">{user?.email || user?.phone}</span></span><span className="text-xs text-[#a6bddb]">{user?.email ? "Signed in" : "Not verified"}</span>
+        <div className="flex items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white px-3.5 py-3 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F8E8D8] text-[#A95F35]" aria-hidden="true">☎</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{user?.email ? "Email" : "Mobile number"}</span><span className="mt-0.5 block text-xs text-[#625C56]">{user?.email || user?.phone}</span></span><span className="text-xs text-[#89837D]">{user?.email ? "Signed in" : "Not verified"}</span>
         </div>
-        <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-2xl border border-[#ef9f90]/30 bg-[#10273d] px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:bg-[#ef9f90]/10">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ef9f90]/15 text-[#ef9f90]" aria-hidden="true">↪</span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-[#ffd1c9]">Log out</span><span className="mt-0.5 block text-xs text-[#a6bddb]">Your account data stays available after sign-in</span></span><span aria-hidden="true" className="text-lg text-[#a6bddb]">›</span>
+        <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(80,54,32,0.06)] transition hover:bg-[#FFFCF8]">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#F8E8D8] text-[#A95F35]" aria-hidden="true">↪</span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-[#171717]">Log out</span><span className="mt-0.5 block text-xs text-[#625C56]">Your account data stays available after sign-in</span></span><span aria-hidden="true" className="text-lg text-[#89837D]">›</span>
         </button>
         <button
           type="button"
           onClick={() => void removeAccount()}
           disabled={deletingAccount}
-          className="flex w-full items-center gap-3 rounded-2xl border border-[#ef9f90]/30 bg-[#10273d] px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition hover:bg-[#ef9f90]/10 disabled:opacity-50"
+          className="flex w-full items-center gap-3 rounded-2xl border border-[#B94E3D]/25 bg-white px-3.5 py-3 text-left shadow-[0_8px_24px_rgba(80,54,32,0.06)] transition hover:bg-[#B94E3D]/[0.04] disabled:opacity-50"
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#ef9f90]/15 text-[#ef9f90]" aria-hidden="true">×</span>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#B94E3D]/[0.07] text-[#8E3529]" aria-hidden="true">×</span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium text-[#ffd1c9]">
+            <span className="block text-sm font-medium text-[#8E3529]">
               {deletingAccount ? "Deleting account…" : "Delete my account and data"}
             </span>
-            <span className="mt-0.5 block text-xs text-[#a6bddb]">Profiles (including birth-place coordinates), guides, reports and saved voices will be removed.</span>
+            <span className="mt-0.5 block text-xs text-[#625C56]">Profiles (including birth-place coordinates), guides, reports and saved voices will be removed.</span>
           </span>
         </button>
         {user?.role === "admin" && process.env.NODE_ENV !== "production" && (
           <button
             type="button"
             onClick={() => router.push("/dev-tools")}
-            className="flex w-full items-center gap-3 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] px-3.5 py-3 text-left"
+            className="flex w-full items-center gap-3 rounded-2xl border border-[#E8D9CC] bg-white px-3.5 py-3 text-left"
           >
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">Developer tools</span>
-              <span className="mt-0.5 block text-xs text-[#a6bddb]">Admin-only test controls</span>
+              <span className="mt-0.5 block text-xs text-[#625C56]">Admin-only test controls</span>
             </span>
-            <span aria-hidden="true" className="text-lg text-[#a6bddb]">›</span>
+            <span aria-hidden="true" className="text-lg text-[#89837D]">›</span>
           </button>
         )}
-        <p className="px-1 pt-1 text-[11px] leading-4 text-[#a6bddb]">Your profile and saved readings are stored with this account. Since phone verification is disabled, use this browser session to keep access.</p>
-        {error && !editing && <p role="alert" className="px-1 text-sm text-[#ffd1c9]">{error}</p>}
+        <p className="px-1 pt-1 text-[11px] leading-4 text-[#89837D]">Your profile and saved readings are stored with this account. Since phone verification is disabled, use this browser session to keep access.</p>
+        {error && !editing && <p role="alert" className="px-1 text-sm text-[#8E3529]">{error}</p>}
       </section>
     </main>
   );

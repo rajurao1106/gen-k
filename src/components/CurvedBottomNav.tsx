@@ -42,18 +42,38 @@ const BUBBLE_TOP = -16; // bubble kitna bar ke upar nikla hai
 const NOTCH_EDGE =
   "M0 0 H2 C6 0 8 2 9 6 A27 27 0 0 0 63 6 C64 2 66 0 70 0 H72";
 
-const CSS = `
+export function CurvedBottomNav({
+  activePage,
+  onNavigate,
+  onOpenProfile,
+  lightTheme = false,
+}: {
+  activePage: PageKey;
+  onNavigate: (page: PageKey) => void;
+  onOpenProfile: () => void;
+  lightTheme?: boolean;
+}) {
+  // Milan / Mahadasha / Numerology open from the Explore hub, so Explore stays active on them.
+  const navKey: PageKey = EXPLORE_PAGES.includes(activePage) ? "explore" : activePage;
+  const found = SLOTS.findIndex((s) => s.key === navKey);
+  const activeIndex = found === -1 ? COUNT - 1 : found; // bottom bar mein nahi => Profile
+  const centerPct = activeIndex * SLOT_PCT + SLOT_PCT / 2;
+  const half = NOTCH_W / 2;
+  const barBg = lightTheme ? "#FFFFFF" : BAR_BG;
+  const activeColor = lightTheme ? "#A95F35" : GOLD_SOFT;
+  const idleColor = lightTheme ? "#89837D" : IDLE;
+  const css = `
 .cnav { --cnav-dur: 520ms; --cnav-ease: cubic-bezier(0.22, 1, 0.36, 1); }
 .cnav-piece {
-  background: ${BAR_BG};
-  border-top: 1px solid rgba(242,195,107,0.28);
+  background: ${barBg};
+  border-top: 1px solid ${lightTheme ? "#E8D9CC" : "rgba(242,195,107,0.28)"};
   transition: left var(--cnav-dur) var(--cnav-ease), right var(--cnav-dur) var(--cnav-ease);
 }
 .cnav-notch { transition: left var(--cnav-dur) var(--cnav-ease); }
 .cnav-bubble {
   transition: left var(--cnav-dur) var(--cnav-ease);
-  background: linear-gradient(145deg, #f8e6b6 0%, #f2c36b 55%, #d69b3c 100%);
-  box-shadow: 0 8px 18px rgba(242,195,107,0.35), inset 0 1px 0 rgba(255,255,255,0.55);
+  background: ${lightTheme ? "#101010" : "linear-gradient(145deg, #f8e6b6 0%, #f2c36b 55%, #d69b3c 100%)"};
+  box-shadow: ${lightTheme ? "0 8px 18px rgba(80,54,32,0.18)" : "0 8px 18px rgba(242,195,107,0.35), inset 0 1px 0 rgba(255,255,255,0.55)"};
 }
 .cnav-pop { animation: cnav-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 @keyframes cnav-pop {
@@ -68,35 +88,19 @@ const CSS = `
 }
 `;
 
-export function CurvedBottomNav({
-  activePage,
-  onNavigate,
-  onOpenProfile,
-}: {
-  activePage: PageKey;
-  onNavigate: (page: PageKey) => void;
-  onOpenProfile: () => void;
-}) {
-  // Milan / Mahadasha / Numerology open from the Explore hub, so Explore stays active on them.
-  const navKey: PageKey = EXPLORE_PAGES.includes(activePage) ? "explore" : activePage;
-  const found = SLOTS.findIndex((s) => s.key === navKey);
-  const activeIndex = found === -1 ? COUNT - 1 : found; // bottom bar mein nahi => Profile
-  const centerPct = activeIndex * SLOT_PCT + SLOT_PCT / 2;
-  const half = NOTCH_W / 2;
-
   return (
     <nav
       aria-label="Primary"
       className="cnav fixed inset-x-0 bottom-0 z-30 no-print lg:hidden"
     >
-      <style>{CSS}</style>
+      <style>{css}</style>
 
       <div className="relative" style={{ height: BAR_H }}>
         {/* ---------- bar background: left piece + notch + right piece ---------- */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
-          style={{ filter: "drop-shadow(0 -6px 14px rgba(0,0,0,0.45))" }}
+          style={{ filter: `drop-shadow(0 -6px 14px ${lightTheme ? "rgba(80,54,32,0.12)" : "rgba(0,0,0,0.45)"})` }}
         >
           <div
             className="cnav-piece absolute inset-y-0 left-0"
@@ -109,11 +113,11 @@ export function CurvedBottomNav({
             viewBox={`0 0 ${NOTCH_W} ${BAR_H}`}
             style={{ left: `calc(${centerPct}% - ${half}px)`, overflow: "visible" }}
           >
-            <path d={`${NOTCH_EDGE} V${BAR_H} H0 Z`} fill={BAR_BG} />
+            <path d={`${NOTCH_EDGE} V${BAR_H} H0 Z`} fill={barBg} />
             <path
               d={NOTCH_EDGE}
               fill="none"
-              stroke="rgba(242,195,107,0.28)"
+              stroke={lightTheme ? "#E8D9CC" : "rgba(242,195,107,0.28)"}
               strokeWidth={1}
               transform="translate(0 0.5)"
             />
@@ -127,7 +131,9 @@ export function CurvedBottomNav({
         {/* ---------- floating active bubble ---------- */}
         <span
           aria-hidden="true"
-          className="cnav-bubble pointer-events-none absolute z-10 grid place-items-center rounded-full text-[#0b1324]"
+          className={`cnav-bubble pointer-events-none absolute z-10 grid place-items-center rounded-full ${
+            lightTheme ? "text-white" : "text-[#0b1324]"
+          }`}
           style={{
             left: `${centerPct}%`,
             top: BUBBLE_TOP,
@@ -153,13 +159,15 @@ export function CurvedBottomNav({
                   type="button"
                   onClick={() => (isProfile ? onOpenProfile() : onNavigate(slot.key as PageKey))}
                   aria-current={!isProfile && active ? "page" : undefined}
-                  className="flex h-full w-full flex-col items-center justify-end gap-1 pb-2 outline-none transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60"
+                  className={`flex h-full w-full flex-col items-center justify-end gap-1 pb-2 outline-none transition-transform active:scale-95 focus-visible:ring-2 ${
+                    lightTheme ? "focus-visible:ring-[#D9A441]/60" : "focus-visible:ring-[#f2c36b]/60"
+                  }`}
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <span
                     className="cnav-icon"
                     style={{
-                      color: IDLE,
+                      color: idleColor,
                       opacity: active ? 0 : 1,
                       transform: active ? "translateY(-10px) scale(0.5)" : "none",
                     }}
@@ -168,7 +176,7 @@ export function CurvedBottomNav({
                   </span>
                   <span
                     className="cnav-label text-[11px] font-medium leading-none"
-                    style={{ color: active ? GOLD_SOFT : IDLE }}
+                    style={{ color: active ? activeColor : idleColor }}
                   >
                     {slot.label}
                   </span>
@@ -180,7 +188,7 @@ export function CurvedBottomNav({
       </div>
 
       {/* iPhone home-indicator area bhi bar ke colour mein */}
-      <div aria-hidden="true" style={{ height: "env(safe-area-inset-bottom)", background: BAR_BG }} />
+      <div aria-hidden="true" style={{ height: "env(safe-area-inset-bottom)", background: barBg }} />
     </nav>
   );
 }

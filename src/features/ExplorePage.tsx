@@ -74,14 +74,14 @@ export default function ExplorePage({ onNavigate }: { onNavigate: (page: PageKey
   return (
     <section aria-labelledby="explore-heading">
       <div className="mb-6 flex items-center gap-3">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#f2c36b]/15 text-[#f2c36b]">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#F8E8D8] text-[#A95F35]">
           <NavIcon name="explore" />
         </span>
         <div>
-          <h1 id="explore-heading" className="font-display text-2xl font-bold text-[#f9f3eb]">
+          <h1 id="explore-heading" className="font-display text-2xl font-bold text-[#171717]">
             Explore
           </h1>
-          <p className="text-sm text-[#c9d8ed]">More Vedic tools for you</p>
+          <p className="text-sm text-[#625C56]">More Vedic tools for you</p>
         </div>
       </div>
 
@@ -91,15 +91,15 @@ export default function ExplorePage({ onNavigate }: { onNavigate: (page: PageKey
             <button
               type="button"
               onClick={() => onNavigate(tool.key)}
-              className="group flex h-full w-full flex-col rounded-3xl border border-[#f2c36b]/25 bg-[#10273d] p-5 text-left shadow-[0_12px_30px_rgba(0,0,0,0.3)] transition-colors hover:border-[#f2c36b]/55 hover:bg-[#153555] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60"
+              className="group flex h-full w-full flex-col rounded-3xl border border-[#E8D9CC] bg-white p-5 text-left shadow-[0_8px_24px_rgba(80,54,32,0.06)] transition-colors hover:border-[#D9A441] hover:bg-[#FFFCF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A441]/60"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-[#f2c36b]/15 text-[#f2c36b]">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-[#F8E8D8] text-[#A95F35]">
                 <NavIcon name={tool.icon} />
               </span>
-              <span className="mt-4 block font-display text-xl font-bold text-[#f9f3eb]">{tool.hi}</span>
-              <span className="block text-sm text-[#f9e6b2]">{tool.en}</span>
-              <span className="mt-2 block flex-1 text-sm leading-6 text-[#c9d8ed]">{tool.description}</span>
-              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#f2c36b]">
+              <span className="mt-4 block font-display text-xl font-bold text-[#171717]">{tool.hi}</span>
+              <span className="block text-sm text-[#80602F]">{tool.en}</span>
+              <span className="mt-2 block flex-1 text-sm leading-6 text-[#625C56]">{tool.description}</span>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[#A95F35]">
                 Open <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">→</span>
               </span>
             </button>

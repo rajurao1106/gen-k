@@ -200,7 +200,16 @@ function KundaliExperience() {
   return (
     <div
       id="appShell"
-      className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-clip"
+      className={`relative min-h-screen overflow-x-clip ${
+        page === "home" ||
+        page === "kundali" ||
+        page === "ai-friend" ||
+        page === "explore" ||
+        page === "plans" ||
+        page === "profile"
+          ? "bg-[#F8F0E8] text-[#171717]"
+          : "bg-[var(--bg-app)] text-[var(--text-primary)]"
+      }`}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
@@ -334,7 +343,9 @@ html, body { max-width: 100%; overflow-x: clip; }
         }
       `}</style>
 
-      <div className="absolute inset-0 brass-surface pointer-events-none no-print" />
+      {!["home", "kundali", "ai-friend", "explore", "plans", "profile"].includes(page) && (
+        <div className="absolute inset-0 brass-surface pointer-events-none no-print" />
+      )}
 
       <div className="relative lg:flex lg:items-start lg:min-h-screen">
         <Sidebar
@@ -342,12 +353,14 @@ html, body { max-width: 100%; overflow-x: clip; }
           onClose={() => {}}
           activePage={page}
           onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
+          lightTheme
         />
 
         <BottomNav
           activePage={page}
           onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])}
           onOpenProfile={() => router.push(PAGE_ROUTES.profile)}
+          lightTheme
         />
 
         <div className="min-w-0 flex-1 ">

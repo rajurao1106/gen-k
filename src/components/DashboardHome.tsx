@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * DashboardHome — dynamic daily dashboard (dark navy + gold).
+ * DashboardHome — dynamic daily dashboard using the sign-in page palette.
  *
  * Place at: src/components/DashboardHome.tsx
  *
@@ -351,42 +351,42 @@ function Bullet({ icon, tone, text }: { icon: NavIconName; tone: string; text: s
       <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${tone} [&_svg]:h-4 [&_svg]:w-4`}>
         <NavIcon name={icon} />
       </span>
-      <span className="text-[14px] font-medium leading-snug text-[#f9f3eb]">{text}</span>
+      <span className="text-[14px] font-medium leading-snug text-[#171717]">{text}</span>
     </li>
   );
 }
 
 function Stat({ label, value, last }: { label: string; value: string | number; last?: boolean }) {
   return (
-    <div className={`px-1 text-center ${last ? "" : "border-r border-[#f2c36b]/25"}`}>
-      <p className="text-[11px] text-[#a6bddb]">{label}</p>
-      <p className="mt-1 truncate text-[14px] font-medium text-[#f9e6b2]">{value}</p>
+    <div className={`px-1 text-center ${last ? "" : "border-r border-[#E8D9CC]"}`}>
+      <p className="text-[11px] text-[#89837D]">{label}</p>
+      <p className="mt-1 truncate text-[14px] font-medium text-[#80602F]">{value}</p>
     </div>
   );
 }
 
 function Bar({ w }: { w: string }) {
-  return <div className={`h-3 animate-pulse rounded-full bg-[#f2c36b]/15 ${w}`} />;
+  return <div className={`h-3 animate-pulse rounded-full bg-[#F0D8B1]/45 ${w}`} />;
 }
 
 function LoadingCard({ line }: { line: string }) {
   return (
     <section
-      className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-4 sm:p-5"
+      className="rounded-[22px] border border-[#E8D9CC] bg-white p-4 shadow-[0_8px_24px_rgba(80,54,32,0.06)] sm:p-5"
       role="status"
       aria-live="polite"
     >
       <div className="flex items-center gap-3">
         <span
-          className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[#f2c36b]/25 border-t-[#f2c36b]"
+          className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-[#E8D9CC] border-t-[#A95F35]"
           aria-hidden="true"
         />
-        <p className="text-[14px] font-medium text-[#f9e6b2]">{line}</p>
+        <p className="text-[14px] font-medium text-[#80602F]">{line}</p>
       </div>
       <div className="mt-5 space-y-4">
         {["w-3/4", "w-2/3", "w-4/5"].map((w) => (
           <div key={w} className="flex items-center gap-3">
-            <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-[#f2c36b]/15" />
+            <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-[#F0D8B1]/45" />
             <Bar w={w} />
           </div>
         ))}
@@ -394,7 +394,7 @@ function LoadingCard({ line }: { line: string }) {
           <Bar w="w-full" />
           <Bar w="w-5/6" />
         </div>
-        <div className="h-14 animate-pulse rounded-2xl bg-[#f2c36b]/10" />
+        <div className="h-14 animate-pulse rounded-2xl bg-[#F8E8D8]" />
       </div>
     </section>
   );
@@ -504,7 +504,7 @@ export default function DashboardHome() {
       <section className="relative pt-1">
         <div className="pr-28">
           <h2
-            className="text-[30px] font-medium leading-[1.12] text-[#f9f3eb] sm:text-[34px]"
+            className="text-[30px] font-medium leading-[1.12] text-[#171717] sm:text-[34px]"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             {hello},
@@ -513,14 +513,14 @@ export default function DashboardHome() {
           </h2>
           {moon && (
             <>
-              <p className="mt-3 flex items-center gap-1 text-[12px] tracking-[0.08em] text-[#f2c36b]">
+              <p className="mt-3 flex items-center gap-1 text-[12px] tracking-[0.08em] text-[#A95F35]">
                 <PinIcon />
                 {moon.sign.hi.toUpperCase()}
                 {moon.nakshatra ? " RASHI" : ""}
                 {moon.approx ? " (APPROX.)" : ""}
               </p>
               {moon.nakshatra && (
-                <p className="mt-1 text-[12px] text-[#c9d8ed]">
+                <p className="mt-1 text-[12px] text-[#625C56]">
                   {moon.nakshatra} &middot; pada {moon.pada}
                 </p>
               )}
@@ -528,13 +528,13 @@ export default function DashboardHome() {
             </>
           )}
           {dateLabel && status !== "empty" && (
-            <p className="mt-1 text-[12px] text-[#a6bddb]">{dateLabel}</p>
+            <p className="mt-1 text-[12px] text-[#89837D]">{dateLabel}</p>
           )}
         </div>
 
         <div
           aria-hidden="true"
-          className="absolute right-0 top-0 flex h-24 w-24 items-center justify-center rounded-full border border-[#f2c36b]/40 bg-[#10273d] text-[54px] leading-none text-[#f2c36b] sm:h-28 sm:w-28"
+          className="absolute right-0 top-0 flex h-24 w-24 items-center justify-center rounded-full border border-[#E8D9CC] bg-white text-[54px] leading-none text-[#A95F35] shadow-[0_8px_24px_rgba(80,54,32,0.08)] sm:h-28 sm:w-28"
         >
           {/* \uFE0E => emoji nahi, text glyph dikhe */}
           {moon ? `${moon.sign.glyph}\uFE0E` : "\u2726\uFE0E"}
@@ -546,13 +546,13 @@ export default function DashboardHome() {
 
       {/* ---------- error ---------- */}
       {status === "error" && (
-        <section className="rounded-[22px] border border-[#ef9f90]/40 bg-[#10273d] p-5 text-center">
-          <p className="text-[15px] font-medium text-[#f9f3eb]">Aaj ka guide abhi nahi bana</p>
-          <p className="mx-auto mt-1 max-w-xs text-[13px] leading-6 text-[#c9d8ed]">{error}</p>
+        <section className="rounded-[22px] border border-[#B94E3D]/25 bg-white p-5 text-center shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+          <p className="text-[15px] font-medium text-[#171717]">Aaj ka guide abhi nahi bana</p>
+          <p className="mx-auto mt-1 max-w-xs text-[13px] leading-6 text-[#625C56]">{error}</p>
           <button
             type="button"
             onClick={() => void load()}
-            className="mt-4 rounded-xl bg-[#f2c36b] px-5 py-2.5 text-[14px] font-semibold text-[#0b1324] active:scale-[0.98]"
+            className="mt-4 rounded-xl bg-[#101010] px-5 py-2.5 text-[14px] font-semibold text-white active:scale-[0.98]"
           >
             Try again
           </button>
@@ -561,15 +561,15 @@ export default function DashboardHome() {
 
       {/* ---------- no profile ---------- */}
       {status === "empty" && (
-        <section className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-5 text-center">
-          <p className="text-[15px] font-medium text-[#f9f3eb]">Apna profile banao</p>
-          <p className="mx-auto mt-1 max-w-xs text-[13px] leading-6 text-[#c9d8ed]">
+        <section className="rounded-[22px] border border-[#E8D9CC] bg-white p-5 text-center shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
+          <p className="text-[15px] font-medium text-[#171717]">Apna profile banao</p>
+          <p className="mx-auto mt-1 max-w-xs text-[13px] leading-6 text-[#625C56]">
             Naam, janm tithi, samay aur sthan daalo, phir yahan roz ka guide aur upay dikhega.
           </p>
           <button
             type="button"
             onClick={() => router.push("/start")}
-            className="mt-4 rounded-xl bg-[#f2c36b] px-5 py-2.5 text-[14px] font-semibold text-[#0b1324] active:scale-[0.98]"
+            className="mt-4 rounded-xl bg-[#101010] px-5 py-2.5 text-[14px] font-semibold text-white active:scale-[0.98]"
           >
             Get started
           </button>
@@ -579,18 +579,18 @@ export default function DashboardHome() {
       {/* ---------- today's guide ---------- */}
       {status === "ready" && guide && (
         <>
-          <section className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-4 sm:p-5">
+          <section className="rounded-[22px] border border-[#E8D9CC] bg-white p-4 shadow-[0_8px_24px_rgba(80,54,32,0.06)] sm:p-5">
             <ul>
-              <Bullet icon="sparkles" tone="bg-[#f5a65b]/20 text-[#f5a65b]" text={guide.belief} />
-              <Bullet icon="timeline" tone="bg-[#7fd18a]/20 text-[#7fd18a]" text={guide.power} />
-              <Bullet icon="clock" tone="bg-[#ef9f90]/20 text-[#ef9f90]" text={guide.caution} />
+              <Bullet icon="sparkles" tone="bg-[#F8E8D8] text-[#A95F35]" text={guide.belief} />
+              <Bullet icon="timeline" tone="bg-[#F0D8B1]/45 text-[#80602F]" text={guide.power} />
+              <Bullet icon="clock" tone="bg-[#B94E3D]/[0.07] text-[#B94E3D]" text={guide.caution} />
             </ul>
 
             {guide.note && (
-              <p className="mb-4 mt-3 text-[13px] leading-6 text-[#c9d8ed]">{guide.note}</p>
+              <p className="mb-4 mt-3 text-[13px] leading-6 text-[#625C56]">{guide.note}</p>
             )}
 
-            <div className={`grid ${guide.full ? "grid-cols-4" : "grid-cols-2"} rounded-2xl border border-[#f2c36b]/30 bg-[#0a1a2e] py-3`}>
+            <div className={`grid ${guide.full ? "grid-cols-4" : "grid-cols-2"} rounded-2xl border border-[#E8D9CC] bg-[#F8F0E8] py-3`}>
               <Stat label="Lucky no." value={guide.luckyNo} />
               <Stat label="Color" value={guide.color} last={!guide.full} />
               {guide.full && (
@@ -604,7 +604,7 @@ export default function DashboardHome() {
               <button
                 type="button"
                 onClick={() => router.push("/plans?feature=daily_guide_full")}
-                className="mt-4 w-full rounded-xl border border-[#f2c36b]/35 px-4 py-2.5 text-sm font-medium text-[#f8d27a] transition-colors hover:bg-[#f2c36b]/10"
+                className="mt-4 w-full rounded-xl border border-[#D9A441]/40 px-4 py-2.5 text-sm font-medium text-[#80602F] transition-colors hover:bg-[#F8E8D8]"
               >
                 Unlock the full daily guide and remedy
               </button>
@@ -612,18 +612,18 @@ export default function DashboardHome() {
           </section>
 
           {guide.full && guide.remedy && (
-            <section className="rounded-[22px] border border-[#f2c36b]/30 bg-[#10273d] p-4 sm:p-5">
-              <p className="text-[12px] uppercase tracking-[0.18em] text-[#f2c36b]">Aaj ka upay</p>
+            <section className="rounded-[22px] border border-[#E8D9CC] bg-white p-4 shadow-[0_8px_24px_rgba(80,54,32,0.06)] sm:p-5">
+              <p className="text-[12px] uppercase tracking-[0.18em] text-[#80602F]">Aaj ka upay</p>
               <p
-                className="mt-2 text-[20px] font-medium leading-snug text-[#f9f3eb]"
+                className="mt-2 text-[20px] font-medium leading-snug text-[#171717]"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 {guide.remedy.title}
               </p>
               <ol className="mt-3 space-y-2">
                 {guide.remedy.steps.map((step, i) => (
-                  <li key={i} className="flex gap-3 text-[13px] leading-6 text-[#c9d8ed]">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f2c36b]/20 text-[11px] font-medium text-[#f9e6b2]">
+                  <li key={i} className="flex gap-3 text-[13px] leading-6 text-[#625C56]">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F0D8B1]/45 text-[11px] font-medium text-[#80602F]">
                       {i + 1}
                     </span>
                     {step}
@@ -631,11 +631,11 @@ export default function DashboardHome() {
                 ))}
               </ol>
               {guide.remedy.mantra && (
-                <p className="mt-4 rounded-xl border border-[#f2c36b]/25 bg-[#0a1a2e] px-4 py-3 text-center text-[14px] text-[#f9e6b2]">
+                <p className="mt-4 rounded-xl border border-[#E8D9CC] bg-[#F8F0E8] px-4 py-3 text-center text-[14px] text-[#80602F]">
                   {guide.remedy.mantra}
                 </p>
               )}
-              <p className="mt-3 text-center text-[11px] text-[#a6bddb]/80">
+              <p className="mt-3 text-center text-[11px] text-[#89837D]">
                 Indicative daily guide &middot; kal naya banega
               </p>
             </section>
@@ -645,20 +645,20 @@ export default function DashboardHome() {
 
       {/* ---------- quick access ---------- */}
       <section>
-        <p className="mb-3 text-[12px] uppercase tracking-[0.18em] text-[#a6bddb]">Quick access</p>
+        <p className="mb-3 text-[12px] uppercase tracking-[0.18em] text-[#80602F]">Quick access</p>
         <div className="grid grid-cols-2 gap-3">
           {SHORTCUTS.map((s) => (
             <button
               key={s.path}
               type="button"
               onClick={() => router.push(s.path)}
-              className="flex flex-col items-start gap-2 rounded-2xl border border-[#f2c36b]/25 bg-[#0d2138]/80 p-4 text-left transition-colors hover:border-[#f2c36b]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b] active:scale-[0.98]"
+              className="flex flex-col items-start gap-2 rounded-2xl border border-[#E8D9CC] bg-white p-4 text-left shadow-[0_8px_24px_rgba(80,54,32,0.06)] transition-colors hover:border-[#D9A441] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A441] active:scale-[0.98]"
             >
-              <span className="text-[#f2c36b]">
+              <span className="text-[#A95F35]">
                 <NavIcon name={s.icon} />
               </span>
-              <span className="font-display text-[17px] font-semibold text-[#f8d27a]">{s.label}</span>
-              <span className="text-[12px] leading-5 text-[#c9d8ed]">{s.desc}</span>
+              <span className="font-display text-[17px] font-semibold text-[#80602F]">{s.label}</span>
+              <span className="text-[12px] leading-5 text-[#625C56]">{s.desc}</span>
             </button>
           ))}
         </div>

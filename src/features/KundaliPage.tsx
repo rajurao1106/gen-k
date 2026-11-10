@@ -373,15 +373,15 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
   return (
     <div className="mx-auto max-w-4xl">
       {stage === "details" ? (
-        <section className="mx-auto max-w-2xl rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/85 p-5 shadow-xl shadow-black/30 backdrop-blur sm:p-8">
+        <section className="mx-auto max-w-2xl rounded-2xl border border-[#E8D9CC] bg-white p-5 shadow-[0_16px_50px_rgba(80,54,32,0.1)] sm:p-8">
           <div className="mb-6 text-center">
-            <p className="text-xs uppercase tracking-[0.22em] text-[#d8b36a]">
+            <p className="text-xs uppercase tracking-[0.22em] text-[#80602F]">
               Personalized Jyotish
             </p>
-            <h1 className="mt-2 font-display text-3xl font-semibold text-[#f5efe6]">
+            <h1 className="mt-2 font-display text-3xl font-semibold text-[#171717]">
               जन्म कुंडली
             </h1>
-            <p className="mt-2 text-sm text-[#afbdd7]">
+            <p className="mt-2 text-sm text-[#625C56]">
               Add your birth details to start a personal Kundli conversation.
             </p>
           </div>
@@ -397,7 +397,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
               <div key={field.key}>
                 <label
                   htmlFor={field.key}
-                  className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
+                  className="mb-1.5 block text-xs font-medium text-[#625C56]"
                 >
                   {field.label}
                 </label>
@@ -414,7 +414,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                       [event.target.name]: event.target.value,
                     })
                   }
-                  className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-3 text-sm text-[#f5e6d3] outline-none transition-colors placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
+                  className="w-full rounded-lg border border-transparent bg-[#F4F4F3] px-3.5 py-3 text-sm text-[#171717] outline-none transition-colors placeholder:text-[#8A8A88] focus:border-[#D9A441] focus:bg-white focus:ring-2 focus:ring-[#D9A441]/20"
                 />
               </div>
             ))}
@@ -422,7 +422,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             <div>
               <label
                 htmlFor="gender"
-                className="mb-1.5 block text-xs font-medium text-[#f4d7a7]"
+                className="mb-1.5 block text-xs font-medium text-[#625C56]"
               >
                 Gender (optional)
               </label>
@@ -432,7 +432,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 onChange={(event) =>
                   setInput({ ...input, gender: event.target.value })
                 }
-                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-3 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70"
+                className="w-full rounded-lg border border-transparent bg-[#F4F4F3] px-3.5 py-3 text-sm text-[#171717] outline-none focus:border-[#D9A441] focus:bg-white focus:ring-2 focus:ring-[#D9A441]/20"
               >
                 <option value="">Prefer not to say</option>
                 <option value="Female">Female</option>
@@ -442,7 +442,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             </div>
 
             <div>
-              <p className="mb-1.5 block text-xs font-medium text-[#f4d7a7]">
+              <p className="mb-1.5 block text-xs font-medium text-[#625C56]">
                 Reading language
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -453,8 +453,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                     onClick={() => setLanguage(value)}
                     className={`rounded-lg border px-3 py-2.5 text-sm transition-colors ${
                       language === value
-                        ? "border-[#d8b36a]/60 bg-[#d8b36a]/15 text-[#d8b36a]"
-                        : "border-[#d8b36a]/15 bg-[#111d31] text-[#afbdd7] hover:border-[#d8b36a]/40"
+                        ? "border-[#D9A441] bg-[#F8E8D8]/70 text-[#80602F]"
+                        : "border-[#E8D9CC] bg-white text-[#625C56] hover:border-[#D9A441]/70"
                     }`}
                   >
                     {value === "en" ? "English" : "हिंदी"}
@@ -466,7 +466,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             {error && (
               <p
                 role="alert"
-                className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#f0958a]"
+                className="rounded-lg border border-[#B94E3D]/25 bg-[#B94E3D]/[0.07] px-3 py-2 text-xs text-[#8E3529]"
               >
                 {error}
               </p>
@@ -475,26 +475,26 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             <button
               type="submit"
               disabled={!isFormComplete}
-              className="w-full rounded-lg bg-[#d8b36a] py-3 font-display text-base font-semibold text-[#0b1324] transition-colors hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-[#101010] py-3 font-display text-base font-semibold text-white transition-colors hover:bg-[#302A25] disabled:cursor-not-allowed disabled:bg-[#E9E4DF] disabled:text-[#A9A29B]"
             >
               Continue to Kundli chat
             </button>
           </form>
 
-          <div className="mt-7 border-t border-[#d8b36a]/15 pt-5">
+          <div className="mt-7 border-t border-[#E8D9CC] pt-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <h3 className="font-display text-lg font-semibold text-[#f5efe6]">
+                <h3 className="font-display text-lg font-semibold text-[#171717]">
                   Saved people
                 </h3>
-                <p className="text-xs text-[#afbdd7]">
+                <p className="text-xs text-[#625C56]">
                   Choose a saved profile or add another person.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={addAnotherUser}
-                className="shrink-0 rounded-lg border border-[#d8b36a]/30 px-3 py-2 text-xs text-[#f8d27a] hover:bg-[#d8b36a]/10"
+                className="shrink-0 rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs text-[#80602F] hover:bg-[#F8E8D8]"
               >
                 + Add user
               </button>
@@ -514,8 +514,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                       <div
                         className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 transition-colors ${
                           selected
-                            ? "border-[#d8b36a]/50 bg-[#d8b36a]/15"
-                            : "border-[#d8b36a]/10 hover:border-[#d8b36a]/30"
+                            ? "border-[#D9A441] bg-[#F8E8D8]/70"
+                            : "border-[#E8D9CC] hover:border-[#D9A441]/70"
                         }`}
                       >
                         <button
@@ -523,10 +523,10 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                           onClick={() => selectProfile(profile)}
                           className="min-w-0 flex-1 text-left"
                         >
-                          <span className="block truncate text-sm font-medium text-[#f5e6d3]">
+                          <span className="block truncate text-sm font-medium text-[#171717]">
                             {profile.name}
                           </span>
-                          <span className="block truncate text-xs text-[#afbdd7]">
+                          <span className="block truncate text-xs text-[#625C56]">
                             {profile.dob} · {profile.bot} · {profile.bop}
                           </span>
                         </button>
@@ -534,7 +534,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                           type="button"
                           onClick={(event) => void removeSavedPerson(profile, event)}
                           disabled={deletingProfileId === getKundaliProfileId(profile)}
-                          className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[#afbdd7] transition-colors hover:text-[#f0958a] disabled:cursor-wait disabled:opacity-50"
+                          className="shrink-0 rounded px-1.5 py-0.5 text-xs text-[#89837D] transition-colors hover:text-[#B94E3D] disabled:cursor-wait disabled:opacity-50"
                           aria-label={`Delete saved person ${profile.name}`}
                         >
                           {deletingProfileId === getKundaliProfileId(profile) ? "…" : "✕"}
@@ -545,7 +545,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 })}
               </ul>
             ) : (
-              <p className="rounded-lg border border-[#d8b36a]/10 bg-[#111d31]/60 px-3 py-3 text-xs text-[#afbdd7]">
+              <p className="rounded-lg border border-[#E8D9CC] bg-[#F8F0E8] px-3 py-3 text-xs text-[#625C56]">
                 No saved people yet. Add birth details above and continue.
               </p>
             )}
@@ -553,14 +553,14 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
 
         </section>
       ) : (
-        <section className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 shadow-xl shadow-black/30">
-          <header className="border-b border-[#d8b36a]/15 bg-[#0d1a2e]/90 p-4 sm:px-6">
+        <section className="flex min-h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-2xl border border-[#E8D9CC] bg-white shadow-[0_16px_50px_rgba(80,54,32,0.1)]">
+          <header className="border-b border-[#E8D9CC] bg-[#FFFCF8] p-4 sm:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-display text-xl font-semibold text-[#f5efe6]">
+                <h2 className="font-display text-xl font-semibold text-[#171717]">
                   Kundli chat
                 </h2>
-                <p className="truncate text-xs text-[#afbdd7]">
+                <p className="truncate text-xs text-[#625C56]">
                   {input.name} · {input.dob} · {input.bop}
                 </p>
               </div>
@@ -568,7 +568,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 <button
                   type="button"
                   onClick={() => setLanguage(language === "en" ? "hi" : "en")}
-                  className="rounded-lg border border-[#d8b36a]/20 px-3 py-2 text-xs text-[#e3cbb0] hover:border-[#d8b36a]/50"
+                  className="rounded-lg border border-[#E8D9CC] px-3 py-2 text-xs text-[#625C56] hover:border-[#D9A441]"
                 >
                   {language === "en" ? "हिंदी" : "English"}
                 </button>
@@ -577,7 +577,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                     type="button"
                     onClick={saveChatLocally}
                     disabled={savedLocally}
-                    className="rounded-lg border border-[#d8b36a]/30 px-3 py-2 text-xs text-[#d8b36a] hover:border-[#d8b36a]/60 disabled:opacity-50"
+                    className="rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs text-[#80602F] hover:border-[#D9A441] disabled:opacity-50"
                   >
                     {savedLocally ? "Saved" : "Save on this device"}
                   </button>
@@ -585,21 +585,21 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 <button
                   type="button"
                   onClick={backToDetails}
-                  className="rounded-lg border border-[#d8b36a]/20 px-3 py-2 text-xs text-[#e3cbb0] hover:border-[#d8b36a]/50"
+                  className="rounded-lg border border-[#E8D9CC] px-3 py-2 text-xs text-[#625C56] hover:border-[#D9A441]"
                 >
                   Edit details
                 </button>
               </div>
             </div>
             {(chartLoading || chartData) && (
-              <div className="mt-4 rounded-xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-3">
+              <div className="mt-4 rounded-xl border border-[#E8D9CC] bg-[#F8F0E8] p-3">
                 {chartLoading && !chartData ? (
-                  <p className="text-center text-xs text-[#afbdd7]">
+                  <p className="text-center text-xs text-[#625C56]">
                     Preparing your birth chart…
                   </p>
                 ) : chartData ? (
                   <details>
-                    <summary className="cursor-pointer text-center text-sm text-[#d8b36a]">
+                    <summary className="cursor-pointer text-center text-sm text-[#80602F]">
                       {language === "hi" ? "लग्न" : "Lagna (Ascendant)"}:{" "}
                       {language === "hi"
                         ? chartData.lagnaHi || chartData.lagna || "कुंडली"
@@ -616,7 +616,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                     </summary>
                     <div className="mx-auto mt-3 max-w-md">
                       <KundaliChartSVG data={chartData} />
-                      <p className="text-center text-xs text-[#afbdd7]">
+                      <p className="text-center text-xs text-[#625C56]">
                         {chartData.ayanamsa || ""}
                       </p>
                     </div>
@@ -628,13 +628,13 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
 
           <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
             {messages.length === 0 && (
-              <div className="rounded-xl border border-[#d8b36a]/15 bg-[#111d31]/60 p-4">
-                <p className="font-medium text-[#f5efe6]">
+              <div className="rounded-xl border border-[#E8D9CC] bg-[#F8F0E8] p-4">
+                <p className="font-medium text-[#171717]">
                   {language === "hi"
                     ? `नमस्ते ${input.name}! अपनी कुंडली के बारे में क्या जानना चाहेंगे?`
                     : `Hi ${input.name}! What would you like to know about your Kundli?`}
                 </p>
-                <p className="mt-1 text-sm text-[#afbdd7]">
+                <p className="mt-1 text-sm text-[#625C56]">
                   {language === "hi"
                     ? "नीचे कोई विषय चुनें या अपना सवाल सीधे लिखें।"
                     : "Choose a topic below or type your own question."}
@@ -650,8 +650,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 <article
                   className={`max-w-[95%] rounded-2xl px-4 py-3 sm:max-w-[85%] ${
                     message.role === "user"
-                      ? "bg-[#d8b36a]/15 text-[#f5e6d3]"
-                      : "border border-[#d8b36a]/15 bg-[#111d31]/75 text-[#edf2fb]"
+                      ? "bg-[#F8E8D8] text-[#171717]"
+                      : "border border-[#E8D9CC] bg-[#FFFCF8] text-[#171717]"
                   }`}
                 >
                   {message.role === "assistant" ? (
@@ -670,18 +670,18 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
 
             {loading && (
               <div className="flex justify-start">
-                <div className="rounded-2xl border border-[#d8b36a]/15 bg-[#111d31]/75 px-4 py-3 text-sm text-[#afbdd7]">
-                  <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] align-[-2px]" />
+                <div className="rounded-2xl border border-[#E8D9CC] bg-[#FFFCF8] px-4 py-3 text-sm text-[#625C56]">
+                  <span className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#D9A441]/30 border-t-[#A95F35] align-[-2px]" />
                   {language === "hi" ? "सोच रहा हूँ…" : "Thinking…"}
                 </div>
               </div>
             )}
 
             {error && (
-              <div role="alert" className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-sm text-[#f0958a]">
+              <div role="alert" className="rounded-lg border border-[#B94E3D]/25 bg-[#B94E3D]/[0.07] px-3 py-2 text-sm text-[#8E3529]">
                 <p>{error}</p>
                 {upgradeFeature && (
-                  <Link href={`/plans?feature=${upgradeFeature}`} className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+                  <Link href={`/plans?feature=${upgradeFeature}`} className="mt-2 inline-block text-xs font-semibold text-[#80602F] underline underline-offset-2">
                     {upgradeFeature === "QUOTA_EXCEEDED" ? "Unlock unlimited AI for ₹19" : "View report and premium plans"}
                   </Link>
                 )}
@@ -690,7 +690,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
             <div ref={messageEndRef} />
           </div>
 
-          <footer className="border-t border-[#d8b36a]/15 bg-[#0d1a2e]/90 p-4 sm:px-6">
+          <footer className="border-t border-[#E8D9CC] bg-[#FFFCF8] p-4 sm:px-6">
             <div className="mb-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -705,8 +705,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 }
                 className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                   selectedTopic === ALL_TOPICS_ID
-                    ? "border-[#d8b36a] bg-[#d8b36a]/20 text-[#f8d27a]"
-                    : "border-[#d8b36a]/30 text-[#f8d27a] hover:bg-[#d8b36a]/10"
+                    ? "border-[#D9A441] bg-[#F8E8D8] text-[#80602F]"
+                    : "border-[#D9A441]/40 text-[#80602F] hover:bg-[#F8E8D8]"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {language === "hi" ? "सभी विषय" : "All topics"}
@@ -726,8 +726,8 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                   }
                   className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
                     selectedTopic === topic.id
-                      ? "border-[#d8b36a] bg-[#d8b36a]/20 text-[#f8d27a]"
-                      : "border-[#d8b36a]/20 text-[#e3cbb0] hover:border-[#d8b36a]/50 hover:text-[#f8d27a]"
+                      ? "border-[#D9A441] bg-[#F8E8D8] text-[#80602F]"
+                      : "border-[#E8D9CC] text-[#625C56] hover:border-[#D9A441] hover:text-[#80602F]"
                   } disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {topic[language]}
@@ -755,17 +755,17 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                     : "Ask anything about your Kundli…"
                 }
                 rows={1}
-                className="max-h-32 min-h-12 flex-1 resize-y rounded-xl border border-[#d8b36a]/20 bg-[#111d31] px-4 py-3 text-sm text-[#f5e6d3] outline-none placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70"
+                className="max-h-32 min-h-12 flex-1 resize-y rounded-xl border border-transparent bg-[#F4F4F3] px-4 py-3 text-sm text-[#171717] outline-none placeholder:text-[#8A8A88] focus:border-[#D9A441] focus:bg-white"
               />
               <button
                 type="submit"
                 disabled={!messageInput.trim() || loading}
-                className="h-12 shrink-0 rounded-xl bg-[#d8b36a] px-5 font-semibold text-[#0b1324] transition-colors hover:bg-[#c99a58] disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-12 shrink-0 rounded-xl bg-[#101010] px-5 font-semibold text-white transition-colors hover:bg-[#302A25] disabled:cursor-not-allowed disabled:bg-[#E9E4DF] disabled:text-[#A9A29B]"
               >
                 {language === "hi" ? "भेजें" : "Send"}
               </button>
             </form>
-            <p className="mt-2 text-[10px] text-[#8ea1c2]">
+            <p className="mt-2 text-[10px] text-[#89837D]">
               {language === "hi"
                 ? "ज्योतिषीय मार्गदर्शन निश्चित भविष्यवाणी या पेशेवर सलाह का विकल्प नहीं है।"
                 : "Astrology is guidance, not a guaranteed prediction or a substitute for professional advice."}

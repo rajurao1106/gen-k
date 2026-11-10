@@ -129,11 +129,13 @@ export function Sidebar({
   onClose,
   activePage,
   onNavigate,
+  lightTheme = false,
 }: {
   open: boolean;
   onClose: () => void;
   activePage: PageKey;
   onNavigate: (page: PageKey) => void;
+  lightTheme?: boolean;
 }) {
   // `collapsed` only affects desktop (lg+). On mobile the drawer is always full.
   const [collapsed, setCollapsed] = useState(false);
@@ -173,6 +175,10 @@ export function Sidebar({
   // Class helpers: "c" variants apply only on desktop when collapsed.
   const hideWhenCollapsed = collapsed ? "lg:hidden" : "";
   const centerWhenCollapsed = collapsed ? "lg:justify-center lg:px-0" : "";
+  const ink = lightTheme ? "text-[#171717]" : INK;
+  const dim = lightTheme ? "text-[#625C56]" : DIM;
+  const line = lightTheme ? "border-[#E8D9CC]" : LINE;
+  const accent = lightTheme ? "#D9A441" : ACCENT;
 
   return (
     <>
@@ -195,15 +201,19 @@ export function Sidebar({
         aria-label="Main menu"
       >
         <div
-          className={`flex h-full flex-col overflow-hidden border border-[#f2c36b]/25 brass-header shadow-[0_18px_40px_rgba(0,0,0,0.45)] ${INK}`}
+          className={`flex h-full flex-col overflow-hidden border ${
+            lightTheme
+              ? "border-[#E8D9CC] bg-white shadow-[0_18px_40px_rgba(80,54,32,0.14)]"
+              : "border-[#f2c36b]/25 brass-header shadow-[0_18px_40px_rgba(0,0,0,0.45)]"
+          } ${ink}`}
         >
           {/* ---- header ---- */}
-          <div className={`flex items-center gap-3 border-b ${LINE} px-4 py-4 ${centerWhenCollapsed}`}>
+          <div className={`flex items-center gap-3 border-b ${line} px-4 py-4 ${centerWhenCollapsed}`}>
             <button
               type="button"
               onClick={() => collapsed && toggle(false)}
               aria-label={collapsed ? "Expand sidebar" : "Gen-K"}
-              className={`h-9 w-9 shrink-0 overflow-hidden rounded-xl bg-[#f2c36b] ${collapsed ? "lg:cursor-e-resize" : "cursor-default"}`}
+              className={`h-9 w-9 shrink-0 overflow-hidden rounded-xl ${lightTheme ? "bg-[#F8E8D8]" : "bg-[#f2c36b]"} ${collapsed ? "lg:cursor-e-resize" : "cursor-default"}`}
             >
               <img src="/logo.png" alt="" className="h-full w-full object-contain" />
             </button>
@@ -212,7 +222,9 @@ export function Sidebar({
               type="button"
               onClick={() => toggle(true)}
               aria-label="Collapse sidebar"
-              className={`ml-auto hidden h-8 w-8 items-center justify-center rounded-lg ${DIM} hover:bg-[#f2c36b]/10 hover:text-[#f9e6b2] ${
+              className={`ml-auto hidden h-8 w-8 items-center justify-center rounded-lg ${dim} ${
+                lightTheme ? "hover:bg-[#FAF8F6] hover:text-[#A95F35]" : "hover:bg-[#f2c36b]/10 hover:text-[#f9e6b2]"
+              } ${
                 collapsed ? "" : "lg:flex"
               }`}
             >
@@ -222,7 +234,9 @@ export function Sidebar({
               type="button"
               onClick={onClose}
               aria-label="Close menu"
-              className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${DIM} hover:bg-[#f2c36b]/10 lg:hidden`}
+              className={`ml-auto flex h-8 w-8 items-center justify-center rounded-lg ${dim} ${
+                lightTheme ? "hover:bg-[#FAF8F6]" : "hover:bg-[#f2c36b]/10"
+              } lg:hidden`}
             >
               ✕
             </button>
@@ -232,7 +246,7 @@ export function Sidebar({
 
           {/* ---- menu ---- */}
           <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Pages">
-            <p className={`px-3 pb-2 pt-1 text-[15px] ${DIM} ${hideWhenCollapsed}`}>Menu</p>
+            <p className={`px-3 pb-2 pt-1 text-[15px] ${dim} ${hideWhenCollapsed}`}>Menu</p>
             <ul className="flex flex-col gap-1">
               {MENU_ITEMS.map((item) => {
                 const active = isNavActive(item.key, activePage);
@@ -245,8 +259,12 @@ export function Sidebar({
                       aria-current={active ? "page" : undefined}
                       className={`flex w-full items-center gap-3.5 rounded-xl border px-3 py-3 text-left text-[15px] transition-colors ${centerWhenCollapsed} ${
                         active
-                          ? "border-[#f2c36b]/35 bg-[#f2c36b]/12 font-medium text-[#f9e6b2] shadow-[inset_0_0_0_1px_rgba(242,195,107,0.12)]"
-                          : `border-transparent ${DIM} hover:bg-[#f2c36b]/8 hover:text-[#f9e6b2]`
+                          ? lightTheme
+                            ? "border-[#D9A441]/50 bg-[#F8E8D8] font-medium text-[#A95F35]"
+                            : "border-[#f2c36b]/35 bg-[#f2c36b]/12 font-medium text-[#f9e6b2] shadow-[inset_0_0_0_1px_rgba(242,195,107,0.12)]"
+                          : lightTheme
+                            ? "border-transparent text-[#625C56] hover:bg-[#FAF8F6] hover:text-[#A95F35]"
+                            : `border-transparent ${dim} hover:bg-[#f2c36b]/8 hover:text-[#f9e6b2]`
                       }`}
                     >
                       <NavIcon name={item.icon} />
@@ -265,17 +283,21 @@ export function Sidebar({
             type="button"
             onClick={() => go("profile")}
             title={userName || "Create profile"}
-            className={`flex items-center gap-3 border-t ${LINE} px-4 py-3.5 text-left hover:bg-[#f2c36b]/8 ${centerWhenCollapsed}`}
+            className={`flex items-center gap-3 border-t ${line} px-4 py-3.5 text-left ${
+              lightTheme ? "hover:bg-[#FAF8F6]" : "hover:bg-[#f2c36b]/8"
+            } ${centerWhenCollapsed}`}
           >
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-[#0b1324]"
-              style={{ background: ACCENT }}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold ${
+                lightTheme ? "text-[#80602F]" : "text-[#0b1324]"
+              }`}
+              style={{ background: lightTheme ? "#F8E8D8" : accent }}
             >
               {(userName.trim()[0] || "G").toUpperCase()}
             </span>
             <span className={`min-w-0 leading-tight ${hideWhenCollapsed}`}>
               <span className="block truncate text-[15px] font-medium">{userName || "Guest"}</span>
-              <span className={`block truncate text-[13px] ${DIM}`}>
+              <span className={`block truncate text-[13px] ${dim}`}>
                 {userName ? "Kundali profile" : "Create your profile"}
               </span>
             </span>

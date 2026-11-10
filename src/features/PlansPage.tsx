@@ -225,7 +225,7 @@ export default function PlansPage() {
           order_id: order.providerOrderId,
           handler: () => undefined,
           modal: { ondismiss: () => undefined },
-          theme: { color: "#f2c36b" },
+          theme: { color: "#D9A441" },
         });
         if (!result) return;
         if (result.razorpay_order_id !== order.providerOrderId) {
@@ -276,32 +276,32 @@ export default function PlansPage() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 text-[#f9f3eb]">
-      <header className="rounded-3xl border border-[#f2c36b]/25 bg-[#10273d]/85 p-5 sm:p-7">
-        <p className="text-xs uppercase tracking-[0.2em] text-[#f2c36b]">
+    <main className="mx-auto max-w-5xl space-y-6 text-[#171717]">
+      <header className="rounded-3xl border border-[#E8D9CC] bg-white p-5 shadow-[0_8px_24px_rgba(80,54,32,0.06)] sm:p-7">
+        <p className="text-xs uppercase tracking-[0.2em] text-[#80602F]">
           Plans & access
         </p>
         <h1 className="mt-2 font-display text-3xl font-semibold">
           Choose what works for you
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#c9d8ed]">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#625C56]">
           Compare the available plans and see what is active on your account.
           Payments are processed securely by Razorpay. Voice generation may
           still use paid AI provider credits.
         </p>
         {account && (
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
-            <span className="rounded-full border border-[#f2c36b]/30 bg-[#0a1a2e] px-3 py-1.5">
+            <span className="rounded-full border border-[#E8D9CC] bg-[#F8F0E8] px-3 py-1.5">
               Current plan:{" "}
-              <strong className="text-[#f8d27a]">{account.plan.name}</strong>
+              <strong className="text-[#80602F]">{account.plan.name}</strong>
             </span>
-            <span className="rounded-full border border-[#f2c36b]/30 bg-[#0a1a2e] px-3 py-1.5">
+            <span className="rounded-full border border-[#E8D9CC] bg-[#F8F0E8] px-3 py-1.5">
               {account.usage.ai_chat.scope === "trial"
                 ? "Free AI replies used: "
                 : account.usage.ai_chat.scope === "unlimited"
                   ? "AI chat access: "
                   : "AI messages today: "}
-              <strong className="text-[#f8d27a]">
+              <strong className="text-[#80602F]">
                 {account.usage.ai_chat.scope === "unlimited"
                   ? "Unlimited"
                   : `${account.usage.ai_chat.used}/${account.usage.ai_chat.limit}`}
@@ -312,7 +312,7 @@ export default function PlansPage() {
               type="button"
               disabled={cancellingPlan}
               onClick={() => void cancelPlan(account.plan.planId, account.plan.name)}
-              className="rounded-full border border-[#ef9f90]/40 px-3 py-1.5 text-[#ffd1c9] transition-colors hover:bg-[#ef9f90]/10 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-full border border-[#B94E3D]/40 px-3 py-1.5 text-[#8E3529] transition-colors hover:bg-[#B94E3D]/[0.07] disabled:cursor-wait disabled:opacity-60"
             >
               {cancellingPlan ? "Cancelling…" : "Cancel active plan"}
             </button>
@@ -322,7 +322,7 @@ export default function PlansPage() {
       </header>
 
       {feature && (
-        <aside className="rounded-2xl border border-[#f2c36b]/40 bg-[#f2c36b]/10 p-4 text-sm text-[#f9e6b2]">
+        <aside className="rounded-2xl border border-[#D9A441]/40 bg-[#F8E8D8]/70 p-4 text-sm text-[#70511F]">
           {feature === "QUOTA_EXCEEDED"
             ? "Your 10 free Kundali and AI Friend replies are used. Pay ₹19 once for unlimited chat."
             : feature === "voice_reply"
@@ -333,7 +333,7 @@ export default function PlansPage() {
       {error && (
         <p
           role="alert"
-          className="rounded-xl border border-[#ef9f90]/40 bg-[#ef9f90]/10 p-3 text-sm text-[#ffd1c9]"
+          className="rounded-xl border border-[#B94E3D]/25 bg-[#B94E3D]/[0.07] p-3 text-sm text-[#8E3529]"
         >
           {error}
         </p>
@@ -341,14 +341,14 @@ export default function PlansPage() {
       {notice && (
         <p
           role="status"
-          className="rounded-xl border border-[#7fd18a]/40 bg-[#7fd18a]/10 p-3 text-sm text-[#c9f2d1]"
+          className="rounded-xl border border-[#7A9B68]/35 bg-[#7A9B68]/[0.08] p-3 text-sm text-[#49643C]"
         >
           {notice}
         </p>
       )}
 
       {loading ? (
-        <p role="status" className="py-8 text-center text-sm text-[#c9d8ed]">
+        <p role="status" className="py-8 text-center text-sm text-[#625C56]">
           Loading plans…
         </p>
       ) : (
@@ -369,25 +369,25 @@ export default function PlansPage() {
             return (
               <article
                 key={plan.planId}
-                className={`flex flex-col rounded-2xl border bg-[#0d2138]/90 p-5 ${
+                className={`flex flex-col rounded-2xl border bg-white p-5 shadow-[0_8px_24px_rgba(80,54,32,0.06)] ${
                   highlighted
-                    ? "border-[#f2c36b]/70 shadow-[0_0_24px_rgba(242,195,107,0.12)]"
-                    : "border-[#f2c36b]/20"
+                    ? "border-[#D9A441] shadow-[0_8px_24px_rgba(217,164,65,0.12)]"
+                    : "border-[#E8D9CC]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-display text-xl font-semibold text-[#f8d27a]">
+                    <h2 className="font-display text-xl font-semibold text-[#80602F]">
                       {plan.name}
                     </h2>
                     {detail && (
-                      <p className="mt-1 text-xs text-[#c9d8ed]">
+                      <p className="mt-1 text-xs text-[#625C56]">
                         {detail.description}
                       </p>
                     )}
                   </div>
                   {highlighted && (
-                    <span className="shrink-0 rounded-full bg-[#f2c36b]/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#f8d27a]">
+                    <span className="shrink-0 rounded-full bg-[#F8E8D8] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#80602F]">
                       Recommended
                     </span>
                   )}
@@ -397,16 +397,16 @@ export default function PlansPage() {
                     ? formatPrice(plan.amountPaise, plan.currency)
                     : "Free"}
                   {plan.durationDays && (
-                    <span className="ml-1 text-xs font-normal text-[#c9d8ed]">
+                    <span className="ml-1 text-xs font-normal text-[#625C56]">
                       / {plan.durationDays} days
                     </span>
                   )}
                 </p>
                 {detail && (
-                  <ul className="my-5 flex-1 space-y-2 text-sm text-[#d9e5f7]">
+                  <ul className="my-5 flex-1 space-y-2 text-sm text-[#625C56]">
                     {detail.features.map((item) => (
                       <li key={item} className="flex gap-2">
-                        <span aria-hidden="true" className="text-[#7fd18a]">
+                        <span aria-hidden="true" className="text-[#49643C]">
                           ✓
                         </span>
                         {item}
@@ -418,13 +418,13 @@ export default function PlansPage() {
                   <button
                     type="button"
                     disabled
-                    className="mt-auto rounded-xl border border-[#7fd18a]/35 px-4 py-2.5 text-sm text-[#7fd18a]"
+                    className="mt-auto rounded-xl border border-[#7A9B68]/40 px-4 py-2.5 text-sm text-[#49643C]"
                   >
                     Current plan
                   </button>
                 ) : activeAddon ? (
                   <div className="mt-auto flex flex-col gap-2">
-                    <span className="rounded-xl border border-[#7fd18a]/35 px-4 py-2.5 text-center text-sm text-[#7fd18a]">
+                    <span className="rounded-xl border border-[#7A9B68]/40 px-4 py-2.5 text-center text-sm text-[#49643C]">
                       Active
                     </span>
                     {["ai_chat_unlimited", "ai_chat_unlimited_money_test"].includes(plan.planId) && (
@@ -432,7 +432,7 @@ export default function PlansPage() {
                         type="button"
                         disabled={cancellingPlan}
                         onClick={() => void cancelPlan(plan.planId, plan.name)}
-                        className="rounded-xl border border-[#ef9f90]/40 px-4 py-2.5 text-sm text-[#ffd1c9] transition-colors hover:bg-[#ef9f90]/10 disabled:cursor-wait disabled:opacity-60"
+                        className="rounded-xl border border-[#B94E3D]/40 px-4 py-2.5 text-sm text-[#8E3529] transition-colors hover:bg-[#B94E3D]/[0.07] disabled:cursor-wait disabled:opacity-60"
                       >
                         {cancellingPlan ? "Cancelling…" : "Cancel plan"}
                       </button>
@@ -442,7 +442,7 @@ export default function PlansPage() {
                   <button
                     type="button"
                     disabled
-                    className="mt-auto rounded-xl border border-[#f2c36b]/20 px-4 py-2.5 text-sm text-[#c9d8ed]"
+                    className="mt-auto rounded-xl border border-[#E8D9CC] px-4 py-2.5 text-sm text-[#625C56]"
                   >
                     Included
                   </button>
@@ -451,7 +451,7 @@ export default function PlansPage() {
                     type="button"
                     disabled={Boolean(busyPlan)}
                     onClick={() => void purchase(plan)}
-                    className="mt-auto rounded-xl bg-[#f2c36b] px-4 py-2.5 text-sm font-semibold text-[#0b1324] transition-colors hover:bg-[#ffdc91] disabled:cursor-wait disabled:opacity-60"
+                    className="mt-auto rounded-xl bg-[#101010] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#302A25] disabled:cursor-wait disabled:opacity-60"
                   >
                     {busyPlan === plan.planId
                       ? "Opening checkout…"
@@ -464,44 +464,44 @@ export default function PlansPage() {
         </section>
       )}
 
-      <p className="rounded-xl border border-[#f2c36b]/20 bg-[#10273d]/70 p-4 text-xs leading-5 text-[#c9d8ed]">
+      <p className="rounded-xl border border-[#E8D9CC] bg-white p-4 text-xs leading-5 text-[#625C56]">
         For Razorpay checkout, configure test credentials. Test payments do not
         charge real money. Live Razorpay keys are rejected by this build.
       </p>
-      <footer className="pb-5 text-xs text-[#a6bddb]">
+      <footer className="pb-5 text-xs text-[#89837D]">
         <LegalFooter />
       </footer>
 
-      <section className="rounded-2xl border border-[#f2c36b]/20 bg-[#10273d]/70 p-5">
+      <section className="rounded-2xl border border-[#E8D9CC] bg-white p-5 shadow-[0_8px_24px_rgba(80,54,32,0.06)]">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl font-semibold text-[#f8d27a]">
+            <h2 className="font-display text-xl font-semibold text-[#171717]">
               Recent payments
             </h2>
-            <p className="mt-1 text-xs text-[#c9d8ed]">
+            <p className="mt-1 text-xs text-[#625C56]">
               Payment activity linked to your account
             </p>
           </div>
           <button
             type="button"
             onClick={() => void refresh()}
-            className="rounded-lg border border-[#f2c36b]/30 px-3 py-2 text-xs text-[#f8d27a] hover:bg-[#f2c36b]/10"
+            className="rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs text-[#80602F] hover:bg-[#F8E8D8]"
           >
             Refresh
           </button>
         </div>
         {history.length ? (
-          <ul className="mt-4 divide-y divide-[#f2c36b]/10">
+          <ul className="mt-4 divide-y divide-[#E8D9CC]">
             {history.slice(0, 5).map((payment) => (
               <li
                 key={payment.id}
                 className="flex items-center justify-between gap-3 py-3 text-sm"
               >
                 <span>
-                  <span className="block text-[#f5efe6]">
+                  <span className="block text-[#171717]">
                     {payment.planName}
                   </span>
-                  <span className="text-xs text-[#a6bddb]">
+                  <span className="text-xs text-[#89837D]">
                     {new Date(payment.createdAt).toLocaleDateString("en-IN")}
                   </span>
                 </span>
@@ -510,7 +510,7 @@ export default function PlansPage() {
                     {formatPrice(payment.amountPaise, payment.currency)}
                   </span>
                   <span
-                    className={`text-xs ${payment.status === "paid" ? "text-[#7fd18a]" : "text-[#a6bddb]"}`}
+                    className={`text-xs ${payment.status === "paid" ? "text-[#49643C]" : "text-[#89837D]"}`}
                   >
                     {payment.status}
                   </span>
@@ -531,7 +531,7 @@ export default function PlansPage() {
                           );
                         }
                       }}
-                      className="mt-1 text-xs text-[#ef9f90] underline"
+                      className="mt-1 text-xs text-[#8E3529] underline"
                     >
                       Revoke demo access
                     </button>
@@ -541,7 +541,7 @@ export default function PlansPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-4 text-sm text-[#a6bddb]">No orders yet.</p>
+          <p className="mt-4 text-sm text-[#625C56]">No orders yet.</p>
         )}
       </section>
     </main>
