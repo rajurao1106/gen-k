@@ -291,12 +291,12 @@ export default function ProfilePage() {
         <p className="mt-0.5 text-sm text-[#89837D]">{user?.email || user?.phone}</p>
         <p className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#80602F]"><span aria-hidden="true">✦</span> Kundali profile</p>
         <a
-          href="https://www.dicebear.com/styles/croodles/"
+          href="https://www.dicebear.com/styles/adventurer/"
           target="_blank"
           rel="noreferrer"
           className="mt-1 text-[10px] text-[#89837D] underline underline-offset-2"
         >
-          Croodles by Vijay Verma · DiceBear
+          Adventurer · DiceBear
         </a>
       </section>
 

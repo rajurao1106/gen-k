@@ -23,7 +23,7 @@ export default function CrittersAvatar({
       <span aria-hidden="true">{name.trim().charAt(0).toUpperCase() || "G"}</span>
       {showAvatar && (
         <img
-          src={`https://api.dicebear.com/10.x/croodles/svg?seed=${encodeURIComponent(seed!)}`}
+          src={`https://api.dicebear.com/10.x/adventurer/svg?seed=${encodeURIComponent(seed!)}`}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           onError={() => setFailedSeed(seed!)}

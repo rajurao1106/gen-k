@@ -101,6 +101,7 @@ const T = {
     voiceName: "Voice label",
     deleteVoice: "Delete my voice",
     aiGenerated: "Voice replies are AI-generated.",
+    voiceLimit: "The free plan includes 10 total replies using your cloned voice.",
     consent: "I confirm this is my own voice, or the person has given me clear permission to create a voice from their recording.",
     consentBy: "Whose voice is this?",
     consentSelf: "My own voice",
@@ -160,6 +161,7 @@ const T = {
     voiceName: "आवाज़ का नाम",
     deleteVoice: "मेरी आवाज़ हटाएँ",
     aiGenerated: "आवाज़ में जवाब AI द्वारा बनाए जाते हैं।",
+    voiceLimit: "Free plan में आपकी clone की हुई आवाज़ में कुल 10 जवाब मिलते हैं।",
     consent: "मैं पुष्टि करता/करती हूँ कि यह मेरी अपनी आवाज़ है, या उस व्यक्ति ने उनकी रिकॉर्डिंग से आवाज़ बनाने की स्पष्ट अनुमति दी है।",
     consentBy: "यह किसकी आवाज़ है?",
     consentSelf: "मेरी अपनी आवाज़",
@@ -1044,6 +1046,7 @@ AI Friend:`,
             <div className="flex flex-col gap-3 border-t border-[#E8D9CC] pt-4">
               <h3 className="text-sm font-medium">{t.myVoice}</h3>
               <p className="text-xs text-[var(--af-dim)]">{t.aiGenerated}</p>
+              <p className="text-xs text-[var(--af-dim)]">{t.voiceLimit}</p>
               {loadingSample ? (
                 <p role="status" className="text-sm text-[var(--af-dim)]">{t.thinking}</p>
               ) : (

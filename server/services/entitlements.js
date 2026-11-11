@@ -44,12 +44,8 @@ export async function hasAccess(userId, feature, now = new Date()) {
     return premium;
   }
   if (feature === "voice_reply") {
-    return Boolean(await Entitlement.exists({
-      userId,
-      planId: "voice_addon",
-      kind: "addon",
-      ...activeAt(now),
-    }));
+    return typeof plan.grants.voiceRepliesTotal === "number" ||
+      await hasVoiceReplyAddon(userId, now);
   }
   const reportPlanId = {
     milan_full_report: "report_milan",
@@ -63,6 +59,15 @@ export async function hasAccess(userId, feature, now = new Date()) {
     planId: reportPlanId,
     kind: "report",
     remainingUses: { $gt: 0 },
+    ...activeAt(now),
+  }));
+}
+
+export async function hasVoiceReplyAddon(userId, now = new Date()) {
+  return Boolean(await Entitlement.exists({
+    userId,
+    planId: "voice_addon",
+    kind: "addon",
     ...activeAt(now),
   }));
 }

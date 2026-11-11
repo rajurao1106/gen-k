@@ -1,7 +1,14 @@
 import express from "express";
 import VoiceProfile from "../models/VoiceProfile.js";
 import { requireFeature, userRateLimit } from "../middleware/featureAccess.js";
-import { consumeUsage, refundUsage } from "../services/entitlements.js";
+import {
+  consumeLifetimeUsage,
+  consumeUsage,
+  getActivePlan,
+  hasVoiceReplyAddon,
+  refundLifetimeUsage,
+  refundUsage,
+} from "../services/entitlements.js";
 import {
   getPresetVoice,
   synthesize,
@@ -156,6 +163,7 @@ router.post(
 
     let usageAt;
     let usageConsumed = false;
+    let freeVoiceUsageConsumed = false;
     try {
       const profile = await VoiceProfile.findOne({
         _id: voiceProfileId,
@@ -171,6 +179,33 @@ router.post(
       }
 
       usageAt = new Date();
+      const plan = await getActivePlan(req.user._id, usageAt);
+      if (
+        typeof plan.grants.voiceRepliesTotal === "number" &&
+        !(await hasVoiceReplyAddon(req.user._id, usageAt))
+      ) {
+        const voiceUsage = await consumeLifetimeUsage(
+          req.user._id,
+          "voice_replies_trial",
+          1,
+          plan.grants.voiceRepliesTotal,
+        );
+        if (!voiceUsage.allowed) {
+          return res.status(402).json({
+            success: false,
+            code: "VOICE_QUOTA_EXCEEDED",
+            message: "Your 10 free voice-clone replies have been used.",
+            upgrade: true,
+            usage: {
+              used: voiceUsage.count,
+              limit: voiceUsage.limit,
+              remaining: voiceUsage.remaining,
+            },
+          });
+        }
+        freeVoiceUsageConsumed = true;
+      }
+
       const usage = await consumeUsage(
         req.user._id,
         "voice_characters",
@@ -179,6 +214,10 @@ router.post(
         usageAt,
       );
       if (!usage.allowed) {
+        if (freeVoiceUsageConsumed) {
+          await refundLifetimeUsage(req.user._id, "voice_replies_trial", 1);
+          freeVoiceUsageConsumed = false;
+        }
         return res.status(402).json({
           success: false,
           code: "QUOTA_EXCEEDED",
@@ -211,6 +250,10 @@ router.post(
           console.error("Preset voice fallback failed:", presetError?.message ?? presetError);
           await refundUsage(req.user._id, "voice_characters", characterCount, usageAt);
           usageConsumed = false;
+          if (freeVoiceUsageConsumed) {
+            await refundLifetimeUsage(req.user._id, "voice_replies_trial", 1);
+            freeVoiceUsageConsumed = false;
+          }
           return res.status(presetError?.code === "BAD_API_KEY" ? 503 : 502).json({
             success: false,
             code: presetError?.code || "VOICE_GENERATION_FAILED",
@@ -230,6 +273,9 @@ router.post(
     } catch (error) {
       if (usageConsumed) {
         await refundUsage(req.user._id, "voice_characters", characterCount, usageAt);
+      }
+      if (freeVoiceUsageConsumed) {
+        await refundLifetimeUsage(req.user._id, "voice_replies_trial", 1);
       }
       console.error("Voice speak error:", error?.message ?? error);
       return res.status(error?.code === "BAD_API_KEY" ? 503 : 502).json({

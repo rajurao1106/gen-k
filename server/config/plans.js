@@ -16,6 +16,7 @@ export const PLANS = {
       kundali: "basic",
       dailyGuide: "preview",
       aiMessagesTotal: 10,
+      voiceRepliesTotal: 10,
     },
   },
   ai_chat_unlimited: {
