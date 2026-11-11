@@ -33,10 +33,10 @@ type Step = "form" | "result";
 type Tab = "doctor" | "client";
 
 const inputClass =
-  "w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40";
-const labelClass = "block text-xs font-medium text-[#f4d7a7] mb-1.5";
+  "w-full rounded-lg bg-[#F4F4F3] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#171717] placeholder:text-[#89837D] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40";
+const labelClass = "block text-xs font-medium text-[#80602F] mb-1.5";
 const cardClass =
-  "rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30";
+  "rounded-2xl border border-[#d8b36a]/20 bg-white/80 backdrop-blur p-6 shadow-xl shadow-black/30";
 
 const EMPTY = { problem: "", dob: "", bot: "", bop: "" };
 
@@ -52,23 +52,23 @@ function SafetyAlert({ level, note }: { level: RiskLevel; note?: string }) {
         high ? "border-[#ef9f90]/60 bg-[#ef9f90]/12" : "border-[#f2c36b]/45 bg-[#f2c36b]/10"
       }`}
     >
-      <h2 className="font-display text-lg font-semibold text-[#f9f3eb]">
+      <h2 className="font-display text-lg font-semibold text-[#171717]">
         {high ? "Turant dhyan dein: safety concern" : "Gehre distress ke sanket mile hain"}
       </h2>
-      <p className="mt-1 text-sm leading-6 text-[#f5e6d3]">
+      <p className="mt-1 text-sm leading-6 text-[#171717]">
         {high
           ? "Input mein self-harm ya suicide se jude sanket hain. Is session mein pehle client ki safety ko dekhein, risk assessment karein, aur zarurat ho to turant professional/emergency madad lein. Ye app is jagah par clinical judgment ka vikalp nahi hai."
           : "Input mein severe distress ke sanket hain. Kundali insight se pehle client ki current halat aur safety ke baare mein seedha poochhein, aur zarurat ho to professional follow-up tay karein."}
       </p>
-      {note && <p className="mt-2 text-sm leading-6 text-[#f9e6b2]">AI note: {note}</p>}
+      {note && <p className="mt-2 text-sm leading-6 text-[#80602F]">AI note: {note}</p>}
       <ul className="mt-3 flex flex-wrap gap-2 text-sm">
         {HELPLINES.map((h) => (
-          <li key={h.name} className="rounded-lg border border-[#d8b36a]/30 bg-[#0a1529]/70 px-3 py-1.5 text-[#f5e6d3]">
+          <li key={h.name} className="rounded-lg border border-[#d8b36a]/30 bg-white/70 px-3 py-1.5 text-[#171717]">
             {h.name}:{" "}
             {h.numbers.map((n, i) => (
               <span key={n}>
                 {i > 0 && " / "}
-                <a href={`tel:${n.replace(/-/g, "")}`} className="font-semibold text-[#f8d27a] underline underline-offset-2">
+                <a href={`tel:${n.replace(/-/g, "")}`} className="font-semibold text-[#A95F35] underline underline-offset-2">
                   {n}
                 </a>
               </span>
@@ -82,9 +82,9 @@ function SafetyAlert({ level, note }: { level: RiskLevel; note?: string }) {
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[#d8b36a]/15 bg-[#111d31]/70 p-3">
-      <dt className="text-[11px] text-[#afbdd7]">{label}</dt>
-      <dd className="mt-0.5 text-sm font-semibold text-[#f5efe6]">{value}</dd>
+    <div className="rounded-xl border border-[#d8b36a]/15 bg-[#F4F4F3]/70 p-3">
+      <dt className="text-[11px] text-[#89837D]">{label}</dt>
+      <dd className="mt-0.5 text-sm font-semibold text-[#171717]">{value}</dd>
     </div>
   );
 }
@@ -93,7 +93,7 @@ function BulletList({ items }: { items: string[] }) {
   return (
     <ul className="space-y-1.5">
       {items.map((item, i) => (
-        <li key={i} className="flex gap-2 text-sm leading-6 text-[#e3cbb0]">
+        <li key={i} className="flex gap-2 text-sm leading-6 text-[#625C56]">
           <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8b36a]" />
           <span>{item}</span>
         </li>
@@ -104,7 +104,7 @@ function BulletList({ items }: { items: string[] }) {
 
 function Disclaimer() {
   return (
-    <p className="pt-2 text-center text-[11px] leading-5 text-[#8ea1c2]">
+    <p className="pt-2 text-center text-[11px] leading-5 text-[#89837D]">
       {DISCLAIMER_HI} Kundali sirf ek supportive lens hai, medical diagnosis nahi.
     </p>
   );
@@ -268,58 +268,58 @@ function ConversationReviewMode({ onBack }: { onBack: () => void }) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
         <div className="no-print flex flex-wrap justify-between gap-2">
-          <button type="button" onClick={() => setResult(null)} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2]">
+          <button type="button" onClick={() => setResult(null)} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#80602F]">
             ← Transcript dekhein
           </button>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={onBack} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2]">
+            <button type="button" onClick={onBack} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#80602F]">
               Kundali insight
             </button>
-            <button type="button" onClick={clearTranscript} className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#e3cbb0]">
+            <button type="button" onClick={clearTranscript} className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#625C56]">
               Naya session / data clear
             </button>
           </div>
         </div>
         <SafetyAlert level={risk} note={result.riskNote} />
         <div className={cardClass}>
-          <h1 className="mb-2 font-display text-xl font-semibold text-[#f5efe6]">Baatcheet ka provisional summary</h1>
-          <p className="text-sm leading-7 text-[#e3cbb0]">{result.presentingConcerns}</p>
+          <h1 className="mb-2 font-display text-xl font-semibold text-[#171717]">Baatcheet ka provisional summary</h1>
+          <p className="text-sm leading-7 text-[#625C56]">{result.presentingConcerns}</p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <section className={cardClass}>
-            <h2 className="mb-3 font-display text-lg font-semibold text-[#d8b36a]">Psychologist ki achhi baatein</h2>
+            <h2 className="mb-3 font-display text-lg font-semibold text-[#A95F35]">Psychologist ki achhi baatein</h2>
             <BulletList items={result.psychologistStrengths.length ? result.psychologistStrengths : ["Transcript mein specific strengths kaafi saaf nahi the; aur context dekhna hoga."]} />
           </section>
           <section className={cardClass}>
-            <h2 className="mb-3 font-display text-lg font-semibold text-[#d8b36a]">Abhi kya unclear hai</h2>
+            <h2 className="mb-3 font-display text-lg font-semibold text-[#A95F35]">Abhi kya unclear hai</h2>
             <BulletList items={result.uncertainties.length ? result.uncertainties : ["Is transcript se aur koi specific gap saamne nahi aaya."]} />
           </section>
         </div>
         <section className={cardClass}>
-          <h2 className="mb-3 font-display text-lg font-semibold text-[#d8b36a]">Question-by-question feedback</h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-[#A95F35]">Question-by-question feedback</h2>
           {result.questionFeedback.length ? (
             <ol className="space-y-3">
               {result.questionFeedback.map((item, index) => (
-                <li key={`${item.psychologistQuestion}-${index}`} className="rounded-lg border border-[#d8b36a]/15 bg-[#111d31]/60 p-4">
-                  <p className="text-xs font-semibold text-[#f9e6b2]">Psychologist: {item.psychologistQuestion}</p>
-                  <p className="mt-1 text-xs text-[#afbdd7]">Patient: {item.patientReply}</p>
-                  <p className="mt-2 text-sm leading-6 text-[#e3cbb0]">
+                <li key={`${item.psychologistQuestion}-${index}`} className="rounded-lg border border-[#d8b36a]/15 bg-[#F4F4F3]/60 p-4">
+                  <p className="text-xs font-semibold text-[#80602F]">Psychologist: {item.psychologistQuestion}</p>
+                  <p className="mt-1 text-xs text-[#89837D]">Patient: {item.patientReply}</p>
+                  <p className="mt-2 text-sm leading-6 text-[#625C56]">
                     {item.assessment === "helpful" ? "Helpful" : item.assessment === "missed_follow_up" ? "Follow-up ka mauka" : "Behtar ho sakta tha"}: {item.why}
                   </p>
                   {item.alternativeQuestion && (
-                    <p className="mt-2 text-sm leading-6 text-[#f9e6b2]">Possible open question: {item.alternativeQuestion}</p>
+                    <p className="mt-2 text-sm leading-6 text-[#80602F]">Possible open question: {item.alternativeQuestion}</p>
                   )}
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="text-sm leading-6 text-[#e3cbb0]">Transcript mein psychologist ke sawal aur patient ke jawab ki saaf pairing nahi mili; isliye specific question feedback nahi diya gaya.</p>
+            <p className="text-sm leading-6 text-[#625C56]">Transcript mein psychologist ke sawal aur patient ke jawab ki saaf pairing nahi mili; isliye specific question feedback nahi diya gaya.</p>
           )}
         </section>
         <section className={cardClass}>
-          <h2 className="mb-3 font-display text-lg font-semibold text-[#d8b36a]">Psychologist ke liye possible next steps</h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-[#A95F35]">Psychologist ke liye possible next steps</h2>
           <BulletList items={result.suggestedNextSteps} />
-          <p className="mt-4 text-xs leading-5 text-[#afbdd7]">
+          <p className="mt-4 text-xs leading-5 text-[#89837D]">
             Yeh transcript par aadharit non-diagnostic support hai, “actual diagnosis” ya treatment plan nahi. Clinical judgment use karein; AI output ko patient ko dene se pehle review karein.
           </p>
         </section>
@@ -331,15 +331,15 @@ function ConversationReviewMode({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex flex-wrap justify-between gap-2">
-        <button type="button" onClick={onBack} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2]">← Kundali insight par wapas</button>
-        <button type="button" onClick={clearTranscript} disabled={recording || loading} className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#e3cbb0] disabled:opacity-50">Transcript clear karein</button>
+        <button type="button" onClick={onBack} className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#80602F]">← Kundali insight par wapas</button>
+        <button type="button" onClick={clearTranscript} disabled={recording || loading} className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#625C56] disabled:opacity-50">Transcript clear karein</button>
       </div>
       <section className={cardClass}>
-        <h1 className="mb-1 font-display text-xl font-semibold text-[#f5efe6]">Psychologist–patient conversation review</h1>
-        <p className="mb-4 text-xs leading-5 text-[#afbdd7]">
+        <h1 className="mb-1 font-display text-xl font-semibold text-[#171717]">Psychologist–patient conversation review</h1>
+        <p className="mb-4 text-xs leading-5 text-[#89837D]">
           Mic se transcript banega. Speaker aap manually select karein. Raw audio app mein save nahi hota; browser ki speech recognition service audio process kar sakti hai. “Complete & Analyze” par transcript Google Gemini ko bheja jayega. Page chhodne par yeh transcript clear ho jayega.
         </p>
-        <label className="mb-5 flex items-start gap-2.5 text-xs leading-5 text-[#e3cbb0]">
+        <label className="mb-5 flex items-start gap-2.5 text-xs leading-5 text-[#625C56]">
           <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} disabled={recording || loading} className="mt-0.5 h-4 w-4 shrink-0 accent-[#d8b36a]" />
           <span>Psychologist aur patient dono ko recording/transcription aur AI analysis ki jaankari hai aur dono ne consent diya hai.</span>
         </label>
@@ -349,7 +349,7 @@ function ConversationReviewMode({ onBack }: { onBack: () => void }) {
             <p className={labelClass}>Abhi kaun bol raha hai?</p>
             <div className="flex gap-2">
               {(["psychologist", "patient"] as const).map((value) => (
-                <button key={value} type="button" disabled={recording || loading} onClick={() => selectSpeaker(value)} aria-pressed={speaker === value} className={`flex-1 rounded-lg border px-3 py-2 text-sm ${speaker === value ? "border-[#d8b36a] bg-[#d8b36a]/15 text-[#f9e6b2]" : "border-[#d8b36a]/20 text-[#afbdd7]"}`}>
+                <button key={value} type="button" disabled={recording || loading} onClick={() => selectSpeaker(value)} aria-pressed={speaker === value} className={`flex-1 rounded-lg border px-3 py-2 text-sm ${speaker === value ? "border-[#d8b36a] bg-[#d8b36a]/15 text-[#80602F]" : "border-[#d8b36a]/20 text-[#89837D]"}`}>
                   {value === "psychologist" ? "Psychologist" : "Patient"}
                 </button>
               ))}
@@ -367,36 +367,36 @@ function ConversationReviewMode({ onBack }: { onBack: () => void }) {
           {!recording ? (
             <button type="button" onClick={startRecording} disabled={loading} className="rounded-lg bg-[#d8b36a] px-4 py-2.5 text-sm font-semibold text-[#0b1324] disabled:opacity-50">● Recording shuru karein</button>
           ) : (
-            <button type="button" onClick={stopRecording} className="rounded-lg border border-[#ef9f90]/60 px-4 py-2.5 text-sm font-semibold text-[#ffd1c9]">Recording rokein</button>
+            <button type="button" onClick={stopRecording} className="rounded-lg border border-[#ef9f90]/60 px-4 py-2.5 text-sm font-semibold text-[#8E3529]">Recording rokein</button>
           )}
-          <button type="button" onClick={() => void analyzeConversation()} disabled={recording || loading || turns.length === 0} className="rounded-lg border border-[#d8b36a]/40 px-4 py-2.5 text-sm font-semibold text-[#f9e6b2] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={() => void analyzeConversation()} disabled={recording || loading || turns.length === 0} className="rounded-lg border border-[#d8b36a]/40 px-4 py-2.5 text-sm font-semibold text-[#80602F] disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? "Transcript analyze ho raha hai…" : "Complete & Analyze"}
           </button>
         </div>
-        <p role="status" aria-live="polite" className="mt-3 text-xs text-[#afbdd7]">
+        <p role="status" aria-live="polite" className="mt-3 text-xs text-[#89837D]">
           {recording
             ? "Recording chal rahi hai. Speaker badalne ke liye pehle rokein, naya speaker select karein, phir dobara shuru karein."
             : "Pehle consent lein, speaker select karein, phir recording shuru karein."}
         </p>
-        {error && <p role="alert" className="mt-3 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#f0958a]">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2 text-xs text-[#8E3529]">{error}</p>}
       </section>
 
       <section className={cardClass}>
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold text-[#d8b36a]">Transcript</h2>
-          <p className="text-[11px] text-[#8ea1c2]">{turns.reduce((sum, turn) => sum + turn.text.length, 0)}/{MAX_TRANSCRIPT_CHARS}</p>
+          <h2 className="font-display text-lg font-semibold text-[#A95F35]">Transcript</h2>
+          <p className="text-[11px] text-[#89837D]">{turns.reduce((sum, turn) => sum + turn.text.length, 0)}/{MAX_TRANSCRIPT_CHARS}</p>
         </div>
         {turns.length ? (
           <ol className="space-y-2">
             {turns.map((turn, index) => (
-              <li key={`${index}-${turn.text}`} className="flex items-start gap-3 rounded-lg border border-[#d8b36a]/15 bg-[#111d31]/60 p-3">
-                <p className="flex-1 text-sm leading-6 text-[#e3cbb0]"><strong className="text-[#f9e6b2]">{turn.speaker === "psychologist" ? "Psychologist" : "Patient"}:</strong> {turn.text}</p>
+              <li key={`${index}-${turn.text}`} className="flex items-start gap-3 rounded-lg border border-[#d8b36a]/15 bg-[#F4F4F3]/60 p-3">
+                <p className="flex-1 text-sm leading-6 text-[#625C56]"><strong className="text-[#80602F]">{turn.speaker === "psychologist" ? "Psychologist" : "Patient"}:</strong> {turn.text}</p>
                 <button type="button" onClick={() => removeTurn(index)} disabled={recording || loading} aria-label={`Turn ${index + 1} delete karein`} className="text-xs text-[#ef9f90] disabled:opacity-50">Delete</button>
               </li>
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-[#afbdd7]">Abhi transcript khaali hai.</p>
+          <p className="text-sm text-[#89837D]">Abhi transcript khaali hai.</p>
         )}
       </section>
       <Disclaimer />
@@ -537,12 +537,12 @@ export default function PsychologistInsightPage() {
           <button
             type="button"
             onClick={() => setViewMode("conversation")}
-            className="mb-5 rounded-lg border border-[#d8b36a]/35 px-3 py-2 text-sm font-semibold text-[#f9e6b2] transition-colors hover:bg-[#d8b36a]/10"
+            className="mb-5 rounded-lg border border-[#d8b36a]/35 px-3 py-2 text-sm font-semibold text-[#80602F] transition-colors hover:bg-[#d8b36a]/10"
           >
             Psychologist–patient conversation record & analyze
           </button>
-          <h1 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">Psychologist Client Insight</h1>
-          <p className="text-xs leading-5 text-[#afbdd7] mb-5">
+          <h1 className="font-display text-xl font-semibold text-[#171717] mb-1">Psychologist Client Insight</h1>
+          <p className="text-xs leading-5 text-[#89837D] mb-5">
             Client ki pareshani aur birth details se Kundali-based supportive insight. Ye data save nahi hota
             aur page band karte hi hat jata hai.
           </p>
@@ -563,7 +563,7 @@ export default function PsychologistInsightPage() {
                 placeholder="e.g. Pichhle 3 mahine se neend nahi aati, chhoti baaton par ghabrahat hoti hai, kaam mein mann nahi lagta…"
                 className={`${inputClass} resize-y`}
               />
-              <p className="mt-1 text-right text-[11px] text-[#8ea1c2]">
+              <p className="mt-1 text-right text-[11px] text-[#89837D]">
                 {input.problem.length}/{MAX_PROBLEM_CHARS}
               </p>
             </div>
@@ -592,7 +592,7 @@ export default function PsychologistInsightPage() {
               </div>
             </div>
 
-            <label className="flex items-start gap-2.5 text-xs leading-5 text-[#e3cbb0]">
+            <label className="flex items-start gap-2.5 text-xs leading-5 text-[#625C56]">
               <input
                 type="checkbox"
                 checked={consent}
@@ -608,7 +608,7 @@ export default function PsychologistInsightPage() {
 
           {error && (
             <div role="alert" className="mt-4 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2">
-              <p className="text-xs text-[#f0958a]">{error}</p>
+              <p className="text-xs text-[#8E3529]">{error}</p>
             </div>
           )}
 
@@ -644,21 +644,21 @@ export default function PsychologistInsightPage() {
         <button
           type="button"
           onClick={() => setStep("form")}
-          className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10"
+          className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#80602F] transition-colors hover:bg-[#f2c36b]/10"
         >
           <span aria-hidden="true">←</span> Details badlein
         </button>
         <button
           type="button"
           onClick={() => setViewMode("conversation")}
-          className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10"
+          className="rounded-full border border-[#f2c36b]/30 px-3.5 py-1.5 text-sm text-[#80602F] transition-colors hover:bg-[#f2c36b]/10"
         >
           Conversation record & analyze
         </button>
         <button
           type="button"
           onClick={clearAll}
-          className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#e3cbb0] transition-colors hover:border-[#ef9f90]/60 hover:text-[#ef9f90]"
+          className="rounded-full border border-[#d8b36a]/30 px-3.5 py-1.5 text-sm text-[#625C56] transition-colors hover:border-[#ef9f90]/60 hover:text-[#ef9f90]"
         >
           Naya client (data clear karein)
         </button>
@@ -666,7 +666,7 @@ export default function PsychologistInsightPage() {
 
       <SafetyAlert level={risk} note={r.riskNote} />
 
-      <div role="tablist" aria-label="Insight view" onKeyDown={onTabKey} className="flex gap-1 rounded-xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-1">
+      <div role="tablist" aria-label="Insight view" onKeyDown={onTabKey} className="flex gap-1 rounded-xl border border-[#d8b36a]/20 bg-white/80 p-1">
         {(
           [
             ["doctor", "Doctor View"],
@@ -684,7 +684,7 @@ export default function PsychologistInsightPage() {
             tabIndex={tab === key ? 0 : -1}
             onClick={() => setTab(key)}
             className={`flex-1 rounded-lg px-3 py-2 font-display text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d8b36a]/60 ${
-              tab === key ? "bg-[#d8b36a] text-[#0b1324]" : "text-[#e3cbb0] hover:bg-[#d8b36a]/10"
+              tab === key ? "bg-[#d8b36a] text-[#0b1324]" : "text-[#625C56] hover:bg-[#d8b36a]/10"
             }`}
           >
             {label}
@@ -695,7 +695,7 @@ export default function PsychologistInsightPage() {
       {tab === "doctor" && (
         <div role="tabpanel" id="pi-panel-doctor" aria-labelledby="pi-tab-doctor" className="space-y-5">
           <div className={cardClass}>
-            <h2 className="font-display text-lg font-semibold text-[#d8b36a] mb-3">Kundali summary</h2>
+            <h2 className="font-display text-lg font-semibold text-[#A95F35] mb-3">Kundali summary</h2>
             {facts && (
               <dl className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 <Fact label="Lagna" value={facts.lagna} />
@@ -706,15 +706,15 @@ export default function PsychologistInsightPage() {
                 <Fact label="Antardasha" value={facts.antardasha} />
               </dl>
             )}
-            <p className="text-sm leading-7 text-[#e3cbb0]">{r.doctorView.kundaliSummary}</p>
+            <p className="text-sm leading-7 text-[#625C56]">{r.doctorView.kundaliSummary}</p>
             {facts?.placeUncertain && (
-              <p className="mt-3 rounded-lg border border-[#f2c36b]/35 bg-[#f2c36b]/10 px-3 py-2 text-xs leading-5 text-[#f9e6b2]">
+              <p className="mt-3 rounded-lg border border-[#f2c36b]/35 bg-[#f2c36b]/10 px-3 py-2 text-xs leading-5 text-[#80602F]">
                 Birth place ({facts.placeLabel || "naam match nahi hua"}) pakka match nahi hua. Kundali ke
                 sthaan-aadharit hisse badal sakte hain, kripya place confirm karein.
               </p>
             )}
             {facts?.timeSensitive && (
-              <p className="mt-3 rounded-lg border border-[#f2c36b]/35 bg-[#f2c36b]/10 px-3 py-2 text-xs leading-5 text-[#f9e6b2]">
+              <p className="mt-3 rounded-lg border border-[#f2c36b]/35 bg-[#f2c36b]/10 px-3 py-2 text-xs leading-5 text-[#80602F]">
                 Birth time thoda sa badalne par Lagna ya Moon sign badal sakta hai. Time confirm ho to hi is
                 summary par zyada bharosa karein.
               </p>
@@ -723,30 +723,30 @@ export default function PsychologistInsightPage() {
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div className={cardClass}>
-              <h2 className="font-display text-lg font-semibold text-[#d8b36a] mb-3">Personality traits</h2>
+              <h2 className="font-display text-lg font-semibold text-[#A95F35] mb-3">Personality traits</h2>
               <BulletList items={r.doctorView.personalityTraits} />
             </div>
             <div className={cardClass}>
-              <h2 className="font-display text-lg font-semibold text-[#d8b36a] mb-3">Mental health tendencies</h2>
+              <h2 className="font-display text-lg font-semibold text-[#A95F35] mb-3">Mental health tendencies</h2>
               <BulletList items={r.doctorView.mentalHealthTendencies} />
-              <p className="mt-3 text-[11px] leading-5 text-[#8ea1c2]">
+              <p className="mt-3 text-[11px] leading-5 text-[#89837D]">
                 Ye tendencies explore karne ke liye hain, diagnosis nahi.
               </p>
             </div>
           </div>
 
           <div className={cardClass}>
-            <h2 className="font-display text-lg font-semibold text-[#d8b36a] mb-1">
+            <h2 className="font-display text-lg font-semibold text-[#A95F35] mb-1">
               {unclear ? "Pehle ye sawal poochhein" : "Aage poochne layak sawal"}
             </h2>
-            {r.clarityNote && <p className="mb-4 text-xs leading-5 text-[#afbdd7]">{r.clarityNote}</p>}
+            {r.clarityNote && <p className="mb-4 text-xs leading-5 text-[#89837D]">{r.clarityNote}</p>}
             <ol className="space-y-3">
               {r.doctorView.suggestedQuestions.map((q, i) => (
-                <li key={i} className="rounded-lg border border-[#d8b36a]/15 bg-[#111d31]/60 p-4">
-                  <p className="text-sm font-medium leading-6 text-[#f5efe6]">
+                <li key={i} className="rounded-lg border border-[#d8b36a]/15 bg-[#F4F4F3]/60 p-4">
+                  <p className="text-sm font-medium leading-6 text-[#171717]">
                     {i + 1}. {q.question}
                   </p>
-                  {q.reason && <p className="mt-1.5 text-xs leading-5 text-[#afbdd7]">Kyun: {q.reason}</p>}
+                  {q.reason && <p className="mt-1.5 text-xs leading-5 text-[#89837D]">Kyun: {q.reason}</p>}
                 </li>
               ))}
             </ol>
@@ -757,34 +757,34 @@ export default function PsychologistInsightPage() {
       {tab === "client" && (
         <div role="tabpanel" id="pi-panel-client" aria-labelledby="pi-tab-client" className="space-y-5">
           {risk === "high" && (
-            <p className="rounded-lg border border-[#ef9f90]/40 bg-[#ef9f90]/10 px-3 py-2 text-xs leading-5 text-[#ffd1c9]">
+            <p className="rounded-lg border border-[#ef9f90]/40 bg-[#ef9f90]/10 px-3 py-2 text-xs leading-5 text-[#8E3529]">
               Safety concern flag hua hai. Ye guidance client ko dene se pehle apna clinical judgment lagayein.
             </p>
           )}
           <div className={cardClass}>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="font-display text-lg font-semibold text-[#d8b36a]">Aapke liye</h2>
+              <h2 className="font-display text-lg font-semibold text-[#A95F35]">Aapke liye</h2>
               <button
                 type="button"
                 onClick={copyClientGuidance}
-                className="rounded-lg border border-[#d8b36a]/30 px-3 py-1.5 text-xs text-[#e3cbb0] transition-colors hover:bg-[#d8b36a]/10"
+                className="rounded-lg border border-[#d8b36a]/30 px-3 py-1.5 text-xs text-[#625C56] transition-colors hover:bg-[#d8b36a]/10"
               >
                 {copied ? "Copy ho gaya" : "Copy karein"}
               </button>
             </div>
-            <p className="text-sm leading-7 text-[#e3cbb0]">{r.clientView.message}</p>
+            <p className="text-sm leading-7 text-[#625C56]">{r.clientView.message}</p>
           </div>
 
           {r.clientView.practices.length > 0 && (
             <div className={cardClass}>
-              <h2 className="font-display text-lg font-semibold text-[#d8b36a] mb-3">
+              <h2 className="font-display text-lg font-semibold text-[#A95F35] mb-3">
                 {unclear ? "Abhi ke liye halki practices" : "Aapke liye practices"}
               </h2>
               <ul className="space-y-3">
                 {r.clientView.practices.map((p, i) => (
-                  <li key={i} className="rounded-lg border border-[#d8b36a]/15 bg-[#111d31]/60 p-4">
-                    <p className="text-sm font-semibold text-[#f5efe6]">{p.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-[#e3cbb0]">{p.description}</p>
+                  <li key={i} className="rounded-lg border border-[#d8b36a]/15 bg-[#F4F4F3]/60 p-4">
+                    <p className="text-sm font-semibold text-[#171717]">{p.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#625C56]">{p.description}</p>
                   </li>
                 ))}
               </ul>

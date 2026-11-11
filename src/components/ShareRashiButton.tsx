@@ -16,7 +16,7 @@ export default function ShareRashiButton({ rashi }: { rashi: string }) {
     <button
       type="button"
       onClick={share}
-      className="mt-3 rounded-full border border-[#f2c36b]/30 px-3 py-1.5 text-xs text-[#f8d27a] hover:bg-[#f2c36b]/10"
+      className="mt-3 rounded-full border border-[#E8D9CC] px-3 py-1.5 text-xs text-[#A95F35] hover:bg-[#F8E8D8]"
     >
       Share rashi
     </button>

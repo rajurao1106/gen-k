@@ -25,9 +25,9 @@ import {
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 
 const cardClass =
-  "rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-xl shadow-black/30 sm:p-6";
+  "rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-5 shadow-xl shadow-black/30 sm:p-6";
 const inputClass =
-  "w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40";
+  "w-full rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-3.5 py-2.5 text-sm text-[#171717] outline-none placeholder:text-[#89837D] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40";
 const primaryBtn =
   "rounded-full bg-[#f2c36b] px-6 py-2.5 text-sm font-semibold text-[#081724] transition-colors hover:bg-[#f8d27a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/70 disabled:opacity-60";
 
@@ -160,10 +160,10 @@ export default function MuhuratPage() {
   return (
     <section aria-labelledby="muhurat-heading" className="space-y-5">
       <div>
-        <h1 id="muhurat-heading" className="font-display text-3xl font-bold text-[#f9f3eb]">
+        <h1 id="muhurat-heading" className="font-display text-3xl font-bold text-[#171717]">
           Muhurat Kundali
         </h1>
-        <p className="mt-1 max-w-prose text-sm leading-6 text-[#c9d8ed]">
+        <p className="mt-1 max-w-prose text-sm leading-6 text-[#625C56]">
           Kaam aur tarikhon ki range chunein. Hum har 30 minute ka samay jaanchkar tithi, nakshatra, vara, lagna
           aur rahukaal ke niyamon se sabse anukool samay dikhayenge. Ye pakki guarantee nahi hai.
         </p>
@@ -172,7 +172,7 @@ export default function MuhuratPage() {
       {!result && (
         <div className={cardClass}>
           <fieldset>
-            <legend className="text-sm font-medium text-[#f9e6b2]">Kaun sa kaam?</legend>
+            <legend className="text-sm font-medium text-[#80602F]">Kaun sa kaam?</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {ACTIVITY_OPTIONS.map((opt) => {
                 const active = activity === opt.key;
@@ -185,8 +185,8 @@ export default function MuhuratPage() {
                     onClick={() => setActivity(opt.key)}
                     className={`rounded-full border px-4 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60 ${
                       active
-                        ? "border-[#f2c36b] bg-[#f2c36b]/20 text-[#f9e6b2]"
-                        : "border-[#d8b36a]/25 text-[#c9d8ed] hover:bg-[#f2c36b]/10"
+                        ? "border-[#f2c36b] bg-[#f2c36b]/20 text-[#80602F]"
+                        : "border-[#d8b36a]/25 text-[#625C56] hover:bg-[#f2c36b]/10"
                     }`}
                   >
                     {opt.label}
@@ -194,12 +194,12 @@ export default function MuhuratPage() {
                 );
               })}
             </div>
-            <p className="mt-1 text-xs text-[#a6bddb]">{ACTIVITY_OPTIONS.find((o) => o.key === activity)?.hint}</p>
+            <p className="mt-1 text-xs text-[#89837D]">{ACTIVITY_OPTIONS.find((o) => o.key === activity)?.hint}</p>
           </fieldset>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor={fromId} className="block text-sm font-medium text-[#f9e6b2]">
+              <label htmlFor={fromId} className="block text-sm font-medium text-[#80602F]">
                 Kab se
               </label>
               <input
@@ -212,7 +212,7 @@ export default function MuhuratPage() {
               />
             </div>
             <div>
-              <label htmlFor={toId} className="block text-sm font-medium text-[#f9e6b2]">
+              <label htmlFor={toId} className="block text-sm font-medium text-[#80602F]">
                 Kab tak (zyada se zyada {MAX_RANGE_DAYS} din)
               </label>
               <input
@@ -227,29 +227,29 @@ export default function MuhuratPage() {
           </div>
 
           <div className="mt-4">
-            <p className="text-sm font-medium text-[#f9e6b2]">Kis jagah ke liye?</p>
+            <p className="text-sm font-medium text-[#80602F]">Kis jagah ke liye?</p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={useMyLocation}
                 disabled={geo === "asking"}
-                className="rounded-full border border-[#f2c36b]/40 px-4 py-1.5 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60 disabled:opacity-60"
+                className="rounded-full border border-[#f2c36b]/40 px-4 py-1.5 text-sm text-[#80602F] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60 disabled:opacity-60"
               >
                 {geo === "asking" ? "Location mil rahi hai..." : "Meri location use karein"}
               </button>
               {geo === "ok" && coords && (
-                <span role="status" className="text-xs text-[#b9ecca]">
+                <span role="status" className="text-xs text-[#49643C]">
                   Location mil gayi ({coords.lat}, {coords.lon})
                 </span>
               )}
               {geo === "denied" && (
-                <span role="status" className="text-xs text-[#ffd1c9]">
+                <span role="status" className="text-xs text-[#8E3529]">
                   Location nahi mili. Neeche shehar ka naam likhein.
                 </span>
               )}
             </div>
             <div className="mt-3">
-              <label htmlFor={placeId} className="block text-xs text-[#a6bddb]">
+              <label htmlFor={placeId} className="block text-xs text-[#89837D]">
                 {coords ? "Ya kisi aur shehar ka naam (ye location se pehle chalega)" : "Shehar / gaon ka naam"}
               </label>
               <input
@@ -263,8 +263,8 @@ export default function MuhuratPage() {
           </div>
 
           <div className="mt-4">
-            <label htmlFor={rashiId} className="block text-sm font-medium text-[#f9e6b2]">
-              Aapki janm rashi (Chandra rashi) <span className="text-xs font-normal text-[#a6bddb]">(zaroori nahi)</span>
+            <label htmlFor={rashiId} className="block text-sm font-medium text-[#80602F]">
+              Aapki janm rashi (Chandra rashi) <span className="text-xs font-normal text-[#89837D]">(zaroori nahi)</span>
             </label>
             <select
               id={rashiId}
@@ -279,7 +279,7 @@ export default function MuhuratPage() {
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-[#a6bddb]">Dene par Chandra bala bhi jaanchi jaati hai, jisse nateeja aapke liye zyada khaas hota hai.</p>
+            <p className="mt-1 text-xs text-[#89837D]">Dene par Chandra bala bhi jaanchi jaati hai, jisse nateeja aapke liye zyada khaas hota hai.</p>
           </div>
 
           <button type="button" onClick={submit} disabled={busy} className={`${primaryBtn} mt-5`}>
@@ -289,27 +289,27 @@ export default function MuhuratPage() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm text-[#ffd1c9]">
+        <p role="alert" className="rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm text-[#8E3529]">
           {error}
         </p>
       )}
 
       {result && (
         <>
-          <div className="rounded-2xl border border-[#d8b36a]/25 bg-[#10273d] p-5 sm:p-6">
-            <p className="text-xs uppercase tracking-wide text-[#c9d8ed]">{result.activityLabel}</p>
-            <h2 className="mt-1 font-display text-2xl font-bold text-[#f9f3eb]">
+          <div className="rounded-2xl border border-[#d8b36a]/25 bg-[#FFFCF8] p-5 sm:p-6">
+            <p className="text-xs uppercase tracking-wide text-[#625C56]">{result.activityLabel}</p>
+            <h2 className="mt-1 font-display text-2xl font-bold text-[#171717]">
               {result.slots.length > 0 ? `${result.slots.length} anukool samay mile` : "Is range mein koi achha samay nahi mila"}
             </h2>
-            <p className="mt-1 text-sm text-[#c9d8ed]">
+            <p className="mt-1 text-sm text-[#625C56]">
               {formatDateHi(result.range.fromDate)} se {formatDateHi(result.range.toDate)} · {result.place.label ?? "aapki jagah"} ·{" "}
               {result.slotsChecked} samay jaanche
               {result.usedChandraBala ? " · Chandra bala shaamil" : ""}
             </p>
             {result.slots.length === 0 && (
-              <div className="mt-3 text-sm leading-6 text-[#edf2fb]">
+              <div className="mt-3 text-sm leading-6 text-[#403A34]">
                 <p>Niyamon ke hisaab se is range ke zyadatar samay ruk gaye. Zyada baar ye kaaran aaye:</p>
-                <ul className="mt-1 list-disc pl-5 marker:text-[#f2c36b]">
+                <ul className="mt-1 list-disc pl-5 marker:text-[#A95F35]">
                   {result.mainBlockers.map((b) => (
                     <li key={b}>{b}</li>
                   ))}
@@ -317,9 +317,9 @@ export default function MuhuratPage() {
                 <p className="mt-2">Tarikhon ki range badhakar dobara dekhein.</p>
               </div>
             )}
-            {explanation?.summary && <p className="mt-3 text-[15px] leading-7 text-[#f9e6b2]">{explanation.summary}</p>}
-            {loadingAi && <p className="mt-3 text-sm text-[#a6bddb]">Samjhaayi ban rahi hai...</p>}
-            {aiError && <p className="mt-3 text-sm text-[#ffd1c9]">{aiError}</p>}
+            {explanation?.summary && <p className="mt-3 text-[15px] leading-7 text-[#80602F]">{explanation.summary}</p>}
+            {loadingAi && <p className="mt-3 text-sm text-[#89837D]">Samjhaayi ban rahi hai...</p>}
+            {aiError && <p className="mt-3 text-sm text-[#8E3529]">{aiError}</p>}
           </div>
 
           {result.slots.map((slot) => {
@@ -328,31 +328,31 @@ export default function MuhuratPage() {
             return (
               <article key={slot.id} className={`rounded-2xl border p-5 sm:p-6 ${grade.box}`} aria-label={`Muhurat ${slot.rank}`}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-xs uppercase tracking-wide text-[#c9d8ed]">Muhurat {slot.rank}</p>
+                  <p className="text-xs uppercase tracking-wide text-[#625C56]">Muhurat {slot.rank}</p>
                   <p className={`text-sm font-semibold ${grade.text}`}>
                     {grade.title} sanket · {slot.percent}% niyam mile
                   </p>
                 </div>
-                <h3 className="mt-1 font-display text-2xl font-bold text-[#f9f3eb]">
+                <h3 className="mt-1 font-display text-2xl font-bold text-[#171717]">
                   {formatDateHi(slot.date)} ({slot.weekday})
                 </h3>
                 <p className={`text-lg font-semibold ${grade.text}`}>
                   {slot.startLocal} se {slot.endLocal}
                 </p>
 
-                {why && <p className="mt-3 text-[15px] leading-7 text-[#edf2fb]">{why}</p>}
+                {why && <p className="mt-3 text-[15px] leading-7 text-[#403A34]">{why}</p>}
 
                 <ul className="mt-3 space-y-2">
                   {slot.factors.map((f) => (
                     <li
                       key={f.key}
-                      className={`flex gap-3 rounded-xl border p-3 text-sm leading-6 text-[#edf2fb] ${
+                      className={`flex gap-3 rounded-xl border p-3 text-sm leading-6 text-[#403A34] ${
                         f.effect === "+" ? "border-[#8fd3a8]/40 bg-[#8fd3a8]/5" : "border-[#ef9f90]/40 bg-[#ef9f90]/5"
                       }`}
                     >
                       <span
                         aria-label={f.effect === "+" ? "Anukool" : "Pratikool"}
-                        className={`mt-0.5 font-bold ${f.effect === "+" ? "text-[#8fd3a8]" : "text-[#ef9f90]"}`}
+                        className={`mt-0.5 font-bold ${f.effect === "+" ? "text-[#49643C]" : "text-[#ef9f90]"}`}
                       >
                         {f.effect === "+" ? "+" : "−"}
                       </span>
@@ -361,30 +361,30 @@ export default function MuhuratPage() {
                   ))}
                 </ul>
 
-                <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm text-[#edf2fb] sm:grid-cols-2">
-                  <div><dt className="inline text-[#a6bddb]">Tithi: </dt><dd className="inline">{slot.panchang.tithi.paksha} {slot.panchang.tithi.name}</dd></div>
-                  <div><dt className="inline text-[#a6bddb]">Nakshatra: </dt><dd className="inline">{slot.panchang.nakshatra.name}</dd></div>
-                  <div><dt className="inline text-[#a6bddb]">Yoga: </dt><dd className="inline">{slot.panchang.yoga.name}</dd></div>
-                  <div><dt className="inline text-[#a6bddb]">Lagna: </dt><dd className="inline">{slot.lagna}</dd></div>
-                  <div><dt className="inline text-[#a6bddb]">Rahukaal us din: </dt><dd className="inline">{slot.day.rahukaal.start}-{slot.day.rahukaal.end}</dd></div>
-                  <div><dt className="inline text-[#a6bddb]">Gulika kaal: </dt><dd className="inline">{slot.day.gulika.start}-{slot.day.gulika.end}</dd></div>
+                <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm text-[#403A34] sm:grid-cols-2">
+                  <div><dt className="inline text-[#89837D]">Tithi: </dt><dd className="inline">{slot.panchang.tithi.paksha} {slot.panchang.tithi.name}</dd></div>
+                  <div><dt className="inline text-[#89837D]">Nakshatra: </dt><dd className="inline">{slot.panchang.nakshatra.name}</dd></div>
+                  <div><dt className="inline text-[#89837D]">Yoga: </dt><dd className="inline">{slot.panchang.yoga.name}</dd></div>
+                  <div><dt className="inline text-[#89837D]">Lagna: </dt><dd className="inline">{slot.lagna}</dd></div>
+                  <div><dt className="inline text-[#89837D]">Rahukaal us din: </dt><dd className="inline">{slot.day.rahukaal.start}-{slot.day.rahukaal.end}</dd></div>
+                  <div><dt className="inline text-[#89837D]">Gulika kaal: </dt><dd className="inline">{slot.day.gulika.start}-{slot.day.gulika.end}</dd></div>
                 </dl>
 
-                <details className="mt-4 rounded-xl border border-[#d8b36a]/20 bg-[#0d2138]/60 p-3">
-                  <summary className="cursor-pointer text-sm font-medium text-[#f9e6b2]">Is samay ki kundali dekhein ({slot.bestLocal})</summary>
+                <details className="mt-4 rounded-xl border border-[#d8b36a]/20 bg-[#F8F0E8]/60 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-[#80602F]">Is samay ki kundali dekhein ({slot.bestLocal})</summary>
                   <div className="mx-auto mt-3 max-w-md">
                     <KundaliChartSVG data={slot.chart} />
-                    <p className="text-center text-xs text-[#afbdd7]">{slot.chart.ayanamsa} ayanamsa</p>
+                    <p className="text-center text-xs text-[#89837D]">{slot.chart.ayanamsa} ayanamsa</p>
                   </div>
                 </details>
               </article>
             );
           })}
 
-          {explanation?.note && <p className="text-sm leading-6 text-[#c9d8ed]">{explanation.note}</p>}
+          {explanation?.note && <p className="text-sm leading-6 text-[#625C56]">{explanation.note}</p>}
 
           {result.slots.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-xs leading-5 text-[#a6bddb] marker:text-[#f2c36b]">
+            <ul className="list-disc space-y-1 pl-5 text-xs leading-5 text-[#89837D] marker:text-[#A95F35]">
               {result.limitations.map((l) => (
                 <li key={l}>{l}</li>
               ))}
@@ -394,14 +394,14 @@ export default function MuhuratPage() {
           <button
             type="button"
             onClick={reset}
-            className="rounded-full border border-[#f2c36b]/40 px-5 py-2 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60"
+            className="rounded-full border border-[#f2c36b]/40 px-5 py-2 text-sm text-[#80602F] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60"
           >
             Naya muhurat dhundhein
           </button>
         </>
       )}
 
-      <p className="text-xs leading-5 text-[#a6bddb]">{DISCLAIMER_HI}</p>
+      <p className="text-xs leading-5 text-[#89837D]">{DISCLAIMER_HI}</p>
     </section>
   );
 }

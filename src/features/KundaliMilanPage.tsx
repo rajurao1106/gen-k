@@ -81,17 +81,17 @@ function PersonPicker({
 }) {
   const selected = selectedIndex !== null ? records[selectedIndex] : null;
   return (
-    <div className="rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/70 p-4">
+    <div className="rounded-xl border border-[#d8b36a]/20 bg-[#F4F4F3]/70 p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+        <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
           {label}
         </p>
-        {selected && <span className="text-[#d8b36a] text-sm">✔</span>}
+        {selected && <span className="text-[#A95F35] text-sm">✔</span>}
       </div>
       <select
         value={selectedIndex ?? ""}
         onChange={(e) => onSelect(Number(e.target.value))}
-        className="w-full rounded-lg bg-[#0a1529] border border-[#d8b36a]/20 px-3 py-2 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/60 mb-3"
+        className="w-full rounded-lg bg-white border border-[#d8b36a]/20 px-3 py-2 text-sm text-[#171717] outline-none focus:border-[#d8b36a]/60 mb-3"
       >
         <option value="" disabled>
           Saved reading choose karein…
@@ -104,16 +104,16 @@ function PersonPicker({
       </select>
       {selected ? (
         <>
-          <p className="font-display text-base font-semibold text-[#f5efe6]">
+          <p className="font-display text-base font-semibold text-[#171717]">
             {selected.name || "—"}
           </p>
-          <p className="text-xs text-[#afbdd7] mt-1">
+          <p className="text-xs text-[#89837D] mt-1">
             {selected.dob} {selected.bot ? `· ${selected.bot}` : ""}
           </p>
-          <p className="text-xs text-[#afbdd7] truncate">{selected.bop}</p>
+          <p className="text-xs text-[#89837D] truncate">{selected.bop}</p>
         </>
       ) : (
-        <p className="text-xs text-[#8ea1c2]">
+        <p className="text-xs text-[#89837D]">
           Koi reading select nahi ki gayi
         </p>
       )}
@@ -395,14 +395,14 @@ Rules:
 
   if (records.length < 2) {
     return (
-      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 flex-col flex gap-2 justify-center items-center text-center">
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/60 backdrop-blur p-10 flex-col flex gap-2 justify-center items-center text-center">
         <div className="h-9 w-9 rounded-lg overflow-hidden bg-[#d8b36a] flex items-center justify-center text-[#0a1529] font-display font-bold text-lg shrink-0">
           <img src="/logo.png" alt="" />
         </div>
-        <h1 className="font-display text-xl font-semibold text-[#afbdd7] mb-2">
+        <h1 className="font-display text-xl font-semibold text-[#89837D] mb-2">
           कुंडली मिलान
         </h1>
-        <p className="text-sm text-[#afbdd7] max-w-md mx-auto">
+        <p className="text-sm text-[#89837D] max-w-md mx-auto">
           Guna Milan ke liye kam se kam 2 saved readings chahiye. पहले "कुंडली"
           page se दो लोगों की readings generate karke save karein, फिर यहाँ वापस
           आएं।
@@ -413,11 +413,11 @@ Rules:
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h1 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <h1 className="font-display text-xl font-semibold text-[#171717] mb-1">
           कुंडली मिलान
         </h1>
-        <p className="text-xs text-[#afbdd7] mb-5">
+        <p className="text-xs text-[#89837D] mb-5">
           Saved readings mein se वर और वधु चुनें, फिर Guna Milan निकालें।
         </p>
 
@@ -439,16 +439,16 @@ Rules:
         {varIndex !== null &&
           vadhuIndex !== null &&
           varIndex === vadhuIndex && (
-            <p className="text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
+            <p className="text-xs text-[#8E3529] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2 mb-4">
               वर और वधु के लिए अलग-अलग readings चुनें।
             </p>
           )}
 
         {error && (
           <div className="mb-4 rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-2">
-            <p className="text-xs text-[#f0958a]">{error}</p>
+            <p className="text-xs text-[#8E3529]">{error}</p>
             {upgradeRequired && (
-              <Link href="/plans?feature=milan_full_report" className="mt-2 inline-block text-xs font-semibold text-[#f8d27a] underline underline-offset-2">
+              <Link href="/plans?feature=milan_full_report" className="mt-2 inline-block text-xs font-semibold text-[#A95F35] underline underline-offset-2">
                 View report plans
               </Link>
             )}
@@ -457,7 +457,7 @@ Rules:
 
         <Link
           href="/plans?feature=milan_full_report"
-          className="mb-3 block rounded-lg border border-[#d8b36a]/25 px-3 py-2 text-center text-xs text-[#f8d27a] transition-colors hover:bg-[#d8b36a]/10"
+          className="mb-3 block rounded-lg border border-[#d8b36a]/25 px-3 py-2 text-center text-xs text-[#A95F35] transition-colors hover:bg-[#d8b36a]/10"
         >
           View full-report plans
         </Link>
@@ -479,13 +479,13 @@ Rules:
       </div>
 
       {result && (
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/60 backdrop-blur p-6 shadow-xl shadow-black/30">
           <div className="flex flex-wrap justify-end gap-2 mb-4">
             {speechSupported && (
               <>
                 <button
                   onClick={handlePlayPause}
-                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                 >
                   {speechState === "speaking"
                     ? "⏸ रोकें"
@@ -496,7 +496,7 @@ Rules:
                 {speechState !== "idle" && (
                   <button
                     onClick={handleStopSpeech}
-                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                   >
                     ⏹ बंद करें
                   </button>
@@ -505,22 +505,22 @@ Rules:
             )}
             <button
               onClick={handleSaveToLocalStorage}
-              className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+              className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
             >
               💾 सेव करें
             </button>
             <button
               onClick={handleDownloadPdf}
-              className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#d8b36a]"
+              className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#A95F35]"
             >
               ⬇ चार्ट सहित डाउनलोड करें
             </button>
           </div>
 
-          <h3 className="font-display text-lg font-semibold text-[#d8b36a] text-center mb-1">
+          <h3 className="font-display text-lg font-semibold text-[#A95F35] text-center mb-1">
             गुण मिलान {result.totalScore} / {result.maxScore}
           </h3>
-          <p className="text-center text-xs text-[#afbdd7] mb-5">
+          <p className="text-center text-xs text-[#89837D] mb-5">
             {result.verdict}
           </p>
 
@@ -531,13 +531,13 @@ Rules:
       )}
 
       {!result && reportHtml && (
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/60 backdrop-blur p-6 shadow-xl shadow-black/30">
           <div className="flex flex-wrap justify-end gap-2 mb-4">
             {speechSupported && (
               <>
                 <button
                   onClick={handlePlayPause}
-                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                 >
                   {speechState === "speaking"
                     ? "⏸ रोकें"
@@ -548,7 +548,7 @@ Rules:
                 {speechState !== "idle" && (
                   <button
                     onClick={handleStopSpeech}
-                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                   >
                     ⏹ बंद करें
                   </button>
@@ -557,7 +557,7 @@ Rules:
             )}
             <button
               onClick={handleDownloadPdf}
-              className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#d8b36a]"
+              className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#A95F35]"
             >
               ⬇ चार्ट सहित डाउनलोड करें
             </button>
@@ -570,8 +570,8 @@ Rules:
       )}
 
       {records.length > 2 && (
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h3 className="font-display text-lg font-semibold text-[#f5efe6] mb-3">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <h3 className="font-display text-lg font-semibold text-[#171717] mb-3">
             Saved reports
           </h3>
           <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -581,20 +581,20 @@ Rules:
                 <li key={actualIndex}>
                   <button
                     onClick={() => loadSavedReport(actualIndex)}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#e3cbb0]"
+                    className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#625C56]"
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium">
                         {item.name || "Untitled"}
                       </span>
-                      <span className="block text-xs text-[#afbdd7] truncate">
+                      <span className="block text-xs text-[#89837D] truncate">
                         {item.dob}
                       </span>
                     </span>
                     <span
                       role="button"
                       onClick={(e) => deleteSavedReport(actualIndex, e)}
-                      className="shrink-0 text-[#afbdd7] hover:text-[#f0958a] text-xs px-1.5 py-0.5 rounded transition-colors"
+                      className="shrink-0 text-[#89837D] hover:text-[#8E3529] text-xs px-1.5 py-0.5 rounded transition-colors"
                       aria-label={`Delete ${item.name}`}
                     >
                       ✕

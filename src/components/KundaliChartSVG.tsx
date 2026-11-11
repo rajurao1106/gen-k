@@ -45,7 +45,7 @@ export function KundaliChartSVG({
       viewBox="0 0 400 400"
       className={compact ? "w-full max-w-[220px] mx-auto" : "w-full max-w-[320px] mx-auto"}
     >
-      <rect x="1" y="1" width="398" height="398" fill="#0a1529" stroke="#d8b36a" strokeWidth="2" />
+      <rect x="1" y="1" width="398" height="398" fill="#FFFCF8" stroke="#D9A441" strokeWidth="2" />
       <polygon points="200,0 400,200 200,400 0,200" fill="none" stroke="#d8b36a" strokeWidth="1.5" />
       <line x1="0" y1="0" x2="400" y2="400" stroke="#d8b36a" strokeWidth="1.5" />
       <line x1="400" y1="0" x2="0" y2="400" stroke="#d8b36a" strokeWidth="1.5" />
@@ -55,11 +55,11 @@ export function KundaliChartSVG({
         const planets = data.houses?.[houseNum] ?? [];
         return (
           <g key={houseNum}>
-            <text x={cx} y={cy - 14} textAnchor="middle" fontSize="10" fill="#afbdd7">
+            <text x={cx} y={cy - 14} textAnchor="middle" fontSize="10" fill="#89837D">
               {houseNum}
               {n === 1 ? " (Lg)" : ""}
             </text>
-            <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="700" fill="#f5efe6">
+            <text x={cx} y={cy + 8} textAnchor="middle" fontSize="12" fontWeight="700" fill="#171717">
               {planets.join(" ")}
             </text>
           </g>

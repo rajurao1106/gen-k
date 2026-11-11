@@ -23,7 +23,7 @@ export function parseCoordinate(raw: string, kind: "lat" | "lng"): number | null
 }
 
 const field =
-  "mt-1 w-full rounded-lg border border-white/15 bg-[#10273d] px-3 py-2.5 text-sm text-[#f9f3eb] outline-none focus:border-[#f2c36b]";
+  "mt-1 w-full rounded-lg border border-[#E8D9CC] bg-[#FFFCF8] px-3 py-2.5 text-sm text-[#171717] outline-none focus:border-[#f2c36b]";
 
 /**
  * Optional "Advanced" box for people who know their exact birth-place coordinates.
@@ -73,35 +73,35 @@ export default function AdvancedPlaceInput({ onUse }: { onUse: (place: AdvancedP
   };
 
   return (
-    <details className="mt-4 rounded-xl border border-[#f2c36b]/20 bg-[#10273d]/60 p-3 text-sm text-[#d5d9e2]">
-      <summary className="cursor-pointer text-xs font-semibold text-[#f2c36b]">
+    <details className="mt-4 rounded-xl border border-[#f2c36b]/20 bg-[#FFFCF8]/60 p-3 text-sm text-[#625C56]">
+      <summary className="cursor-pointer text-xs font-semibold text-[#A95F35]">
         Advanced: enter exact coordinates
       </summary>
-      <p className="mt-2 text-[11px] leading-4 text-[#a6bddb]">
+      <p className="mt-2 text-[11px] leading-4 text-[#89837D]">
         Optional. Use this only if search picks the wrong place or you know your exact birth-place
         coordinates (in Google Maps, long-press the spot and copy the two numbers). A wrong place can
         shift your Lagna and houses; your Moon sign and nakshatra do not depend on it.
       </p>
-      <label className="mt-3 block text-xs font-medium text-[#f9e6b2]">
+      <label className="mt-3 block text-xs font-medium text-[#80602F]">
         Place name
         <input value={name} onChange={(e) => { setName(e.target.value); setError(""); }} onKeyDown={onEnter}
           placeholder="e.g. Panibandha, Odisha" className={field} />
       </label>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <label className="block text-xs font-medium text-[#f9e6b2]">
+        <label className="block text-xs font-medium text-[#80602F]">
           Latitude
           <input value={lat} onChange={(e) => onLatChange(e.target.value)} onKeyDown={onEnter}
             inputMode="decimal" placeholder="21.60" className={field} />
         </label>
-        <label className="block text-xs font-medium text-[#f9e6b2]">
+        <label className="block text-xs font-medium text-[#80602F]">
           Longitude
           <input value={lng} onChange={(e) => { setLng(e.target.value); setError(""); }} onKeyDown={onEnter}
             inputMode="decimal" placeholder="85.55" className={field} />
         </label>
       </div>
-      {error && <p role="alert" className="mt-2 text-xs text-[#ffd1c9]">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-xs text-[#8E3529]">{error}</p>}
       <button type="button" onClick={apply}
-        className="mt-3 w-full rounded-lg border border-[#f2c36b]/40 py-2.5 text-xs font-semibold text-[#f2c36b] hover:bg-[#f2c36b]/10">
+        className="mt-3 w-full rounded-lg border border-[#f2c36b]/40 py-2.5 text-xs font-semibold text-[#A95F35] hover:bg-[#f2c36b]/10">
         Use these coordinates
       </button>
       <p className="mt-2 text-[11px] leading-4 text-[#858e9d]">

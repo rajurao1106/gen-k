@@ -85,29 +85,29 @@ export default function DevToolsPage() {
   };
 
   if (process.env.NODE_ENV === "production") {
-    return <main className="mx-auto max-w-3xl p-6 text-[#f9f3eb]">Developer tools are disabled.</main>;
+    return <main className="mx-auto max-w-3xl p-6 text-[#171717]">Developer tools are disabled.</main>;
   }
   if (status === "loading") return null;
   if (status === "authenticated" && user?.role !== "admin") {
-    return <main className="mx-auto max-w-3xl p-6 text-[#f9f3eb]">Administrator access is required.</main>;
+    return <main className="mx-auto max-w-3xl p-6 text-[#171717]">Administrator access is required.</main>;
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-4 text-[#f9f3eb] sm:p-6">
+    <main className="mx-auto max-w-5xl space-y-6 p-4 text-[#171717] sm:p-6">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-[#f2c36b]">Development only</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-[#A95F35]">Development only</p>
         <h1 className="mt-2 font-display text-3xl font-bold">Admin developer tools</h1>
-        <p className="mt-2 text-sm text-[#c9d8ed]">Test entitlements, quotas and orders. This screen and its API are disabled in production.</p>
+        <p className="mt-2 text-sm text-[#625C56]">Test entitlements, quotas and orders. This screen and its API are disabled in production.</p>
       </header>
-      {error && <p role="alert" className="rounded-xl border border-[#ef9f90]/40 bg-[#ef9f90]/10 p-3 text-sm text-[#ffd1c9]">{error}</p>}
-      {notice && <p role="status" className="rounded-xl border border-[#7fd18a]/40 bg-[#7fd18a]/10 p-3 text-sm text-[#c9f2d1]">{notice}</p>}
-      <section className="space-y-4 rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-4">
+      {error && <p role="alert" className="rounded-xl border border-[#ef9f90]/40 bg-[#ef9f90]/10 p-3 text-sm text-[#8E3529]">{error}</p>}
+      {notice && <p role="status" className="rounded-xl border border-[#7fd18a]/40 bg-[#7fd18a]/10 p-3 text-sm text-[#49643C]">{notice}</p>}
+      <section className="space-y-4 rounded-2xl border border-[#f2c36b]/20 bg-[#FFFCF8] p-4">
         <label className="block text-sm">
           Account
           <select
             value={selectedUserId}
             onChange={(event) => setSelectedUserId(event.currentTarget.value)}
-            className="mt-2 w-full rounded-xl border border-white/15 bg-[#0a1a2e] px-3 py-3"
+            className="mt-2 w-full rounded-xl border border-[#E8D9CC] bg-[#F4F4F3] px-3 py-3"
           >
             <option value="">Select an account</option>
             {users.map((item) => (
@@ -118,33 +118,33 @@ export default function DevToolsPage() {
         <div className="flex flex-wrap gap-2">
           <label className="min-w-48 flex-1 text-sm">
             Plan
-            <select value={planId} onChange={(event) => setPlanId(event.currentTarget.value)} className="mt-2 w-full rounded-xl border border-white/15 bg-[#0a1a2e] px-3 py-3">
+            <select value={planId} onChange={(event) => setPlanId(event.currentTarget.value)} className="mt-2 w-full rounded-xl border border-[#E8D9CC] bg-[#F4F4F3] px-3 py-3">
               {grantablePlans.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
             </select>
           </label>
           <button type="button" disabled={!selectedUserId || busy} onClick={() => void perform(() => grantDevPlan(selectedUserId, planId), "Test entitlement granted.")} className="self-end rounded-xl bg-[#f2c36b] px-4 py-3 text-sm font-semibold text-[#0b1324] disabled:opacity-50">Grant plan</button>
           <button type="button" disabled={!selectedUserId || busy} onClick={() => void perform(() => resetDevUsage(selectedUserId), "Today's usage counters reset.")} className="self-end rounded-xl border border-[#f2c36b]/40 px-4 py-3 text-sm disabled:opacity-50">Reset usage</button>
-          <button type="button" disabled={!selectedUserId || busy} onClick={() => void perform(() => expireDevSubscriptions(selectedUserId), "Active subscriptions expired.")} className="self-end rounded-xl border border-[#ef9f90]/40 px-4 py-3 text-sm text-[#ffd1c9] disabled:opacity-50">Expire subscription</button>
+          <button type="button" disabled={!selectedUserId || busy} onClick={() => void perform(() => expireDevSubscriptions(selectedUserId), "Active subscriptions expired.")} className="self-end rounded-xl border border-[#ef9f90]/40 px-4 py-3 text-sm text-[#8E3529] disabled:opacity-50">Expire subscription</button>
         </div>
       </section>
-      <section className="rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-4">
+      <section className="rounded-2xl border border-[#f2c36b]/20 bg-[#FFFCF8] p-4">
         <h2 className="font-display text-xl font-semibold">Account entitlements</h2>
-        {loading ? <p role="status" className="mt-3 text-sm text-[#a6bddb]">Loading…</p> : entitlements.length ? (
-          <ul className="mt-3 divide-y divide-white/10">
+        {loading ? <p role="status" className="mt-3 text-sm text-[#89837D]">Loading…</p> : entitlements.length ? (
+          <ul className="mt-3 divide-y divide-[#E8D9CC]">
             {entitlements.map((entitlement) => (
               <li key={entitlement.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
                 <span>{entitlement.planId} · {entitlement.kind} · {entitlement.status}{entitlement.remainingUses !== null ? ` · ${entitlement.remainingUses} uses` : ""}</span>
-                {entitlement.status === "active" && <button type="button" disabled={busy} onClick={() => void perform(() => revokeDevEntitlement(entitlement.id), "Entitlement revoked.")} className="rounded-lg border border-[#ef9f90]/40 px-3 py-1.5 text-xs text-[#ffd1c9] disabled:opacity-50">Revoke</button>}
+                {entitlement.status === "active" && <button type="button" disabled={busy} onClick={() => void perform(() => revokeDevEntitlement(entitlement.id), "Entitlement revoked.")} className="rounded-lg border border-[#ef9f90]/40 px-3 py-1.5 text-xs text-[#8E3529] disabled:opacity-50">Revoke</button>}
               </li>
             ))}
           </ul>
-        ) : <p className="mt-3 text-sm text-[#a6bddb]">No entitlements for this account.</p>}
+        ) : <p className="mt-3 text-sm text-[#89837D]">No entitlements for this account.</p>}
       </section>
-      <section className="rounded-2xl border border-[#f2c36b]/20 bg-[#10273d] p-4">
+      <section className="rounded-2xl border border-[#f2c36b]/20 bg-[#FFFCF8] p-4">
         <h2 className="font-display text-xl font-semibold">Recent orders</h2>
-        <ul className="mt-3 divide-y divide-white/10">
+        <ul className="mt-3 divide-y divide-[#E8D9CC]">
           {orders.map((order) => <li key={order.id} className="flex flex-wrap justify-between gap-2 py-3 text-sm"><span>{order.userPhone} · {order.planId}</span><span>{order.status} · {(order.amountPaise / 100).toLocaleString("en-IN", { style: "currency", currency: order.currency })}</span></li>)}
-          {!orders.length && <li className="py-3 text-sm text-[#a6bddb]">No orders found.</li>}
+          {!orders.length && <li className="py-3 text-sm text-[#89837D]">No orders found.</li>}
         </ul>
       </section>
     </main>

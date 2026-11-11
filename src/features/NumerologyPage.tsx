@@ -291,23 +291,23 @@ Rules:
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-        <h1 className="font-display text-xl font-semibold text-[#f5efe6] mb-1">
+      <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+        <h1 className="font-display text-xl font-semibold text-[#171717] mb-1">
           न्यूमरोलॉजी
         </h1>
-        <p className="text-xs text-[#afbdd7] mb-5">
+        <p className="text-xs text-[#89837D] mb-5">
           Naam aur date of birth se aapke ank (numbers) nikalte hain।
         </p>
 
         {saved.length > 0 && (
           <div className="mb-4">
-            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">
+            <label className="block text-xs font-medium text-[#80602F] mb-1.5">
               Saved reading se bharein (optional)
             </label>
             <select
               defaultValue=""
               onChange={(e) => applySaved(Number(e.target.value))}
-              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/60"
+              className="w-full rounded-lg bg-[#F4F4F3] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#171717] outline-none focus:border-[#d8b36a]/60"
             >
               <option value="" disabled>
                 Choose karein…
@@ -323,31 +323,31 @@ Rules:
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">
+            <label className="block text-xs font-medium text-[#80602F] mb-1.5">
               Full name
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Ananya Sharma"
-              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
+              className="w-full rounded-lg bg-[#F4F4F3] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#171717] placeholder:text-[#89837D] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#f4d7a7] mb-1.5">
+            <label className="block text-xs font-medium text-[#80602F] mb-1.5">
               Date of birth
             </label>
             <input
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full rounded-lg bg-[#111d31] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
+              className="w-full rounded-lg bg-[#F4F4F3] border border-[#d8b36a]/20 px-3.5 py-2.5 text-sm text-[#171717] outline-none focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
             />
           </div>
         </div>
 
         {error && (
-          <p className="mt-4 text-xs text-[#f0958a] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2">
+          <p className="mt-4 text-xs text-[#8E3529] bg-[#f0958a]/10 border border-[#f0958a]/25 rounded-lg px-3 py-2">
             {error}
           </p>
         )}
@@ -369,21 +369,21 @@ Rules:
       </div>
 
       {loading && (
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-10 text-center">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/60 backdrop-blur p-10 text-center">
           <div className="h-8 w-8 mx-auto rounded-full border-2 border-[#d8b36a]/30 border-t-[#d8b36a] animate-spin mb-4" />
-          <p className="text-sm text-[#afbdd7]">आपके अंक निकाले जा रहे हैं…</p>
+          <p className="text-sm text-[#89837D]">आपके अंक निकाले जा रहे हैं…</p>
         </div>
       )}
 
       {(result || reportHtml) && !loading && (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/60 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/60 backdrop-blur p-6 shadow-xl shadow-black/30">
             <div className="flex flex-wrap justify-end gap-2 mb-4">
               {speechSupported && (
                 <>
                   <button
                     onClick={handlePlayPause}
-                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                    className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                   >
                     {speechState === "speaking"
                       ? "⏸ रोकें"
@@ -394,7 +394,7 @@ Rules:
                   {speechState !== "idle" && (
                     <button
                       onClick={handleStopSpeech}
-                      className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                      className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                     >
                       ⏹ बंद करें
                     </button>
@@ -404,14 +404,14 @@ Rules:
               {result && (
                 <button
                   onClick={handleSaveToLocalStorage}
-                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#e3cbb0]"
+                  className="text-xs rounded-lg border border-[#d8b36a]/20 px-3 py-1.5 text-[#625C56]"
                 >
                   💾 सेव करें
                 </button>
               )}
               <button
                 onClick={handleDownloadPdf}
-                className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#d8b36a]"
+                className="text-xs rounded-lg border border-[#d8b36a]/50 px-3 py-1.5 text-[#A95F35]"
               >
                 ⬇ चार्ट सहित डाउनलोड करें
               </button>
@@ -426,8 +426,8 @@ Rules:
       )}
 
       {saved.length > 0 && (
-        <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 backdrop-blur p-6 shadow-xl shadow-black/30">
-          <h3 className="font-display text-lg font-semibold text-[#f5efe6] mb-3">
+        <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 backdrop-blur p-6 shadow-xl shadow-black/30">
+          <h3 className="font-display text-lg font-semibold text-[#171717] mb-3">
             Saved reports
           </h3>
           <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -435,20 +435,20 @@ Rules:
               <li key={index}>
                 <button
                   onClick={() => loadSavedReport(index)}
-                  className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#e3cbb0]"
+                  className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors border bg-transparent border-[#d8b36a]/10 hover:border-[#d8b36a]/30 text-[#625C56]"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">
                       {item.name || "Untitled"}
                     </span>
-                    <span className="block text-xs text-[#afbdd7] truncate">
+                    <span className="block text-xs text-[#89837D] truncate">
                       {item.dob}
                     </span>
                   </span>
                   <span
                     role="button"
                     onClick={(e) => deleteSavedReport(index, e)}
-                    className="shrink-0 text-[#afbdd7] hover:text-[#f0958a] text-xs px-1.5 py-0.5 rounded transition-colors"
+                    className="shrink-0 text-[#89837D] hover:text-[#8E3529] text-xs px-1.5 py-0.5 rounded transition-colors"
                     aria-label={`Delete ${item.name}`}
                   >
                     ✕

@@ -12,7 +12,7 @@ export default function LegalFooter() {
   return (
     <nav aria-label="Legal and support" className="flex flex-wrap justify-center gap-x-4 gap-y-2">
       {links.map(([label, href]) => (
-        <Link key={href} href={href} className="hover:text-[#ffda91]">
+        <Link key={href} href={href} className="hover:text-[#80602F]">
           {label}
         </Link>
       ))}

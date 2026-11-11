@@ -136,7 +136,7 @@ export default function BirthPlaceMap({ lat, lng, center, onPick }: Props) {
       ref={elRef}
       role="application"
       aria-label="Map: tap or drag the pin to choose your birth place"
-      className="isolate z-0 mt-3 h-56 w-full overflow-hidden rounded-lg border border-white/15 bg-[#10273d]"
+      className="isolate z-0 mt-3 h-56 w-full overflow-hidden rounded-lg border border-[#E8D9CC] bg-[#FFFCF8]"
     />
   );
 }

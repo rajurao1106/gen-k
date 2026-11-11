@@ -193,7 +193,7 @@ function KundaliExperience() {
   }, [pathname]);
 
   if (profileLoadError) {
-    return <main role="alert" className="min-h-screen bg-[#071a2a] px-5 py-12 text-center text-[#ffd1c9]">{profileLoadError}</main>;
+    return <main role="alert" className="min-h-screen bg-[#F8F0E8] px-5 py-12 text-center text-[#8E3529]">{profileLoadError}</main>;
   }
   if (!authReady) return null;
   if (pathname === "/start") return <Onboarding />;
@@ -201,36 +201,27 @@ function KundaliExperience() {
   return (
     <div
       id="appShell"
-      className={`relative min-h-screen overflow-x-clip ${
-        page === "home" ||
-        page === "kundali" ||
-        page === "ai-friend" ||
-        page === "explore" ||
-        page === "plans" ||
-        page === "profile"
-          ? "bg-[#F8F0E8] text-[#171717]"
-          : "bg-[var(--bg-app)] text-[var(--text-primary)]"
-      }`}
+      className="relative min-h-screen overflow-x-clip bg-[#F8F0E8] text-[#171717]"
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Mukta:wght@400;500;600;700&display=swap');
 
         :root {
-          --bg-app: #071a2a;
-          --bg-surface: #10273d;
-          --bg-surface-strong: #153555;
-          --bg-surface-soft: #1d446d;
-          --bg-header: #0d2138;
-          --gold: #f0c06d;
-          --gold-strong: #d69b3c;
-          --gold-soft: #f8e6b6;
-          --text-primary: #f9f3eb;
-          --text-body: #edf2fb;
-          --text-muted: #c9d8ed;
-          --text-subtle: #a6bddb;
-          --text-dark: #081724;
-          --border: rgba(240,192,109,0.34);
-          --danger: #ef9f90;
+          --bg-app: #F8F0E8;
+          --bg-surface: #FFFCF8;
+          --bg-surface-strong: #F8E8D8;
+          --bg-surface-soft: #F4F4F3;
+          --bg-header: #FFFCF8;
+          --gold: #A95F35;
+          --gold-strong: #80602F;
+          --gold-soft: #F8E8D8;
+          --text-primary: #171717;
+          --text-body: #403A34;
+          --text-muted: #625C56;
+          --text-subtle: #89837D;
+          --text-dark: #171717;
+          --border: rgba(217,164,65,0.34);
+          --danger: #8E3529;
         }
 
         .font-display { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.01em; }
@@ -238,12 +229,12 @@ function KundaliExperience() {
 
         .brass-surface {
           background:
-            radial-gradient(circle at 15% 20%, rgba(240,192,109,0.14), transparent 42%),
-            radial-gradient(circle at 85% 80%, rgba(120,170,255,0.08), transparent 48%),
-            linear-gradient(160deg, #0a1d2f 0%, #0d233b 45%, #071822 100%);
+            radial-gradient(circle at 15% 20%, rgba(217,164,65,0.12), transparent 42%),
+            radial-gradient(circle at 85% 80%, rgba(169,95,53,0.05), transparent 48%),
+            linear-gradient(160deg, #F8F0E8 0%, #FFFCF8 45%, #F8F0E8 100%);
         }
         .brass-header {
-          background: linear-gradient(135deg, #10273d 0%, #0d2138 52%, #0a1a2e 100%);
+          background: linear-gradient(135deg, #FFFCF8 0%, #F8F0E8 52%, #FFFCF8 100%);
         }
 
         .prose-kundli h2 { font-family: 'Rajdhani', sans-serif; color: var(--gold); font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
@@ -262,7 +253,7 @@ function KundaliExperience() {
           overflow-wrap: break-word;
           word-break: break-word;
         }
-        input[type="date"], input[type="time"] { color-scheme: dark; }
+        input[type="date"], input[type="time"] { color-scheme: light; }
 html, body { max-width: 100%; overflow-x: clip; }
         * { min-width: 0; }
 
@@ -344,9 +335,7 @@ html, body { max-width: 100%; overflow-x: clip; }
         }
       `}</style>
 
-      {!["home", "kundali", "ai-friend", "explore", "plans", "profile"].includes(page) && (
-        <div className="absolute inset-0 brass-surface pointer-events-none no-print" />
-      )}
+      <div className="absolute inset-0 brass-surface pointer-events-none no-print" />
 
       <div className="relative lg:flex lg:items-start lg:min-h-screen">
         <Sidebar

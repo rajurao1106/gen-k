@@ -112,19 +112,19 @@ export default function UserDataPage() {
   const hasActiveSearch = search.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-[#060f20] px-4 py-8 text-[#f5efe6]">
+    <div className="min-h-screen bg-[#F8F0E8] px-4 py-8 text-[#171717]">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-2xl shadow-black/30 md:flex-row md:items-center md:justify-between">
+        <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-5 shadow-2xl shadow-black/30 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#afbdd7]">
+            <p className="text-xs uppercase tracking-[0.25em] text-[#89837D]">
               Admin dashboard
             </p>
-            <h1 className="font-display text-3xl text-[#f5efe6]">
+            <h1 className="font-display text-3xl text-[#171717]">
               All saved records
             </h1>
             {!loading && !error && (
-              <p className="mt-1 text-sm text-[#afbdd7]">
+              <p className="mt-1 text-sm text-[#89837D]">
                 {records.length} {records.length === 1 ? "record" : "records"}{" "}
                 saved
                 {hasActiveSearch &&
@@ -139,7 +139,7 @@ export default function UserDataPage() {
               onClick={() => void loadRecords()}
               disabled={loading}
               aria-label="Refresh records"
-              className="flex items-center gap-2 rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-4 py-2 text-sm text-[#f5efe6] transition hover:border-[#d8b36a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-4 py-2 text-sm text-[#171717] transition hover:border-[#d8b36a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg
                 className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -158,7 +158,7 @@ export default function UserDataPage() {
             <button
               type="button"
               onClick={() => router.replace("/")}
-              className="rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-4 py-2 text-sm text-[#f5efe6] transition hover:border-[#d8b36a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a]"
+              className="rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-4 py-2 text-sm text-[#171717] transition hover:border-[#d8b36a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a]"
             >
               Home
             </button>
@@ -173,18 +173,18 @@ export default function UserDataPage() {
         </div>
 
         {/* Filters */}
-        <div className="mb-6 rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-4 shadow-xl shadow-black/20">
+        <div className="mb-6 rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-4 shadow-xl shadow-black/20">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex-1">
               <label
                 htmlFor="record-search"
-                className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]"
+                className="mb-2 block text-[10px] uppercase tracking-wide text-[#89837D]"
               >
                 Search records
               </label>
               <div className="relative">
                 <svg
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8ea1c2]"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#89837D]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -200,14 +200,14 @@ export default function UserDataPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by name, date, place, content..."
-                  className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] py-2.5 pl-9 pr-9 text-sm text-[#f5e6d3] placeholder:text-[#8ea1c2] outline-none focus:border-[#d8b36a]/70"
+                  className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] py-2.5 pl-9 pr-9 text-sm text-[#171717] placeholder:text-[#89837D] outline-none focus:border-[#d8b36a]/70"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#8ea1c2] transition hover:text-[#f5e6d3]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#89837D] transition hover:text-[#171717]"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -227,7 +227,7 @@ export default function UserDataPage() {
             <div className="md:w-46">
               <label
                 htmlFor="record-sort"
-                className="mb-2 block text-[10px] uppercase tracking-wide text-[#afbdd7]"
+                className="mb-2 block text-[10px] uppercase tracking-wide text-[#89837D]"
               >
                 Sort by
               </label>
@@ -237,7 +237,7 @@ export default function UserDataPage() {
                 onChange={(event) =>
                   setSortBy(event.target.value as "newest" | "oldest")
                 }
-                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3 py-2.5 text-sm text-[#f5e6d3] outline-none focus:border-[#d8b36a]/70"
+                className="w-full rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-3 py-2.5 text-sm text-[#171717] outline-none focus:border-[#d8b36a]/70"
               >
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -250,7 +250,7 @@ export default function UserDataPage() {
         {error && (
           <div
             role="alert"
-            className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[#f0958a]/30 bg-[#f0958a]/10 p-4 text-[#f0958a] shadow-lg shadow-black/10"
+            className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-[#f0958a]/30 bg-[#f0958a]/10 p-4 text-[#8E3529] shadow-lg shadow-black/10"
           >
             <div className="flex items-start gap-3">
               <svg
@@ -270,7 +270,7 @@ export default function UserDataPage() {
                 <button
                   type="button"
                   onClick={() => void loadRecords()}
-                  className="mt-1 text-xs underline underline-offset-2 hover:text-[#f5b0a7]"
+                  className="mt-1 text-xs underline underline-offset-2 hover:text-[#8E3529]"
                 >
                   Try again
                 </button>
@@ -280,7 +280,7 @@ export default function UserDataPage() {
               type="button"
               onClick={() => setError("")}
               aria-label="Dismiss error"
-              className="shrink-0 rounded p-0.5 transition hover:text-[#f5b0a7]"
+              className="shrink-0 rounded p-0.5 transition hover:text-[#8E3529]"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -306,7 +306,7 @@ export default function UserDataPage() {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-xl shadow-black/20"
+                className="animate-pulse rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-5 shadow-xl shadow-black/20"
               >
                 <div className="mb-4 flex items-center justify-between">
                   <div className="space-y-2">
@@ -330,10 +330,10 @@ export default function UserDataPage() {
 
         {/* Empty state */}
         {!loading && !error && filteredRecords.length === 0 && (
-          <div className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-12 text-center shadow-xl shadow-black/20">
+          <div className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-12 text-center shadow-xl shadow-black/20">
             <svg
               viewBox="0 0 24 24"
-              className="mx-auto mb-4 h-10 w-10 text-[#8ea1c2]"
+              className="mx-auto mb-4 h-10 w-10 text-[#89837D]"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
@@ -352,7 +352,7 @@ export default function UserDataPage() {
                 </>
               )}
             </svg>
-            <p className="text-sm text-[#afbdd7]">
+            <p className="text-sm text-[#89837D]">
               {hasActiveSearch
                 ? `No records match "${search.trim()}".`
                 : "No saved records yet."}
@@ -361,7 +361,7 @@ export default function UserDataPage() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="mt-3 text-xs text-[#d8b36a] underline underline-offset-2 hover:text-[#f4d7a7]"
+                className="mt-3 text-xs text-[#A95F35] underline underline-offset-2 hover:text-[#80602F]"
               >
                 Clear search
               </button>
@@ -380,14 +380,14 @@ export default function UserDataPage() {
               return (
                 <div
                   key={record._id}
-                  className="rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-xl shadow-black/20 transition hover:border-[#d8b36a]/40"
+                  className="rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-5 shadow-xl shadow-black/20 transition hover:border-[#d8b36a]/40"
                 >
                   <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h2 className="font-display text-xl text-[#f5efe6]">
+                      <h2 className="font-display text-xl text-[#171717]">
                         {record.fullName || "Unnamed User"}
                       </h2>
-                      <p className="text-xs text-[#afbdd7]">
+                      <p className="text-xs text-[#89837D]">
                         {record.createdAt
                           ? new Date(record.createdAt).toLocaleString()
                           : "No timestamp"}
@@ -395,20 +395,20 @@ export default function UserDataPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-[#d8b36a]/25 bg-[#d8b36a]/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-[#f4d7a7]">
+                      <span className="rounded-full border border-[#d8b36a]/25 bg-[#d8b36a]/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-[#80602F]">
                         {record.readingLanguage || "en"}
                       </span>
 
                       {isConfirming ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-[#afbdd7]">
+                          <span className="text-xs text-[#89837D]">
                             Delete this record?
                           </span>
                           <button
                             type="button"
                             disabled={isDeleting}
                             onClick={() => void confirmDelete(record._id)}
-                            className="rounded-lg border border-[#f0958a]/40 bg-[#f0958a]/20 px-3 py-1.5 text-xs font-medium text-[#f0958a] transition hover:border-[#f0958a]/60 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg border border-[#f0958a]/40 bg-[#f0958a]/20 px-3 py-1.5 text-xs font-medium text-[#8E3529] transition hover:border-[#f0958a]/60 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {isDeleting ? "Deleting..." : "Yes, delete"}
                           </button>
@@ -416,7 +416,7 @@ export default function UserDataPage() {
                             type="button"
                             disabled={isDeleting}
                             onClick={cancelDelete}
-                            className="rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3 py-1.5 text-xs text-[#f5efe6] transition hover:border-[#d8b36a]/40"
+                            className="rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-3 py-1.5 text-xs text-[#171717] transition hover:border-[#d8b36a]/40"
                           >
                             Cancel
                           </button>
@@ -426,7 +426,7 @@ export default function UserDataPage() {
                           type="button"
                           onClick={() => requestDelete(record._id)}
                           aria-label={`Delete record for ${record.fullName || "unnamed user"}`}
-                          className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-1.5 text-xs font-medium text-[#f0958a] transition hover:border-[#f0958a]/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0958a]"
+                          className="rounded-lg border border-[#f0958a]/25 bg-[#f0958a]/10 px-3 py-1.5 text-xs font-medium text-[#8E3529] transition hover:border-[#f0958a]/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0958a]"
                         >
                           Delete
                         </button>
@@ -436,55 +436,55 @@ export default function UserDataPage() {
 
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+                      <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
                         Date of birth
                       </p>
-                      <p className="text-sm text-[#e3cbb0]">
+                      <p className="text-sm text-[#625C56]">
                         {record.dateOfBirth || "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+                      <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
                         Time of birth
                       </p>
-                      <p className="text-sm text-[#e3cbb0]">
+                      <p className="text-sm text-[#625C56]">
                         {record.timeOfBirth || "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+                      <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
                         Place of birth
                       </p>
-                      <p className="text-sm text-[#e3cbb0]">
+                      <p className="text-sm text-[#625C56]">
                         {record.placeOfBirth || "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+                      <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
                         Gender
                       </p>
-                      <p className="text-sm text-[#e3cbb0]">
+                      <p className="text-sm text-[#625C56]">
                         {record.gender || "Prefer not to say"}
                       </p>
                     </div>
                   </div>
 
                   {record.content && (
-                    <div className="mt-4 rounded-xl border border-[#d8b36a]/20 bg-[#111d31]/60 p-4">
+                    <div className="mt-4 rounded-xl border border-[#d8b36a]/20 bg-[#F4F4F3]/60 p-4">
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-[10px] uppercase tracking-wide text-[#afbdd7]">
+                        <p className="text-[10px] uppercase tracking-wide text-[#89837D]">
                           Reading content
                         </p>
                         <button
                           type="button"
                           onClick={() => toggleExpanded(record._id)}
-                          className="text-xs text-[#d8b36a] underline underline-offset-2 hover:text-[#f4d7a7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a]"
+                          className="text-xs text-[#A95F35] underline underline-offset-2 hover:text-[#80602F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d8b36a]"
                         >
                           {isExpanded ? "Show less" : "Show more"}
                         </button>
                       </div>
                       <div
-                        className={`prose-kundli overflow-auto text-sm leading-7 text-[#e3cbb0] transition-[max-height] duration-200 ${
+                        className={`prose-kundli overflow-auto text-sm leading-7 text-[#625C56] transition-[max-height] duration-200 ${
                           isExpanded ? "max-h-[32rem]" : "max-h-24"
                         }`}
                         dangerouslySetInnerHTML={{ __html: record.content }}

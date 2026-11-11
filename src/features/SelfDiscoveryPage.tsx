@@ -25,7 +25,7 @@ import {
 import type { KundaliProfile } from "../types";
 
 const cardClass =
-  "rounded-2xl border border-[#d8b36a]/20 bg-[#0a1529]/80 p-5 shadow-xl shadow-black/30 sm:p-6";
+  "rounded-2xl border border-[#d8b36a]/20 bg-white/80 p-5 shadow-xl shadow-black/30 sm:p-6";
 const resultKey = (profileId: string) => `genk_selfdiscovery_result_${profileId}`;
 
 function ListBlock({ title, items, tone }: { title: string; items: string[]; tone: "good" | "grow" | "do" }) {
@@ -33,9 +33,9 @@ function ListBlock({ title, items, tone }: { title: string; items: string[]; ton
   const border =
     tone === "good" ? "border-[#8fd3a8]/40" : tone === "grow" ? "border-[#f2c36b]/40" : "border-[#9ec1ff]/40";
   return (
-    <div className={`rounded-xl border ${border} bg-[#0d2138]/70 p-4`}>
-      <h4 className="font-display text-base font-semibold text-[#f9f3eb]">{title}</h4>
-      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6 text-[#edf2fb] marker:text-[#f2c36b]">
+    <div className={`rounded-xl border ${border} bg-[#F8F0E8]/70 p-4`}>
+      <h4 className="font-display text-base font-semibold text-[#171717]">{title}</h4>
+      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-6 text-[#403A34] marker:text-[#A95F35]">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -49,9 +49,9 @@ function SafetyNote({ level }: { level: RiskLevel }) {
   return (
     <div
       role={level === "high" ? "alert" : "status"}
-      className="mt-3 rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm leading-6 text-[#f5e6d3]"
+      className="mt-3 rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm leading-6 text-[#171717]"
     >
-      <p className="font-semibold text-[#f9f3eb]">Aapne jo likha hai wo bhaari lag raha hai.</p>
+      <p className="font-semibold text-[#171717]">Aapne jo likha hai wo bhaari lag raha hai.</p>
       <p className="mt-1">
         Kisi apne, ya kisi professional se abhi baat karna madad kar sakta hai. Agar aap khud ko nuksan
         pahunchane ke baare mein soch rahe hain, to turant madad lein.
@@ -63,7 +63,7 @@ function SafetyNote({ level }: { level: RiskLevel }) {
             {h.numbers.map((n, i) => (
               <span key={n}>
                 {i > 0 && " / "}
-                <a href={`tel:${n.replace(/-/g, "")}`} className="font-semibold text-[#f8d27a] underline underline-offset-2">
+                <a href={`tel:${n.replace(/-/g, "")}`} className="font-semibold text-[#A95F35] underline underline-offset-2">
                   {n}
                 </a>
               </span>
@@ -90,8 +90,8 @@ function ReflectionQuestion({
   const inputId = useId();
 
   return (
-    <div className="rounded-xl border border-[#d8b36a]/20 bg-[#0d2138]/60 p-4">
-      <label htmlFor={inputId} className="block text-sm font-medium leading-6 text-[#f9e6b2]">
+    <div className="rounded-xl border border-[#d8b36a]/20 bg-[#F8F0E8]/60 p-4">
+      <label htmlFor={inputId} className="block text-sm font-medium leading-6 text-[#80602F]">
         {question}
       </label>
       <textarea
@@ -104,7 +104,7 @@ function ReflectionQuestion({
           setStatus("");
         }}
         placeholder="Apne shabdon mein likhein. Ye sirf aapke is device par rehta hai."
-        className="mt-2 w-full rounded-lg border border-[#d8b36a]/20 bg-[#111d31] px-3.5 py-2.5 text-sm text-[#f5e6d3] outline-none placeholder:text-[#8ea1c2] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
+        className="mt-2 w-full rounded-lg border border-[#d8b36a]/20 bg-[#F4F4F3] px-3.5 py-2.5 text-sm text-[#171717] outline-none placeholder:text-[#89837D] focus:border-[#d8b36a]/70 focus:ring-1 focus:ring-[#d8b36a]/40"
       />
       <div className="mt-2 flex items-center gap-3">
         <button
@@ -117,7 +117,7 @@ function ReflectionQuestion({
         >
           Save answer
         </button>
-        <span role="status" className="text-xs text-[#a6bddb]">
+        <span role="status" className="text-xs text-[#89837D]">
           {status}
         </span>
       </div>
@@ -137,11 +137,11 @@ function SectionCard({
 }) {
   return (
     <article className={cardClass} aria-labelledby={`sec-${section.key}`}>
-      <h3 id={`sec-${section.key}`} className="font-display text-2xl font-bold text-[#f9f3eb]">
+      <h3 id={`sec-${section.key}`} className="font-display text-2xl font-bold text-[#171717]">
         {section.title}
       </h3>
-      {section.basedOn && <p className="mt-1 text-xs text-[#a6bddb]">Chart se: {section.basedOn}</p>}
-      <p className="mt-3 text-[15px] leading-7 text-[#edf2fb]">{section.insight}</p>
+      {section.basedOn && <p className="mt-1 text-xs text-[#89837D]">Chart se: {section.basedOn}</p>}
+      <p className="mt-3 text-[15px] leading-7 text-[#403A34]">{section.insight}</p>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <ListBlock title="Aapki taakat" items={section.strengths} tone="good" />
@@ -151,7 +151,7 @@ function SectionCard({
 
       {section.questions.length > 0 && (
         <div className="mt-5">
-          <h4 className="font-display text-lg font-semibold text-[#f2c36b]">Khud se poochhiye</h4>
+          <h4 className="font-display text-lg font-semibold text-[#A95F35]">Khud se poochhiye</h4>
           <div className="mt-2 space-y-3">
             {section.questions.map((q) => (
               <ReflectionQuestion key={q} question={q} saved={journal[q]?.answer} onSave={onSave} />
@@ -246,8 +246,8 @@ export default function SelfDiscoveryPage() {
   if (!profile) {
     return (
       <section className={cardClass}>
-        <h1 className="font-display text-2xl font-bold text-[#f9f3eb]">Swa-Bodh</h1>
-        <p className="mt-2 text-sm leading-6 text-[#c9d8ed]">
+        <h1 className="font-display text-2xl font-bold text-[#171717]">Swa-Bodh</h1>
+        <p className="mt-2 text-sm leading-6 text-[#625C56]">
           Apni reflection banane ke liye pehle apni janm tithi, samay aur sthaan profile mein bharein.
         </p>
       </section>
@@ -257,10 +257,10 @@ export default function SelfDiscoveryPage() {
   return (
     <section aria-labelledby="sd-heading" className="space-y-5">
       <div>
-        <h1 id="sd-heading" className="font-display text-3xl font-bold text-[#f9f3eb]">
+        <h1 id="sd-heading" className="font-display text-3xl font-bold text-[#171717]">
           Swa-Bodh
         </h1>
-        <p className="mt-1 max-w-prose text-sm leading-6 text-[#c9d8ed]">
+        <p className="mt-1 max-w-prose text-sm leading-6 text-[#625C56]">
           Apni kundali ko aaine ki tarah dekhiye: aapka swabhav, mann, rishte aur kaam ka tareeka. Ye
           bhavishyavani nahi hai, khud ko samajhne ka ek nazariya hai.
         </p>
@@ -268,8 +268,8 @@ export default function SelfDiscoveryPage() {
 
       {!result && (
         <div className={cardClass}>
-          <p className="text-sm leading-6 text-[#edf2fb]">
-            <span className="font-semibold text-[#f9f3eb]">{profile.name}</span> ki kundali se 6 hisson mein
+          <p className="text-sm leading-6 text-[#403A34]">
+            <span className="font-semibold text-[#171717]">{profile.name}</span> ki kundali se 6 hisson mein
             reflection banegi. Har hisse mein taakat, dhyan dene wali baatein, chhoti aadatein aur khud se
             poochhne ke sawal honge.
           </p>
@@ -285,7 +285,7 @@ export default function SelfDiscoveryPage() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm text-[#ffd1c9]">
+        <p role="alert" className="rounded-xl border border-[#ef9f90]/50 bg-[#ef9f90]/10 p-4 text-sm text-[#8E3529]">
           {error}
         </p>
       )}
@@ -294,13 +294,13 @@ export default function SelfDiscoveryPage() {
         <>
           {result.intro && (
             <div className={cardClass}>
-              <p className="text-[15px] leading-7 text-[#edf2fb]">{result.intro}</p>
+              <p className="text-[15px] leading-7 text-[#403A34]">{result.intro}</p>
             </div>
           )}
 
           {todayQuestion && (
             <div className="rounded-2xl border border-[#f2c36b]/40 bg-[#f2c36b]/10 p-5">
-              <h2 className="font-display text-xl font-bold text-[#f9f3eb]">Aaj ka ek sawal</h2>
+              <h2 className="font-display text-xl font-bold text-[#171717]">Aaj ka ek sawal</h2>
               <div className="mt-2">
                 <ReflectionQuestion
                   key={todayQuestion}
@@ -318,7 +318,7 @@ export default function SelfDiscoveryPage() {
 
           {result.closing && (
             <div className={cardClass}>
-              <p className="text-[15px] leading-7 text-[#f9e6b2]">{result.closing}</p>
+              <p className="text-[15px] leading-7 text-[#80602F]">{result.closing}</p>
             </div>
           )}
 
@@ -326,14 +326,14 @@ export default function SelfDiscoveryPage() {
             type="button"
             onClick={generate}
             disabled={loading}
-            className="rounded-full border border-[#f2c36b]/40 px-5 py-2 text-sm text-[#f9e6b2] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60 disabled:opacity-60"
+            className="rounded-full border border-[#f2c36b]/40 px-5 py-2 text-sm text-[#80602F] transition-colors hover:bg-[#f2c36b]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2c36b]/60 disabled:opacity-60"
           >
             {loading ? "Dobara ban raha hai..." : "Reflection dobara banayein"}
           </button>
         </>
       )}
 
-      <p className="text-xs leading-5 text-[#a6bddb]">{DISCLAIMER_HI}</p>
+      <p className="text-xs leading-5 text-[#89837D]">{DISCLAIMER_HI}</p>
     </section>
   );
 }

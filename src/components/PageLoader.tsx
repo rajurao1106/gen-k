@@ -3,7 +3,7 @@ export default function PageLoader() {
     <main
       aria-busy="true"
       aria-live="polite"
-      className="grid min-h-screen place-items-center bg-[#071a2a] text-[#f9f3eb]"
+      className="grid min-h-screen place-items-center bg-[#F8F0E8] text-[#171717]"
     >
       <div className="flex flex-col items-center gap-4">
         <span
