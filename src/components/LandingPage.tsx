@@ -94,7 +94,7 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
         </nav>
       </header>
 
-      <section className="relative isolate mx-auto grid min-h-[610px] w-full max-w-7xl items-center gap-10 px-5 pb-20 pt-12 sm:px-8 md:min-h-[670px] md:pb-24 lg:grid-cols-[1.12fr_0.88fr] lg:px-12 lg:pt-6">
+      <section className="relative isolate mx-auto grid w-full max-w-7xl items-center gap-6 px-5 pb-20 pt-4 sm:px-8 md:min-h-[670px] md:pb-24 lg:grid-cols-[1.12fr_0.88fr] lg:gap-10 lg:px-12 lg:pt-6">
         <div className="pointer-events-none absolute -left-48 top-10 -z-10 h-[460px] w-[460px] rounded-full bg-[#E8B99A]/25 blur-[110px]" />
         <div className="pointer-events-none absolute right-[-10%] top-[-15%] -z-10 h-[580px] w-[580px] rounded-full bg-[#F2DCCB]/70 blur-[130px]" />
 
@@ -145,32 +145,36 @@ export default function LandingPage({ children }: { children?: ReactNode }) {
           </div>
         </div>
 
-        <div aria-hidden="true" className="relative mx-auto flex h-[360px] w-full max-w-[430px] items-center justify-center sm:h-[460px]">
-  <div className="absolute h-[280px] w-[280px] rounded-full border border-[#D9A441]/25 sm:h-[360px] sm:w-[360px]" />
-  <div className="absolute h-[220px] w-[220px] rounded-full border border-dashed border-[#D9A441]/30 sm:h-[290px] sm:w-[290px]" />
-  <div className="absolute h-[170px] w-[170px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(217,164,65,0.22),rgba(248,232,216,0.8)_46%,rgba(248,240,232,0.25)_72%)] shadow-[0_0_100px_rgba(204,151,74,0.14)] sm:h-[220px] sm:w-[220px]" />
-  <div className="absolute h-[270px] w-[270px] rotate-45 border border-[#D9A441]/25 sm:h-[350px] sm:w-[350px]" />
-  <div className="absolute h-[270px] w-[270px] -rotate-45 border border-[#D9A441]/20 sm:h-[350px] sm:w-[350px]" />
+        {/* order-first: image on top on mobile. lg:order-last: back to the right on desktop. */}
+        <div
+          aria-hidden="true"
+          className="relative order-first mx-auto flex h-[360px] w-full max-w-[430px] items-center justify-center sm:h-[460px] lg:order-last"
+        >
+          <div className="absolute h-[280px] w-[280px] rounded-full border border-[#D9A441]/25 sm:h-[360px] sm:w-[360px]" />
+          <div className="absolute h-[220px] w-[220px] rounded-full border border-dashed border-[#D9A441]/30 sm:h-[290px] sm:w-[290px]" />
+          <div className="absolute h-[170px] w-[170px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(217,164,65,0.22),rgba(248,232,216,0.8)_46%,rgba(248,240,232,0.25)_72%)] shadow-[0_0_100px_rgba(204,151,74,0.14)] sm:h-[220px] sm:w-[220px]" />
+          <div className="absolute h-[270px] w-[270px] rotate-45 border border-[#D9A441]/25 sm:h-[350px] sm:w-[350px]" />
+          <div className="absolute h-[270px] w-[270px] -rotate-45 border border-[#D9A441]/20 sm:h-[350px] sm:w-[350px]" />
 
-  {/* Om (peeks out behind the head like a halo) */}
-  <div className="relative -translate-y-16 flex h-28 w-28 items-center justify-center rounded-full border border-[#D9A441]/35 bg-[#F8E8D8]/85 text-5xl text-[#B77A25] shadow-[0_0_55px_rgba(217,164,65,0.18)] sm:-translate-y-24 sm:h-36 sm:w-36 sm:text-6xl">
-    <span className="translate-y-[-2px]">ॐ</span>
-  </div>
+          {/* Om (peeks out behind the head like a halo) */}
+          <div className="relative -translate-y-16 flex h-28 w-28 items-center justify-center rounded-full border border-[#D9A441]/35 bg-[#F8E8D8]/85 text-5xl text-[#B77A25] shadow-[0_0_55px_rgba(217,164,65,0.18)] sm:-translate-y-24 sm:h-36 sm:w-36 sm:text-6xl">
+            <span className="translate-y-[-2px]">ॐ</span>
+          </div>
 
-  {/* Astrologer image on top of Om */}
-  <img
-    src="/vedic-astrologer.png"
-    alt=""
-    className="absolute bottom-0 left-1/2 z-10 w-[115%] max-w-none -translate-x-1/2 object-contain [mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)] drop-shadow-[0_20px_40px_rgba(60,40,25,0.2)]"
-  />
+          {/* Astrologer image on top of Om */}
+          <img
+            src="/vedic-astrologer.png"
+            alt=""
+            className="absolute bottom-0 left-1/2 z-10 w-[115%] max-w-none -translate-x-1/2 object-contain [mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)] drop-shadow-[0_20px_40px_rgba(60,40,25,0.2)]"
+          />
 
-  <span className="absolute left-[13%] top-[21%] text-xl text-[#D9A441]">✦</span>
-  <span className="absolute right-[13%] top-[29%] text-sm text-[#A95F35]">✧</span>
-  <span className="absolute bottom-[20%] left-[20%] z-20 text-sm text-[#B77A25]">✧</span>
-  <span className="absolute bottom-[18%] right-[19%] z-20 text-lg text-[#A95F35]">✦</span>
-  <span className="absolute right-[8%] top-[57%] h-1.5 w-1.5 rounded-full bg-[#D9A441]" />
-  <span className="absolute left-[9%] top-[62%] h-1 w-1 rounded-full bg-[#A95F35]" />
-</div>
+          <span className="absolute left-[13%] top-[21%] text-xl text-[#D9A441]">✦</span>
+          <span className="absolute right-[13%] top-[29%] text-sm text-[#A95F35]">✧</span>
+          <span className="absolute bottom-[20%] left-[20%] z-20 text-sm text-[#B77A25]">✧</span>
+          <span className="absolute bottom-[18%] right-[19%] z-20 text-lg text-[#A95F35]">✦</span>
+          <span className="absolute right-[8%] top-[57%] h-1.5 w-1.5 rounded-full bg-[#D9A441]" />
+          <span className="absolute left-[9%] top-[62%] h-1 w-1 rounded-full bg-[#A95F35]" />
+        </div>
       </section>
 
       <section
