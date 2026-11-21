@@ -394,7 +394,7 @@ html, body { max-width: 100%; overflow-x: clip; }
             )}
             {page === "home" && <DashboardHome />}{" "}
             {page === "explore" && <ExplorePage onNavigate={(nextPage) => router.push(PAGE_ROUTES[nextPage])} />}
-            {page === "kundali" && <KundaliPage />}
+            {page === "kundali" && user && <KundaliPage accountId={user.id} />}
             {page === "ai-friend" && <AIFriendPage />}
             {page === "milan" && <KundaliMilanPage />}
             {page === "numerology" && <NumerologyPage />}

@@ -10,12 +10,15 @@ import {
 import { ApiError, fetchCurrentUser, logoutCurrentUser, type AuthUser } from "./api";
 import { AuthContext, type AuthStatus } from "./auth-context";
 import { signOutFirebase } from "./firebase";
+import { KUNDALI_LOCAL_CHAT_KEY } from "./storage";
 
 function clearUserLocalData() {
   const language = localStorage.getItem("ai_friend_language");
+  const kundaliChats = localStorage.getItem(KUNDALI_LOCAL_CHAT_KEY);
   localStorage.clear();
   sessionStorage.clear();
   if (language) localStorage.setItem("ai_friend_language", language);
+  if (kundaliChats) localStorage.setItem(KUNDALI_LOCAL_CHAT_KEY, kundaliChats);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

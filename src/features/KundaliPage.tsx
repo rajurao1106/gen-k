@@ -8,17 +8,21 @@ import {
   QUOTA_ERROR_MESSAGE_HI,
 } from "../lib/gemini";
 import {
+  deleteSavedKundaliChat,
   deleteUserKundaliProfile,
+  getSavedKundaliChat,
+  getSavedKundaliChats,
   getKundaliProfileId,
   getSavedKundalis,
   getUserKundaliProfile,
   getUserKundaliProfiles,
-  saveKundaliRecord,
+  saveKundaliChat,
   saveUserKundaliProfile,
+  type StoredKundaliChat,
 } from "../lib/storage";
 import { KundaliChartSVG } from "../components/KundaliChartSVG";
 import { BIRTH_FIELDS, type ChartData } from "../types";
-import { deleteMyProfile, fetchBirthChart, saveUserDetail } from "../lib/api";
+import { deleteMyProfile, fetchBirthChart } from "../lib/api";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -49,6 +53,23 @@ function plainText(html: string) {
     .trim();
 }
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
 function getErrorMessage(error: unknown) {
   if (
     error &&
@@ -64,7 +85,7 @@ function getErrorMessage(error: unknown) {
     : "Something went wrong while consulting the stars. Please try again.";
 }
 
-export default function KundaliPage() {
+export default function KundaliPage({ accountId }: { accountId: string }) {
   const searchParams = useSearchParams();
   const [input, setInput] = useState(() => {
     if (searchParams.get("newProfile") === "1") {
@@ -97,9 +118,53 @@ export default function KundaliPage() {
   const [error, setError] = useState<string | null>(null);
   const [upgradeFeature, setUpgradeFeature] = useState("");
   const [profiles, setProfiles] = useState(() => getUserKundaliProfiles());
-  const [savedLocally, setSavedLocally] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
   const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
+  const chartSvgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const localChats = getSavedKundaliChats(accountId);
+      // oxlint-disable-next-line react/set-state-in-effect
+      setProfiles((currentProfiles) => {
+        const merged = new Map(
+          currentProfiles.map((profile) => [getKundaliProfileId(profile), profile]),
+        );
+        localChats.forEach((chat) => {
+          merged.set(getKundaliProfileId(chat.profile), chat.profile);
+        });
+        return [...merged.values()];
+      });
+    } catch (storageError) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setError(
+        storageError instanceof Error
+          ? storageError.message
+          : "Could not load Kundali history from this device.",
+      );
+    }
+  }, [accountId]);
+
+  useEffect(() => {
+    if (stage !== "chat") return;
+    try {
+      saveKundaliChat(accountId, {
+        profile: input,
+        messages,
+        chart: chartData,
+        language,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (storageError) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setError(
+        storageError instanceof Error
+          ? `Chat history could not be saved on this device: ${storageError.message}`
+          : "Chat history could not be saved on this device.",
+      );
+    }
+  }, [accountId, chartData, input, language, messages, stage]);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -152,14 +217,34 @@ export default function KundaliPage() {
       return;
     }
     setError(null);
+    setSaveNotice("");
     setUpgradeFeature("");
-    saveUserKundaliProfile(input);
+    let savedChat: StoredKundaliChat | null;
+    try {
+      savedChat = getSavedKundaliChat(accountId, input);
+      saveUserKundaliProfile(input);
+      saveKundaliChat(accountId, {
+        profile: input,
+        messages: savedChat?.messages ?? [],
+        chart: savedChat?.chart ?? null,
+        language: savedChat?.language ?? language,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (storageError) {
+      setError(
+        storageError instanceof Error
+          ? storageError.message
+          : "Could not save your birth details on this device.",
+      );
+      return;
+    }
     setProfiles(getUserKundaliProfiles());
-    setMessages([]);
+    setMessages(savedChat?.messages ?? []);
+    setChartData(savedChat?.chart ?? null);
+    if (savedChat) setLanguage(savedChat.language);
     setSelectedTopic(null);
-    setSavedLocally(false);
     setStage("chat");
-    void generateChartData();
+    if (!savedChat?.chart) void generateChartData();
   };
 
   const askQuestion = async (question: string, topicId?: string) => {
@@ -167,6 +252,7 @@ export default function KundaliPage() {
     if (!trimmedQuestion || loading) return;
 
     setError(null);
+    setSaveNotice("");
     setUpgradeFeature("");
     setSelectedTopic(topicId ?? null);
     setMessageInput("");
@@ -243,33 +329,6 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
         ...previous,
         { role: "assistant", content: assistantMessage },
       ]);
-      setSavedLocally(false);
-
-      if (messages.length === 0) {
-        try {
-          const savedRecord = await saveUserDetail({
-            fullName: input.name,
-            dateOfBirth: input.dob,
-            timeOfBirth: input.bot,
-            placeOfBirth: input.bop,
-            gender: input.gender,
-            readingLanguage: language,
-            content: assistantMessage,
-            chart,
-          });
-          saveKundaliRecord({
-            ...input,
-            content: assistantMessage,
-            chart,
-            _id: savedRecord._id,
-          });
-        } catch (saveError) {
-          console.error("Could not save the user's reading:", saveError);
-          setError(
-            "Your answer is ready, but it could not be saved to your account. Please try again.",
-          );
-        }
-      }
     } catch (requestError) {
       const requestCode =
         requestError && typeof requestError === "object" && "code" in requestError
@@ -325,6 +384,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
       for (const record of relatedReadings) {
         if (record._id) await deleteMyProfile(record._id);
       }
+      deleteSavedKundaliChat(accountId, profile);
       setProfiles(deleteUserKundaliProfile(profile));
       if (getKundaliProfileId(input) === profileId) {
         setInput({ name: "", dob: "", bot: "", bop: "", gender: "" });
@@ -336,32 +396,114 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
     }
   };
 
-  const saveChatLocally = async () => {
-    const lastAssistantMessage = [...messages]
-      .reverse()
-      .find((message) => message.role === "assistant");
-    if (!lastAssistantMessage) return;
+  const saveKundaliPdf = () => {
+    try {
+      const chat: StoredKundaliChat = {
+        profile: input,
+        messages,
+        chart: chartData,
+        language,
+        updatedAt: new Date().toISOString(),
+      };
+      saveKundaliChat(accountId, chat);
+      setError(null);
+    } catch (storageError) {
+      setError(
+        storageError instanceof Error
+          ? `Could not save this reading on your device: ${storageError.message}`
+          : "Could not save this reading on your device.",
+      );
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=1200,height=900");
+    if (!printWindow) {
+      setSaveNotice("Kundali saved on this device. Allow pop-ups to create the PDF; chat history is not included.");
+      return;
+    }
+
+    const chartSvg = chartSvgRef.current?.querySelector("svg")?.outerHTML ?? "";
+    const chartSigns = [
+      chartData?.lagna ? `Lagna: ${chartData.lagna}` : "",
+      chartData?.moonSign ? `Moon sign (Rashi): ${chartData.moonSign}` : "",
+      chartData?.moonNakshatra ? `Nakshatra: ${chartData.moonNakshatra}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     try {
-      const savedRecord = await saveUserDetail({
-        fullName: input.name,
-        dateOfBirth: input.dob,
-        timeOfBirth: input.bot,
-        placeOfBirth: input.bop,
-        gender: input.gender,
-        content: lastAssistantMessage.content,
-        chart: chartData,
-      });
-      saveKundaliRecord({
-        ...input,
-        content: lastAssistantMessage.content,
-        chart: chartData,
-        _id: savedRecord._id,
-      });
-      setSavedLocally(true);
-      setError(null);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save this reading.");
+      printWindow.onload = () => printWindow.print();
+      printWindow.document.write(`<!doctype html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <title>Kundali - ${escapeHtml(input.name)}</title>
+            <style>
+              @page { size: A4 portrait; margin: 12mm; }
+              * { box-sizing: border-box; }
+              body { margin: 0; color: #24211d; font-family: Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .page { max-width: 780px; margin: 0 auto; }
+              .hero { border: 1px solid #ead8c7; border-radius: 18px; padding: 22px 26px; background: #fbf3e9; }
+              .eyebrow { margin: 0 0 8px; color: #96603a; font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+              h1 { margin: 0; color: #29231d; font-family: Georgia, serif; font-size: 30px; }
+              .subtitle { margin: 7px 0 0; color: #786e63; font-size: 12px; }
+              h2 { margin: 22px 0 10px; color: #81512f; font-family: Georgia, serif; font-size: 18px; page-break-after: avoid; }
+              .details { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 16px; }
+              .detail { min-height: 58px; border: 1px solid #eee5da; border-radius: 10px; padding: 10px 12px; background: #fffdfa; }
+              .label { display: block; margin-bottom: 5px; color: #8d8174; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+              .value { color: #27231f; font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+              .signs { margin-top: 14px; border: 1px solid #e8d7bd; border-radius: 10px; padding: 11px 13px; background: #fff8eb; color: #654d31; font-size: 11px; line-height: 1.6; }
+              .chart-card { display: grid; grid-template-columns: minmax(230px, 0.9fr) 1.1fr; align-items: center; gap: 20px; border: 1px solid #eadfd2; border-radius: 14px; padding: 18px; background: #fffdfa; page-break-inside: avoid; }
+              .chart { min-width: 0; }
+              .chart svg { display: block; width: 100%; max-width: 300px; height: auto; margin: 0 auto; }
+              .summary { color: #49423a; font-size: 10.5px; line-height: 1.65; white-space: pre-wrap; }
+              .summary p { margin: 0; }
+              .footer { margin-top: 20px; border-top: 1px solid #eadfd2; padding-top: 9px; color: #8d8174; font-size: 9px; }
+              @media print { .hero, .detail, .signs, .chart-card { break-inside: avoid; } }
+              @media screen and (max-width: 600px) { .details, .chart-card { grid-template-columns: 1fr; } }
+            </style>
+          </head>
+          <body>
+            <main class="page">
+              <header class="hero">
+                <p class="eyebrow">Gen-K · Vedic astrology</p>
+                <h1>Kundali report</h1>
+                <p class="subtitle">Personal birth details and planetary chart</p>
+              </header>
+              <section>
+                <h2>Birth details</h2>
+                <div class="details">
+                  <div class="detail"><span class="label">Name</span><span class="value">${escapeHtml(input.name)}</span></div>
+                  <div class="detail"><span class="label">Gender</span><span class="value">${escapeHtml(input.gender || "Not provided")}</span></div>
+                  <div class="detail"><span class="label">Date of birth</span><span class="value">${escapeHtml(input.dob)}</span></div>
+                  <div class="detail"><span class="label">Time of birth</span><span class="value">${escapeHtml(input.bot)}</span></div>
+                  <div class="detail"><span class="label">Place of birth</span><span class="value">${escapeHtml(input.bop)}</span></div>
+                </div>
+                ${chartSigns ? `<div class="signs">${escapeHtml(chartSigns)}</div>` : ""}
+              </section>
+              <section>
+                <h2>Birth chart</h2>
+                <div class="chart-card">
+                  <div class="chart">${chartSvg || "<p>Chart is not available yet.</p>"}</div>
+                  <div class="summary">
+                    ${chartData?.summary ? `<p>${escapeHtml(chartData.summary)}</p>` : "<p>Chart details are not available yet.</p>"}
+                  </div>
+                </div>
+              </section>
+              <footer class="footer">Generated on ${escapeHtml(new Date().toLocaleDateString())} · For personal reference</footer>
+            </main>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      setSaveNotice("Kundali saved on this device. Choose “Save as PDF” in the print dialog; chat history is not included.");
+    } catch (printError) {
+      printWindow.close();
+      setSaveNotice(
+        printError instanceof Error
+          ? `Saved on this device, but the PDF could not be opened: ${printError.message}`
+          : "Saved on this device, but the PDF could not be opened.",
+      );
     }
   };
 
@@ -563,6 +705,10 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 <p className="truncate text-xs text-[#625C56]">
                   {input.name} · {input.dob} · {input.bop}
                 </p>
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#EDF4E9] px-2.5 py-1 text-[11px] font-medium text-[#49643C]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#64874F]" aria-hidden="true" />
+                  {language === "hi" ? "चैट इस डिवाइस पर अपने-आप सेव है" : "Chat autosaves on this device"}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -575,11 +721,14 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 {messages.some((message) => message.role === "assistant") && (
                   <button
                     type="button"
-                    onClick={saveChatLocally}
-                    disabled={savedLocally}
-                    className="rounded-lg border border-[#D9A441]/40 px-3 py-2 text-xs text-[#80602F] hover:border-[#D9A441] disabled:opacity-50"
+                    onClick={saveKundaliPdf}
+                    title="Save birth details and chart as PDF; chat history is not included"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#A95F35] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#874A2B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A95F35]"
                   >
-                    {savedLocally ? "Saved" : "Save on this device"}
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="h-4 w-4">
+                      <path d="M10 2.5v9m0 0 3.25-3.25M10 11.5 6.75 8.25M3.5 13.5v2.25c0 .41.34.75.75.75h11.5c.41 0 .75-.34.75-.75V13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {language === "hi" ? "कुंडली PDF सेव करें" : "Save Kundali PDF"}
                   </button>
                 )}
                 <button
@@ -591,6 +740,11 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 </button>
               </div>
             </div>
+            {saveNotice && (
+              <p role="status" className="mt-3 rounded-lg bg-[#EDF4E9] px-3 py-2 text-xs text-[#49643C]">
+                {saveNotice}
+              </p>
+            )}
             {(chartLoading || chartData) && (
               <div className="mt-4 rounded-xl border border-[#E8D9CC] bg-[#F8F0E8] p-3">
                 {chartLoading && !chartData ? (
@@ -614,7 +768,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                           }`
                         : ""}
                     </summary>
-                    <div className="mx-auto mt-3 max-w-md">
+                    <div ref={chartSvgRef} className="mx-auto mt-3 max-w-md">
                       <KundaliChartSVG data={chartData} />
                       <p className="text-center text-xs text-[#625C56]">
                         {chartData.ayanamsa || ""}
