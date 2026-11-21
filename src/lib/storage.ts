@@ -16,6 +16,7 @@ export type StoredKundaliChat = {
   messages: StoredChatMessage[];
   chart: ChartData | null;
   language: "en" | "hi";
+  simpleLanguage?: boolean;
   updatedAt: string;
 };
 
@@ -59,6 +60,8 @@ function isStoredKundaliChat(value: unknown): value is StoredKundaliChat {
     ) &&
     (value.chart === null || isChartData(value.chart)) &&
     (value.language === "en" || value.language === "hi") &&
+    (value.simpleLanguage === undefined ||
+      typeof value.simpleLanguage === "boolean") &&
     typeof value.updatedAt === "string"
   );
 }

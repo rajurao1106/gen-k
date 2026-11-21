@@ -108,6 +108,7 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
     );
   });
   const [language, setLanguage] = useState<"en" | "hi">("en");
+  const [simpleLanguage, setSimpleLanguage] = useState(false);
   const [stage, setStage] = useState<"details" | "chat">("details");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState("");
@@ -154,6 +155,7 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
         messages,
         chart: chartData,
         language,
+        simpleLanguage,
         updatedAt: new Date().toISOString(),
       });
     } catch (storageError) {
@@ -164,7 +166,7 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
           : "Chat history could not be saved on this device.",
       );
     }
-  }, [accountId, chartData, input, language, messages, stage]);
+  }, [accountId, chartData, input, language, messages, simpleLanguage, stage]);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -228,6 +230,7 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
         messages: savedChat?.messages ?? [],
         chart: savedChat?.chart ?? null,
         language: savedChat?.language ?? language,
+        simpleLanguage: savedChat?.simpleLanguage ?? false,
         updatedAt: new Date().toISOString(),
       });
     } catch (storageError) {
@@ -242,6 +245,7 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
     setMessages(savedChat?.messages ?? []);
     setChartData(savedChat?.chart ?? null);
     if (savedChat) setLanguage(savedChat.language);
+    setSimpleLanguage(savedChat?.simpleLanguage ?? false);
     setSelectedTopic(null);
     setStage("chat");
     if (!savedChat?.chart) void generateChartData();
@@ -287,6 +291,20 @@ export default function KundaliPage({ accountId }: { accountId: string }) {
       : isTopicQuestion && topic
         ? `Answer only about "${topic.en}". Do not include a full life reading or unrelated sections.`
         : `Answer the user's question directly and personally. Focus only on the aspects relevant to the question; do not produce the full all-topics report unless explicitly requested.`;
+    const responseStyle = simpleLanguage
+      ? `Simple language mode:
+- Start with a clear, direct answer to the user's exact question.
+- Use everyday words in ${language === "hi" ? "Hindi" : "English"}. Avoid Sanskrit and technical astrology terms, jargon, filler, and unrelated background.
+- If the user uses a technical term, explain it briefly in plain words and then answer directly.
+- Keep the answer focused and concise. Follow the requested scope; for a full reading, cover each requested area briefly.
+- Use only the chart facts provided above. Do not invent placements, dates, or certainty; if a fact cannot be determined, say so plainly.
+- Separate what the chart states from interpretation. Describe predictions as possibilities, never guarantees.
+- For a question about "Rashi", answer with the Moon sign shown in the chart. If distinguishing it from the Ascendant is useful, say "rising sign" and explain the difference briefly; avoid Sanskrit labels.`
+      : `Astrology terms mode:
+- Astrology terminology may be used where it helps answer the question.
+- Answer the user's question directly and do not add unrelated background.
+- Use only the chart facts provided above; do not invent placements, dates, or certainty.
+- Describe predictions as possibilities, never guarantees.`;
 
     try {
       const response = await callGemini({
@@ -317,11 +335,12 @@ Write entirely in ${
           language === "hi" ? "Hindi using Devanagari script" : "English"
         }.
 ${focus}
+${responseStyle}
 
 User's latest request: ${trimmedQuestion}
 ${previousContext ? `\nConversation so far:\n${previousContext}` : ""}
 
-Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", answer with the Moon sign (Chandra Rashi) from the chart facts and clearly distinguish it from the Lagna (Ascendant). Explain relevant astrological reasoning where possible, but do not invent planetary placements or calculations that are not in the chart facts above. Be clear that predictions are possibilities, not certainties. Never diagnose illness or make definitive fertility, death, accident, or financial claims. Keep the answer useful, warm, and easy to understand.`,
+Use Vedic/sidereal astrology. For a question about "Rashi", answer with the Moon sign in the chart; distinguish it from the ascendant/rising sign when helpful. Do not invent planetary placements or calculations that are not in the chart facts above. Never diagnose illness or make definitive fertility, death, accident, or financial claims. Keep the answer useful, warm, and easy to understand.`,
       });
       const html = await marked.parse(response.output_text ?? "");
       const assistantMessage = String(html).trim();
@@ -403,6 +422,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
         messages,
         chart: chartData,
         language,
+        simpleLanguage,
         updatedAt: new Date().toISOString(),
       };
       saveKundaliChat(accountId, chat);
@@ -717,6 +737,21 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                   className="rounded-lg border border-[#E8D9CC] px-3 py-2 text-xs text-[#625C56] hover:border-[#D9A441]"
                 >
                   {language === "en" ? "हिंदी" : "English"}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={simpleLanguage}
+                  title="Applies to replies you send after changing this setting"
+                  onClick={() => setSimpleLanguage((enabled) => !enabled)}
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    simpleLanguage
+                      ? "border-[#64874F]/40 bg-[#EDF4E9] text-[#49643C]"
+                      : "border-[#E8D9CC] text-[#625C56] hover:border-[#D9A441]"
+                  }`}
+                >
+                  {language === "hi"
+                    ? `सरल भाषा: ${simpleLanguage ? "चालू" : "बंद"}`
+                    : `Simple language: ${simpleLanguage ? "On" : "Off"}`}
                 </button>
                 {messages.some((message) => message.role === "assistant") && (
                   <button
