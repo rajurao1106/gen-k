@@ -648,7 +648,7 @@ Use Vedic/sidereal astrology. When the user asks for "Rashi" or "राशि", 
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <article
-                  className={`max-w-[95%] rounded-2xl px-4 py-3 sm:max-w-[85%] ${
+                  className={`kundli-chat-answer max-w-[95%] rounded-2xl px-4 py-3 sm:max-w-[85%] ${
                     message.role === "user"
                       ? "bg-[#F8E8D8] text-[#171717]"
                       : "border border-[#E8D9CC] bg-[#FFFCF8] text-[#171717]"

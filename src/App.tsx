@@ -240,6 +240,12 @@ function KundaliExperience() {
         .prose-kundli h2 { font-family: 'Rajdhani', sans-serif; color: var(--gold); font-size: 1.5rem; font-weight: 700; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
         .prose-kundli h1 { font-family: 'Rajdhani', sans-serif; color: var(--text-primary); font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
         .prose-kundli h3 { color: var(--gold-soft); font-size: 1.05rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.4rem; }
+        .kundli-chat-answer .prose-kundli h1,
+        .kundli-chat-answer .prose-kundli h2,
+        .kundli-chat-answer .prose-kundli h3,
+        .kundli-chat-answer .prose-kundli h4 {
+          color: var(--text-primary);
+        }
         .prose-kundli p { color: var(--text-body); line-height: 1.7; margin-bottom: 0.85rem; }
         .prose-kundli ul { color: var(--text-body); margin-bottom: 0.85rem; padding-left: 1.1rem; }
         .prose-kundli li { margin-bottom: 0.35rem; }
